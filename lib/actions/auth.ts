@@ -11,12 +11,28 @@ export interface ResultadoAuth {
   error?: string;
 }
 
+/**
+ * Traduce errores de Supabase Auth con mensaje claro.
+ */
 function errorOpaco(error: AuthError, generico: string): string {
-  if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
-    return "Demasiados intentos seguidos. Aguardá 60 segundos por seguridad y volvé a probar.";
-  }
   console.error("[auth]", error.status, error.name, error.message);
-  return generico;
+
+  if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
+    if (/email rate limit/i.test(error.message)) {
+      return "Límite de envíos de email de Supabase alcanzado. Esperá unos minutos o usá 'Iniciar Sesión' con una cuenta ya creada.";
+    }
+    return `Límite de intentos alcanzado en Supabase (${error.message}). Por favor aguardá unos minutos o cambiá de email.`;
+  }
+
+  if (/user already registered/i.test(error.message)) {
+    return "Este email ya está registrado. Cambiá a 'Iniciar Sesión' para ingresar.";
+  }
+
+  if (/invalid login credentials/i.test(error.message)) {
+    return "Email o contraseña incorrectos.";
+  }
+
+  return error.message || generico;
 }
 
 export async function iniciarSesion(_previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {
@@ -64,7 +80,7 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
     if (!data.session) {
       const { error: errorLogin } = await supabase.auth.signInWithPassword(parseado.data);
       if (errorLogin) {
-        return { error: "Cuenta registrada. Iniciá sesión con tu email y contraseña." };
+        return { error: "Cuenta creada. Por favor, cambiá a 'Iniciar Sesión' e ingresá tus datos." };
       }
     }
   } catch (error) {
