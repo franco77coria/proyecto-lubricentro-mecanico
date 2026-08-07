@@ -1,4 +1,4 @@
-import { AlertTriangle, Car, ChevronRight, Clock, Plus, Wrench } from "lucide-react";
+import { AlertTriangle, Car, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -32,7 +32,7 @@ const ESTADO_LABEL: Record<string, string> = {
 
 export default async function PaginaTablero() {
   const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  if (!sesion?.perfil) redirect("/onboarding");
 
   const supabase = await crearClienteServidor();
   const tallerId = sesion.perfil.taller_id;
