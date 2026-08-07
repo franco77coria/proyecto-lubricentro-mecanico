@@ -41,13 +41,11 @@ export async function iniciarSesion(_previo: ResultadoAuth, formData: FormData):
     const { error } = await supabase.auth.signInWithPassword(parseado.data);
     if (error) return { error: errorOpaco(error, "Email o contraseña incorrectos") };
   } catch (error) {
-    // Next señaliza redirect y notFound lanzando errores internos: sin esto,
-    // el catch se los come y la página se prerenderiza estática y sin sesión.
     unstable_rethrow(error);
     return { error: "No se pudo conectar. Probá de nuevo." };
   }
 
-  redirect("/");
+  redirect("/tablero");
 }
 
 export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {
@@ -71,13 +69,6 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
   redirect("/onboarding");
 }
 
-/**
- * Punto de entrada único del formulario de login.
- *
- * El botón es uno solo y el modo viaja en el propio form, así que la pantalla
- * no necesita dos acciones ni dos estados: el label del botón morfea y acá se
- * despacha.
- */
 export async function autenticar(previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {
   return formData.get("modo") === "registro"
     ? crearCuenta(previo, formData)
@@ -103,19 +94,22 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
     const { error } = await supabase.rpc("crear_taller", {
       p_nombre: parseado.data.nombre,
       p_nombre_usuario: parseado.data.nombreUsuario ?? "",
-      // La función SQL espera undefined para "sin dato", no null.
       p_telefono: parseado.data.telefono || undefined,
     });
+
     if (error) {
-      console.error("[crear_taller]", error.code);
-      return { error: "No se pudo crear el taller. Probá de nuevo." };
+      console.error("[crear_taller]", error.code, error.message);
+      if (error.message?.includes("ya pertenece a un taller") || error.code === "23505") {
+        redirect("/tablero");
+      }
+      return { error: error.message || "No se pudo crear el taller. Probá de nuevo." };
     }
   } catch (error) {
     unstable_rethrow(error);
     return { error: "No se pudo conectar. Probá de nuevo." };
   }
 
-  redirect("/");
+  redirect("/tablero");
 }
 
 export async function cerrarSesion() {
