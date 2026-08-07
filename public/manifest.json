@@ -1,0 +1,17 @@
+{
+  "name": "Taller Mecánico & Lubricentro",
+  "short_name": "Taller",
+  "description": "Sistema de gestión para lubricentros y talleres mecánicos",
+  "start_url": "/tablero",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#1E293B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

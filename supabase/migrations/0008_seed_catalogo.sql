@@ -1,0 +1,228 @@
+-- ============================================================================
+-- 0008 — Seed curado del catálogo de vehículos (mercado argentino)
+--
+-- Cubre autos, utilitarios y motos: las patentes de moto están contempladas
+-- en el esquema, así que el catálogo también tiene que estarlo.
+--
+-- Esto es el piso, no el techo. Lo que falte se carga desde la app como
+-- `pendiente` y el cron mensual propone altas. Idempotente: se puede volver
+-- a correr sin duplicar.
+-- ============================================================================
+
+insert into public.marca (nombre, alias, origen, estado) values
+  ('Volkswagen',    array['vw', 'volks'],          'seed', 'aprobado'),
+  ('Chevrolet',     array['chevy', 'gm'],          'seed', 'aprobado'),
+  ('Ford',          array[]::text[],               'seed', 'aprobado'),
+  ('Fiat',          array[]::text[],               'seed', 'aprobado'),
+  ('Renault',       array['renaul'],               'seed', 'aprobado'),
+  ('Peugeot',       array['peugot', 'peujot'],     'seed', 'aprobado'),
+  ('Toyota',        array[]::text[],               'seed', 'aprobado'),
+  ('Citroën',       array['citroen'],              'seed', 'aprobado'),
+  ('Honda',         array[]::text[],               'seed', 'aprobado'),
+  ('Nissan',        array[]::text[],               'seed', 'aprobado'),
+  ('Jeep',          array[]::text[],               'seed', 'aprobado'),
+  ('RAM',           array[]::text[],               'seed', 'aprobado'),
+  ('Hyundai',       array['hiunday'],              'seed', 'aprobado'),
+  ('Kia',           array[]::text[],               'seed', 'aprobado'),
+  ('Mercedes-Benz', array['mercedes', 'benz', 'mb'], 'seed', 'aprobado'),
+  ('BMW',           array[]::text[],               'seed', 'aprobado'),
+  ('Audi',          array[]::text[],               'seed', 'aprobado'),
+  ('Suzuki',        array[]::text[],               'seed', 'aprobado'),
+  ('Mitsubishi',    array[]::text[],               'seed', 'aprobado'),
+  ('Chery',         array[]::text[],               'seed', 'aprobado'),
+  ('Iveco',         array[]::text[],               'seed', 'aprobado'),
+  ('Volvo',         array[]::text[],               'seed', 'aprobado'),
+  ('Land Rover',    array['landrover'],            'seed', 'aprobado'),
+  ('Alfa Romeo',    array['alfa'],                 'seed', 'aprobado'),
+  ('Dodge',         array[]::text[],               'seed', 'aprobado'),
+  ('Chrysler',      array[]::text[],               'seed', 'aprobado'),
+  ('Haval',         array['great wall', 'gwm'],    'seed', 'aprobado'),
+  ('Baic',          array[]::text[],               'seed', 'aprobado'),
+  ('JAC',           array[]::text[],               'seed', 'aprobado'),
+  ('Isuzu',         array[]::text[],               'seed', 'aprobado'),
+  ('SsangYong',     array['ssang yong'],           'seed', 'aprobado'),
+  ('Subaru',        array[]::text[],               'seed', 'aprobado'),
+  ('Mini',          array[]::text[],               'seed', 'aprobado'),
+  ('Porsche',       array[]::text[],               'seed', 'aprobado'),
+  ('Lifan',         array[]::text[],               'seed', 'aprobado'),
+  ('Geely',         array[]::text[],               'seed', 'aprobado'),
+  ('DS',            array[]::text[],               'seed', 'aprobado'),
+  ('Seat',          array[]::text[],               'seed', 'aprobado'),
+  ('Skoda',         array[]::text[],               'seed', 'aprobado'),
+  ('Lexus',         array[]::text[],               'seed', 'aprobado'),
+  ('Daihatsu',      array[]::text[],               'seed', 'aprobado'),
+  ('Lada',          array[]::text[],               'seed', 'aprobado'),
+  ('Changan',       array[]::text[],               'seed', 'aprobado'),
+  ('Foton',         array[]::text[],               'seed', 'aprobado'),
+  ('Shineray',      array[]::text[],               'seed', 'aprobado'),
+  ('Jaguar',        array[]::text[],               'seed', 'aprobado'),
+  ('Scania',        array[]::text[],               'seed', 'aprobado'),
+  -- Motos
+  ('Yamaha',        array[]::text[],               'seed', 'aprobado'),
+  ('Kawasaki',      array[]::text[],               'seed', 'aprobado'),
+  ('KTM',           array[]::text[],               'seed', 'aprobado'),
+  ('Zanella',       array[]::text[],               'seed', 'aprobado'),
+  ('Motomel',       array[]::text[],               'seed', 'aprobado'),
+  ('Corven',        array[]::text[],               'seed', 'aprobado'),
+  ('Gilera',        array[]::text[],               'seed', 'aprobado'),
+  ('Guerrero',      array[]::text[],               'seed', 'aprobado'),
+  ('Keller',        array[]::text[],               'seed', 'aprobado'),
+  ('Mondial',       array[]::text[],               'seed', 'aprobado'),
+  ('Bajaj',         array[]::text[],               'seed', 'aprobado'),
+  ('Royal Enfield', array['enfield'],              'seed', 'aprobado'),
+  ('Benelli',       array[]::text[],               'seed', 'aprobado'),
+  ('Beta',          array[]::text[],               'seed', 'aprobado'),
+  ('Vespa',         array[]::text[],               'seed', 'aprobado'),
+  ('Piaggio',       array[]::text[],               'seed', 'aprobado'),
+  ('Kymco',         array[]::text[],               'seed', 'aprobado'),
+  ('Brava',         array[]::text[],               'seed', 'aprobado'),
+  ('TVS',           array[]::text[],               'seed', 'aprobado')
+on conflict (nombre_norm) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Modelos
+-- ---------------------------------------------------------------------------
+
+insert into public.modelo (marca_id, nombre, origen, estado)
+select m.id, v.modelo, 'seed', 'aprobado'
+from (values
+  -- Volkswagen
+  ('Volkswagen','Gol'),('Volkswagen','Gol Trend'),('Volkswagen','Gol Country'),
+  ('Volkswagen','Suran'),('Volkswagen','Fox'),('Volkswagen','Voyage'),
+  ('Volkswagen','Polo'),('Volkswagen','Virtus'),('Volkswagen','Vento'),
+  ('Volkswagen','Bora'),('Volkswagen','Golf'),('Volkswagen','Passat'),
+  ('Volkswagen','Amarok'),('Volkswagen','Saveiro'),('Volkswagen','T-Cross'),
+  ('Volkswagen','Nivus'),('Volkswagen','Taos'),('Volkswagen','Tiguan'),
+  ('Volkswagen','Up!'),('Volkswagen','Caddy'),('Volkswagen','Crafter'),
+  -- Chevrolet
+  ('Chevrolet','Corsa'),('Chevrolet','Classic'),('Chevrolet','Celta'),
+  ('Chevrolet','Prisma'),('Chevrolet','Onix'),('Chevrolet','Onix Plus'),
+  ('Chevrolet','Agile'),('Chevrolet','Aveo'),('Chevrolet','Cruze'),
+  ('Chevrolet','Tracker'),('Chevrolet','Spin'),('Chevrolet','S10'),
+  ('Chevrolet','Montana'),('Chevrolet','Captiva'),('Chevrolet','Equinox'),
+  ('Chevrolet','Trailblazer'),('Chevrolet','Sonic'),('Chevrolet','Astra'),
+  ('Chevrolet','Vectra'),('Chevrolet','Meriva'),('Chevrolet','Zafira'),
+  ('Chevrolet','Blazer'),('Chevrolet','Cobalt'),
+  -- Ford
+  ('Ford','Fiesta'),('Ford','Ka'),('Ford','Focus'),('Ford','EcoSport'),
+  ('Ford','Ranger'),('Ford','F-100'),('Ford','F-150'),('Ford','Mondeo'),
+  ('Ford','Escort'),('Ford','Territory'),('Ford','Bronco Sport'),
+  ('Ford','Maverick'),('Ford','Transit'),('Ford','Kuga'),('Ford','Explorer'),
+  -- Fiat
+  ('Fiat','Uno'),('Fiat','Palio'),('Fiat','Siena'),('Fiat','Punto'),
+  ('Fiat','Idea'),('Fiat','Strada'),('Fiat','Toro'),('Fiat','Cronos'),
+  ('Fiat','Argo'),('Fiat','Mobi'),('Fiat','Fiorino'),('Fiat','Ducato'),
+  ('Fiat','Doblo'),('Fiat','Duna'),('Fiat','147'),('Fiat','Spazio'),
+  ('Fiat','Tipo'),('Fiat','Linea'),('Fiat','500'),('Fiat','Pulse'),
+  -- Renault
+  ('Renault','Clio'),('Renault','Symbol'),('Renault','Megane'),
+  ('Renault','Logan'),('Renault','Sandero'),('Renault','Stepway'),
+  ('Renault','Duster'),('Renault','Oroch'),('Renault','Kangoo'),
+  ('Renault','Fluence'),('Renault','Captur'),('Renault','Koleos'),
+  ('Renault','Master'),('Renault','Trafic'),('Renault','Alaskan'),
+  ('Renault','12'),('Renault','18'),('Renault','19'),('Renault','9'),
+  ('Renault','Twingo'),('Renault','Scenic'),('Renault','Kwid'),
+  -- Peugeot
+  ('Peugeot','206'),('Peugeot','207'),('Peugeot','208'),('Peugeot','307'),
+  ('Peugeot','308'),('Peugeot','408'),('Peugeot','405'),('Peugeot','504'),
+  ('Peugeot','505'),('Peugeot','2008'),('Peugeot','3008'),('Peugeot','5008'),
+  ('Peugeot','Partner'),('Peugeot','Boxer'),('Peugeot','Expert'),
+  ('Peugeot','106'),('Peugeot','Landtrek'),
+  -- Toyota
+  ('Toyota','Corolla'),('Toyota','Corolla Cross'),('Toyota','Hilux'),
+  ('Toyota','SW4'),('Toyota','Etios'),('Toyota','Yaris'),('Toyota','RAV4'),
+  ('Toyota','Camry'),('Toyota','Innova'),('Toyota','Land Cruiser'),
+  ('Toyota','Prius'),('Toyota','Hiace'),
+  -- Citroën
+  ('Citroën','C3'),('Citroën','C3 Aircross'),('Citroën','C4'),
+  ('Citroën','C4 Lounge'),('Citroën','C4 Cactus'),('Citroën','Berlingo'),
+  ('Citroën','Jumper'),('Citroën','Jumpy'),('Citroën','Xsara'),
+  ('Citroën','ZX'),('Citroën','Saxo'),('Citroën','C5'),
+  -- Honda
+  ('Honda','Civic'),('Honda','Fit'),('Honda','City'),('Honda','HR-V'),
+  ('Honda','CR-V'),('Honda','WR-V'),('Honda','Accord'),
+  ('Honda','Wave'),('Honda','Titan'),('Honda','Twister'),('Honda','XR'),
+  ('Honda','CB'),('Honda','Biz'),('Honda','Tornado'),('Honda','Falcon'),
+  -- Nissan
+  ('Nissan','March'),('Nissan','Versa'),('Nissan','Sentra'),
+  ('Nissan','Kicks'),('Nissan','Frontier'),('Nissan','X-Trail'),
+  ('Nissan','Tiida'),('Nissan','Note'),
+  -- Jeep / RAM
+  ('Jeep','Renegade'),('Jeep','Compass'),('Jeep','Commander'),
+  ('Jeep','Grand Cherokee'),('Jeep','Wrangler'),
+  ('RAM','1500'),('RAM','2500'),('RAM','700'),('RAM','Rampage'),
+  -- Hyundai / Kia
+  ('Hyundai','Accent'),('Hyundai','Elantra'),('Hyundai','Tucson'),
+  ('Hyundai','Santa Fe'),('Hyundai','Creta'),('Hyundai','HB20'),
+  ('Hyundai','i10'),('Hyundai','i30'),('Hyundai','Kona'),('Hyundai','H1'),
+  ('Kia','Rio'),('Kia','Cerato'),('Kia','Sportage'),('Kia','Sorento'),
+  ('Kia','Picanto'),('Kia','Soul'),('Kia','Seltos'),
+  -- Premium
+  ('Mercedes-Benz','Sprinter'),('Mercedes-Benz','Vito'),
+  ('Mercedes-Benz','Clase A'),('Mercedes-Benz','Clase C'),
+  ('Mercedes-Benz','Clase E'),('Mercedes-Benz','Clase G'),
+  ('Mercedes-Benz','Accelo'),('Mercedes-Benz','Atego'),
+  ('BMW','Serie 1'),('BMW','Serie 3'),('BMW','Serie 5'),
+  ('BMW','X1'),('BMW','X3'),('BMW','X5'),
+  ('Audi','A1'),('Audi','A3'),('Audi','A4'),('Audi','A5'),
+  ('Audi','Q3'),('Audi','Q5'),('Audi','Q7'),
+  ('Porsche','Cayenne'),('Porsche','Macan'),('Porsche','911'),
+  ('Jaguar','XE'),('Jaguar','XF'),('Jaguar','F-Pace'),
+  ('Lexus','ES'),('Lexus','NX'),('Lexus','RX'),
+  ('Mini','Cooper'),('Mini','Countryman'),
+  -- Suzuki / Mitsubishi / Subaru
+  ('Suzuki','Fun'),('Suzuki','Swift'),('Suzuki','Grand Vitara'),
+  ('Suzuki','Jimny'),('Suzuki','S-Cross'),('Suzuki','Baleno'),
+  ('Suzuki','AX 100'),('Suzuki','EN 125'),('Suzuki','GN 125'),
+  ('Mitsubishi','L200'),('Mitsubishi','Outlander'),('Mitsubishi','Montero'),
+  ('Mitsubishi','Lancer'),('Mitsubishi','ASX'),
+  ('Subaru','Impreza'),('Subaru','Forester'),('Subaru','XV'),('Subaru','Outback'),
+  -- Chinas
+  ('Chery','QQ'),('Chery','Tiggo'),('Chery','Tiggo 2'),('Chery','Tiggo 3'),
+  ('Chery','Tiggo 4'),('Chery','Tiggo 8'),('Chery','Arrizo'),('Chery','Fulwin'),
+  ('Haval','H6'),('Haval','Jolion'),('Haval','Poer'),
+  ('Baic','X35'),('Baic','X55'),('Baic','D20'),
+  ('JAC','S2'),('JAC','S3'),('JAC','T6'),('JAC','T8'),
+  ('Lifan','320'),('Lifan','530'),('Lifan','X60'),
+  ('Geely','Emgrand'),('Geely','LC'),
+  ('Changan','CS15'),('Changan','CS35'),('Changan','Alsvin'),
+  ('Shineray','T30'),('Shineray','X30'),
+  ('Foton','Gratour'),('Foton','Aumark'),
+  -- Resto
+  ('Iveco','Daily'),('Iveco','Tector'),('Iveco','Stralis'),
+  ('Volvo','XC40'),('Volvo','XC60'),('Volvo','XC90'),('Volvo','S60'),
+  ('Land Rover','Defender'),('Land Rover','Discovery'),
+  ('Land Rover','Range Rover'),('Land Rover','Freelander'),
+  ('Alfa Romeo','147'),('Alfa Romeo','156'),('Alfa Romeo','159'),
+  ('Alfa Romeo','Giulietta'),('Alfa Romeo','Stelvio'),
+  ('Dodge','Journey'),('Dodge','Caliber'),
+  ('Chrysler','PT Cruiser'),('Chrysler','300'),
+  ('Isuzu','D-Max'),
+  ('SsangYong','Actyon'),('SsangYong','Korando'),('SsangYong','Rexton'),
+  ('DS','DS3'),('DS','DS4'),('DS','DS7'),
+  ('Seat','Ibiza'),('Seat','Leon'),('Seat','Cordoba'),('Seat','Toledo'),
+  ('Skoda','Fabia'),('Skoda','Octavia'),('Skoda','Superb'),
+  ('Daihatsu','Terios'),('Daihatsu','Sirion'),
+  ('Lada','Niva'),('Lada','Samara'),
+  ('Scania','R450'),('Scania','P310'),
+  -- Motos
+  ('Yamaha','YBR'),('Yamaha','FZ'),('Yamaha','XTZ'),('Yamaha','Crypton'),
+  ('Yamaha','MT'),('Yamaha','FZ-S'),('Yamaha','Ray ZR'),
+  ('Kawasaki','Ninja'),('Kawasaki','Versys'),('Kawasaki','Z'),
+  ('KTM','Duke'),('KTM','Adventure'),('KTM','RC'),
+  ('Zanella','RX'),('Zanella','ZB'),('Zanella','Styler'),('Zanella','Patagonian'),
+  ('Motomel','Blitz'),('Motomel','Skua'),('Motomel','Sirius'),('Motomel','S2'),
+  ('Corven','Energy'),('Corven','Triax'),('Corven','Hunter'),('Corven','Mirage'),
+  ('Gilera','Smash'),('Gilera','VC'),('Gilera','Sahel'),
+  ('Guerrero','Trip'),('Guerrero','Econo'),('Guerrero','Queen'),('Guerrero','GRF'),
+  ('Keller','Stratus'),('Keller','Miracle'),('Keller','KN'),
+  ('Mondial','RD'),('Mondial','HD'),('Mondial','LD'),
+  ('Bajaj','Rouser'),('Bajaj','Boxer'),('Bajaj','Dominar'),
+  ('Royal Enfield','Himalayan'),('Royal Enfield','Classic'),('Royal Enfield','Meteor'),
+  ('Benelli','TNT'),('Benelli','Leoncino'),('Benelli','Imperiale'),
+  ('Beta','Motard'),('Beta','RR'),
+  ('Vespa','Primavera'),('Piaggio','Liberty'),
+  ('Kymco','Agility'),('Brava','Nevada'),('TVS','Rockz')
+) as v(marca, modelo)
+join public.marca m on m.nombre_norm = public.normalizar(v.marca)
+on conflict (marca_id, nombre_norm) do nothing;

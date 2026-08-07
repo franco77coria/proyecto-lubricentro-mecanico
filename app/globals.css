@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+/* Tailwind no trae variante para esta consulta y la necesitamos: es la que
+   apaga el blur de las superficies de vidrio. Se usa como
+   `sin-transparencia:backdrop-blur-none` en los componentes. */
+@custom-variant sin-transparencia (@media (prefers-reduced-transparency: reduce));
+
+/* ==========================================================================
+   Sistema de diseño — Taller
+   Fondo claro, minimalista tipo iOS, identidad automotor.
+   Todos los colores son tokens semánticos: nunca hex crudo en componentes.
+   Eso deja el dark mode como un segundo mapa de tokens, sin tocar UI.
+   ========================================================================== */
+
+:root {
+  /* --- Superficies y texto --- */
+  --background: #f8fafc;
+  --card: #ffffff;
+  --foreground: #0f172a;
+  --muted: #e9edf1;
+  --muted-foreground: #64748b; /* 4.6:1 sobre --card */
+  --border: #e2e8f0;
+
+  /* --- Marca --- */
+  --primary: #1e293b;
+  --primary-foreground: #ffffff;
+
+  /* Naranja de seguridad.
+     Medido, no elegido a ojo: #f97316 (el naranja "lindo" de Tailwind) no
+     llega ni a 3:1. #ea580c llega a 3:1 —suficiente para iconos y bordes—
+     pero con texto blanco encima da 3.56:1 y el mínimo para texto es 4.5:1.
+     #c2410c da 5.18:1 con blanco encima y 4.95:1 como texto sobre el fondo
+     claro, así que sirve para las dos cosas. Un solo token en vez de dos
+     evita tener que decidir cuál va en cada componente. */
+  --accent: #c2410c;
+  --accent-foreground: #ffffff;
+
+  /* Reservado para destructivo y crítico. Nunca como acento decorativo:
+     el checklist necesita que el rojo signifique una sola cosa. */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* --- Estados del checklist ---
+     Cada uno se acompaña SIEMPRE de un icono distinto en la UI.
+     El color no puede ser el único indicador (sol en el taller + daltonismo). */
+  --estado-ok: #15803d;
+  --estado-observado: #b45309;
+  --estado-critico: #dc2626;
+  --estado-na: #94a3b8;
+
+  --ring: #c2410c;
+
+  /* --- Forma --- */
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+
+  /* --- Safe areas (iOS notch / home indicator) --- */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* --- Alturas del chrome flotante ---
+     Las listas suman estos valores como padding para que el contenido
+     no quede tapado por la isla ni por la barra inferior. */
+  --isla-height: 3.25rem;
+  --barra-height: 4.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-estado-ok: var(--estado-ok);
+  --color-estado-observado: var(--estado-observado);
+  --color-estado-critico: var(--estado-critico);
+  --color-estado-na: var(--estado-na);
+
+  --color-ring: var(--ring);
+
+  /* Cuerpo: font del sistema. Ya trae optical sizing y tablas de tracking,
+     pesa 0 bytes y se ve nativo en cada plataforma.
+     Display: Barlow Condensed, solo para números grandes (patente, N° de OT,
+     km, totales, tacómetro) — ahí vive la identidad fierrera. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-barlow-condensed), var(--font-sans);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+html {
+  /* Elimina el delay de ~300ms del doble tap SIN bloquear el pinch-zoom.
+     Deshabilitar el zoom del usuario es un anti-patrón de accesibilidad. */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+
+  /* Sin rubber-band de la página entera: el scroll vive en los contenedores. */
+  overscroll-behavior-y: none;
+
+  /* El flash gris de Android al tocar delata que es una web. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Los controles no se seleccionan como texto al mantener el dedo apoyado. */
+button,
+[role="button"],
+label,
+nav {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Foco visible siempre — nunca quitar el outline sin reemplazarlo. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Tipografía
+   Tracking específico por tamaño: un letter-spacing fijo está mal en algún lado.
+   Leading al revés que el tamaño: apretado en títulos, holgado en cuerpo.
+   ========================================================================== */
+
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Precios, kilómetros y totales: sin esto las columnas bailan al actualizarse. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-caption {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
+   Utilidades de layout nativo
+   ========================================================================== */
+
+.safe-top {
+  padding-top: var(--safe-top);
+}
+.safe-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+.safe-x {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* Inset para listas que scrollean debajo del chrome flotante.
+   El sobrante de 1.5rem no es decorativo: con 1rem el último elemento queda
+   a 7px de la barra y se lee como si estuviera cortado. */
+.scroll-inset {
+  padding-bottom: calc(var(--barra-height) + var(--safe-bottom) + 1.5rem);
+}
+
+/* Scroll edge effect: el contenido se desvanece contra el chrome flotante,
+   en lugar de cortarse con un borde de 1px. */
+.edge-fade-bottom {
+  mask-image: linear-gradient(to bottom, black calc(100% - 2rem), transparent);
+}
+
+/* ==========================================================================
+   Skeletons
+   Una onda de brillo que recorre el placeholder. 1.6s por ciclo (0.62 Hz):
+   por encima del rango de ~0.2 Hz que resulta molesto en animaciones que
+   se repiten sin parar mientras se mira la pantalla.
+   ========================================================================== */
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 70%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: brillo 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    background-image: none;
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Accesibilidad — tres señales independientes, no una
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* El fondo pasa a sólido. El blur lo apaga la variante `sin-transparencia`
+   aplicada en cada componente, porque desde acá no se puede neutralizar la
+   utilidad de Tailwind de forma confiable. */
+@media (prefers-reduced-transparency: reduce) {
+  .material,
+  .material-thick {
+    background: var(--card) !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --muted-foreground: #475569;
+    --border: #94a3b8;
+  }
+  .material,
+  .material-thick {
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+}
+
+/* ==========================================================================
+   Materiales
+   Translucidez SOLO en el chrome (isla, barra, sheets).
+   Nunca en tarjetas de contenido, y nunca una superficie translúcida clara
+   apilada sobre otra: la legibilidad colapsa.
+   ========================================================================== */
+
+/* El BLUR no va acá: escrito como CSS suelto, Lightning CSS lo compila a solo
+   `-webkit-backdrop-filter` y descarta la propiedad estándar, con lo cual no
+   se aplica en ningún navegador actual. Las utilidades `backdrop-blur-*` de
+   Tailwind sí emiten la propiedad correcta, así que el blur se pone en el
+   componente y acá quedan solo el fondo y el borde. */
+.material {
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in srgb, white 40%, transparent);
+}
+
+/* Elevación de las superficies grandes: leen como más gruesas que los chips.
+   Es un MODIFICADOR — se usa junto a `material`, nunca sola. */
+.material-thick {
+  box-shadow: 0 8px 32px rgb(15 23 42 / 0.12);
+}

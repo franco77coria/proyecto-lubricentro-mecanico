@@ -1,0 +1,54 @@
+{
+  "name": "taller",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "//browserslist": "Sin esto, Lightning CSS asume targets viejos y para backdrop-filter emite SOLO -webkit-, descartando la propiedad estándar. Resultado: el blur de la isla, la barra y los sheets no se aplica en ningún navegador actual.",
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions",
+    "iOS >= 16",
+    "not dead"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "check": "next typegen && tsc --noEmit && eslint && next build",
+    "test": "node --test \"lib/**/*.test.ts\"",
+    "db:push": "supabase db push",
+    "verify:db": "node scripts/verificar-db.mjs",
+    "verify:tenant": "node scripts/verificar-tenant.mjs",
+    "verify": "npm run verify:db && npm run verify:tenant"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.29.0",
+    "motion": "^13.0.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "pg": "^8.22.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

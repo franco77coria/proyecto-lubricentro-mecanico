@@ -1,0 +1,240 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
+
+import {
+  DatosCrearOT,
+  DatosItemOT,
+  EstadoOT,
+  crearOTSchema,
+  itemOTSchema,
+} from "@/lib/schemas/ot";
+import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+
+export async function crearOrdenTrabajo(datos: DatosCrearOT): Promise<{ otId?: string; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida. Volvé a ingresar." };
+
+  const parseado = crearOTSchema.safeParse(datos);
+  if (!parseado.success) return { error: parseado.error.issues[0].message };
+
+  const { vehiculoId, clienteId, tipo, kmIngreso, observaciones, anomalias } = parseado.data;
+  const tallerId = sesion.perfil.taller_id;
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    // 1. Insertar la OT (el trigger asignar_numero_ot reescribirá el número si se pasa '')
+    const { data: ot, error } = await supabase
+      .from("orden_trabajo")
+      .insert({
+        taller_id: tallerId,
+        numero: "",
+        vehiculo_id: vehiculoId,
+        cliente_id: clienteId || null,
+        tipo,
+        km_ingreso: kmIngreso,
+        observaciones: observaciones || null,
+        creado_por: sesion.user.id,
+        estado: "presupuesto",
+      })
+      .select("id, numero")
+      .single();
+
+    if (error || !ot) {
+      console.error("[crearOrdenTrabajo]", error?.code, error?.message);
+      return { error: "No se pudo crear la Orden de Trabajo." };
+    }
+
+    // 2. Insertar anomalías si fueron especificadas
+    if (anomalias && anomalias.length > 0) {
+      const notas = anomalias.map((texto, i) => ({
+        taller_id: tallerId,
+        ot_id: ot.id,
+        tipo: "anomalia" as const,
+        texto,
+        orden: i + 1,
+        creado_por: sesion.user.id,
+      }));
+      await supabase.from("ot_nota").insert(notas);
+    }
+
+    // 3. Traer la plantilla activa del taller para armar el checklist de la OT
+    const { data: plantilla } = await supabase
+      .from("checklist_plantilla")
+      .select("id")
+      .eq("taller_id", tallerId)
+      .eq("activa", true)
+      .maybeSingle();
+
+    if (plantilla) {
+      const { data: itemsPlantilla } = await supabase
+        .from("checklist_plantilla_item")
+        .select("id, etiqueta, orden")
+        .eq("plantilla_id", plantilla.id)
+        .eq("activo", true)
+        .order("orden", { ascending: true });
+
+      if (itemsPlantilla && itemsPlantilla.length > 0) {
+        const checklistOt = itemsPlantilla.map((item) => ({
+          taller_id: tallerId,
+          ot_id: ot.id,
+          item_id: item.id,
+          etiqueta_snapshot: item.etiqueta,
+          orden: item.orden,
+        }));
+        await supabase.from("ot_checklist").insert(checklistOt);
+      }
+    }
+
+    revalidatePath("/tablero");
+    revalidatePath("/ot");
+    return { otId: ot.id };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function cambiarEstadoOT(otId: string, nuevoEstado: EstadoOT): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  const dbEstadoMap: Record<EstadoOT, "presupuesto" | "aprobado" | "recibido" | "en_trabajo" | "esperando_repuesto" | "listo" | "entregado" | "cerrado" | "anulado"> = {
+    Presupuesto: "presupuesto",
+    Aprobado: "aprobado",
+    Recibido: "recibido",
+    "En trabajo": "en_trabajo",
+    "Esperando repuesto": "esperando_repuesto",
+    "Listo para entregar": "listo",
+    Entregado: "entregado",
+    Cerrado: "cerrado",
+    Anulado: "anulado",
+  };
+
+  const dbEstado = dbEstadoMap[nuevoEstado];
+  if (!dbEstado) return { error: "Estado inválido" };
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const { error } = await supabase
+      .from("orden_trabajo")
+      .update({
+        estado: dbEstado,
+        fecha_entrega: dbEstado === "entregado" || dbEstado === "cerrado" ? new Date().toISOString() : null,
+      })
+      .eq("id", otId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[cambiarEstadoOT]", error.code, error.message);
+      return { error: "No se pudo actualizar el estado de la OT." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    revalidatePath("/tablero");
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function actualizarItemChecklist(
+  otChecklistId: string,
+  estado: "ok" | "observado" | "critico" | "no_aplica" | null,
+  nota?: string | null,
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const { error } = await supabase
+      .from("ot_checklist")
+      .update({
+        estado: estado || null,
+        nota: nota || null,
+        actualizado_por: sesion.user.id,
+        actualizado_en: new Date().toISOString(),
+      })
+      .eq("id", otChecklistId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[actualizarItemChecklist]", error.code);
+      return { error: "No se pudo actualizar el ítem." };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  const parseado = itemOTSchema.safeParse(item);
+  if (!parseado.success) return { error: parseado.error.issues[0].message };
+
+  const d = parseado.data;
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const { error } = await supabase.from("ot_item").insert({
+      taller_id: sesion.perfil.taller_id,
+      ot_id: otId,
+      tipo: d.tipo,
+      descripcion: d.descripcion,
+      producto_id: d.productoId || null,
+      cantidad: d.cantidad,
+      costo_unitario: d.costoUnitario,
+      precio_unitario: d.precioUnitario,
+      creado_por: sesion.user.id,
+    });
+
+    if (error) {
+      console.error("[agregarItemOT]", error.code);
+      return { error: "No se pudo agregar el ítem." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function eliminarItemOT(otId: string, itemId: string): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const { error } = await supabase
+      .from("ot_item")
+      .delete()
+      .eq("id", itemId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[eliminarItemOT]", error.code);
+      return { error: "No se pudo eliminar el ítem." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
