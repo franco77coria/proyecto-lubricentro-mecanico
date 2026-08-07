@@ -13,7 +13,7 @@ export interface ResultadoAuth {
 
 function errorOpaco(error: AuthError, generico: string): string {
   if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
-    return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
+    return "Demasiados intentos seguidos. Aguardá 60 segundos por seguridad y volvé a probar.";
   }
   console.error("[auth]", error.status, error.name, error.message);
   return generico;
@@ -39,7 +39,6 @@ export async function iniciarSesion(_previo: ResultadoAuth, formData: FormData):
 
   revalidatePath("/", "layout");
 
-  // Verificar si el usuario ya tiene taller o si debe ir a onboarding
   const sesion = await obtenerSesion();
   if (sesion?.estado === "onboarding") {
     redirect("/onboarding");
@@ -65,7 +64,7 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
     if (!data.session) {
       const { error: errorLogin } = await supabase.auth.signInWithPassword(parseado.data);
       if (errorLogin) {
-        return { error: "Cuenta creada. Por favor, iniciá sesión con tu email y contraseña." };
+        return { error: "Cuenta registrada. Iniciá sesión con tu email y contraseña." };
       }
     }
   } catch (error) {
