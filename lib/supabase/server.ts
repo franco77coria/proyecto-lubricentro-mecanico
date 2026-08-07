@@ -3,11 +3,10 @@ import { cookies } from "next/headers";
 
 import type { Database } from "./database.types";
 
+export type PerfilUsuario = Database["public"]["Tables"]["perfil"]["Row"];
+
 /**
  * Cliente para Server Components, Server Actions y Route Handlers.
- *
- * Nunca usar la service_role acá: saltea RLS y con eso se pierde el
- * aislamiento entre talleres, que es la única barrera real del producto.
  */
 export async function crearClienteServidor() {
   const cookieStore = await cookies();
@@ -18,14 +17,13 @@ export async function crearClienteServidor() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: (cookies) => {
+        setAll: (cookiesToSet) => {
           try {
-            for (const { name, value, options } of cookies) {
+            for (const { name, value, options } of cookiesToSet) {
               cookieStore.set(name, value, options);
             }
           } catch {
-            // Los Server Components no pueden escribir cookies. No es un
-            // error: el refresh del token lo hace el proxy, que sí puede.
+            // Los Server Components no pueden escribir cookies directamente.
           }
         },
       },
@@ -36,11 +34,10 @@ export async function crearClienteServidor() {
 /**
  * Sesión y contexto del usuario.
  *
- * Devuelve `null` si no hay sesión, o si la hay pero el usuario todavía no
- * pertenece a ningún taller (recién se registró y no completó el onboarding).
- *
- * Usa getUser() y NO getSession(): getSession lee la cookie sin validarla
- * contra el servidor de auth, así que un token manipulado pasaría.
+ * Devuelve:
+ * - `null` si no hay usuario autenticado.
+ * - `{ user, perfil, estado: "completo" }` si el usuario tiene taller activo.
+ * - `{ user, perfil: null, estado: "onboarding" }` si falta el onboarding.
  */
 export async function obtenerSesion() {
   const supabase = await crearClienteServidor();
@@ -56,5 +53,9 @@ export async function obtenerSesion() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return { user, perfil: perfil?.activo ? perfil : null };
+  if (!perfil || !perfil.activo) {
+    return { user, perfil: null, estado: "onboarding" as const };
+  }
+
+  return { user, perfil, estado: "completo" as const };
 }

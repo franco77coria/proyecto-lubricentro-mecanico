@@ -1,18 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import type { AuthError } from "@supabase/supabase-js";
 
 import { altaTallerSchema, credencialesSchema } from "@/lib/schemas/auth";
-import { crearClienteServidor } from "@/lib/supabase/server";
+import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export interface ResultadoAuth {
   error?: string;
 }
 
-/**
- * Convierte un error de Supabase Auth en algo que se puede mostrar.
- */
 function errorOpaco(error: AuthError, generico: string): string {
   if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
     return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
@@ -39,6 +37,14 @@ export async function iniciarSesion(_previo: ResultadoAuth, formData: FormData):
     return { error: "No se pudo conectar. Probá de nuevo." };
   }
 
+  revalidatePath("/", "layout");
+
+  // Verificar si el usuario ya tiene taller o si debe ir a onboarding
+  const sesion = await obtenerSesion();
+  if (sesion?.estado === "onboarding") {
+    redirect("/onboarding");
+  }
+
   redirect("/tablero");
 }
 
@@ -56,7 +62,6 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
     const { data, error } = await supabase.auth.signUp(parseado.data);
     if (error) return { error: errorOpaco(error, "No se pudo crear la cuenta") };
 
-    // Si signUp no estableció la sesión automáticamente, iniciar sesión para fijar la cookie
     if (!data.session) {
       const { error: errorLogin } = await supabase.auth.signInWithPassword(parseado.data);
       if (errorLogin) {
@@ -68,6 +73,7 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
     return { error: "No se pudo conectar. Probá de nuevo." };
   }
 
+  revalidatePath("/", "layout");
   redirect("/onboarding");
 }
 
@@ -77,9 +83,6 @@ export async function autenticar(previo: ResultadoAuth, formData: FormData): Pro
     : iniciarSesion(previo, formData);
 }
 
-/**
- * Alta del taller. El que lo crea queda como dueño de ESE taller.
- */
 export async function crearTaller(_previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {
   const parseado = altaTallerSchema.safeParse({
     nombre: formData.get("nombre"),
@@ -93,13 +96,11 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
   try {
     const supabase = await crearClienteServidor();
 
-    // 1. Verificar si hay usuario con sesión activa
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       redirect("/login");
     }
 
-    // 2. Ejecutar la función RPC de alta de taller
     const { error } = await supabase.rpc("crear_taller", {
       p_nombre: parseado.data.nombre,
       p_nombre_usuario: parseado.data.nombreUsuario ?? "",
@@ -109,6 +110,7 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
     if (error) {
       console.error("[crear_taller]", error.code, error.message);
       if (error.message?.includes("ya pertenece a un taller") || error.code === "23505") {
+        revalidatePath("/", "layout");
         redirect("/tablero");
       }
       if (error.message?.includes("Sesión requerida")) {
@@ -121,11 +123,13 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
     return { error: "No se pudo conectar. Probá de nuevo." };
   }
 
+  revalidatePath("/", "layout");
   redirect("/tablero");
 }
 
 export async function cerrarSesion() {
   const supabase = await crearClienteServidor();
   await supabase.auth.signOut();
+  revalidatePath("/", "layout");
   redirect("/login");
 }

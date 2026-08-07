@@ -2,38 +2,43 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Refresco de sesión.
+ * Refresco de sesión y sincronización de cookies.
  *
- * En Next 16 esto se llama `proxy.ts`, no `middleware.ts` (misma API, export
- * `proxy`), y corre en runtime Node en vez de Edge.
- *
- * Su único trabajo es renovar el token de Supabase y reescribir las cookies:
- * los Server Components no pueden escribir cookies, así que sin esto la sesión
- * se vence sola y el usuario termina deslogueado sin motivo.
- *
- * La autorización NO vive acá. Vive en el layout de (app), que valida la
- * sesión del lado del servidor, y sobre todo en las políticas RLS de Postgres.
- * Un middleware que "protege" rutas es una puerta que se puede saltear.
+ * En Next.js 16 (Proxy runtime), `setAll` debe actualizar TANTO `request.cookies`
+ * como `response.cookies`. De lo contrario, los Server Components del Layout
+ * leen cookies obsoletas del request y devuelven 307 de nuevo a /login.
  */
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookies) => {
-          for (const { name, value, options } of cookies) {
-            response.cookies.set(name, value, options);
-          }
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
-    },
+    }
   );
 
-  // Valida el token contra el servidor de auth y lo renueva si hace falta.
+  // Valida y renueva silenciosamente el token si está por caducar
   await supabase.auth.getUser();
 
   return response;
@@ -41,8 +46,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo menos assets estáticos e imágenes: renovar la sesión en cada
-    // request de un .svg es gasto puro.
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
   ],
 };
