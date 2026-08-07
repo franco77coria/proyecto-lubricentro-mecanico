@@ -69,7 +69,7 @@ export default function Login() {
             key={modo}
             initial={reducirMovimiento ? false : { opacity: 0, x: modo === "login" ? -15 : 15 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={reducirMovimiento ? false : { opacity: 0, x: modo === "login" ? 15 : -15 }}
+            exit={reducirMovimiento ? undefined : { opacity: 0, x: modo === "login" ? 15 : -15 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
             className="space-y-3"
           >
