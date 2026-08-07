@@ -12,18 +12,12 @@ export interface ResultadoAuth {
 
 /**
  * Convierte un error de Supabase Auth en algo que se puede mostrar.
- *
- * Devolver `error.message` crudo permite enumerar usuarios: "User already
- * registered" contra "Invalid login credentials" dice si un email existe.
- * Todo se colapsa a un mensaje único, salvo el rate limit, que el usuario
- * legítimo necesita ver para entender por qué no puede entrar.
  */
 function errorOpaco(error: AuthError, generico: string): string {
   if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
     return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
   }
-  // El detalle real va a los logs del servidor, no a la pantalla.
-  console.error("[auth]", error.status, error.name);
+  console.error("[auth]", error.status, error.name, error.message);
   return generico;
 }
 
@@ -59,8 +53,16 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase.auth.signUp(parseado.data);
+    const { data, error } = await supabase.auth.signUp(parseado.data);
     if (error) return { error: errorOpaco(error, "No se pudo crear la cuenta") };
+
+    // Si signUp no estableció la sesión automáticamente, iniciar sesión para fijar la cookie
+    if (!data.session) {
+      const { error: errorLogin } = await supabase.auth.signInWithPassword(parseado.data);
+      if (errorLogin) {
+        return { error: "Cuenta creada. Por favor, iniciá sesión con tu email y contraseña." };
+      }
+    }
   } catch (error) {
     unstable_rethrow(error);
     return { error: "No se pudo conectar. Probá de nuevo." };
@@ -76,8 +78,7 @@ export async function autenticar(previo: ResultadoAuth, formData: FormData): Pro
 }
 
 /**
- * Alta del taller. El que lo crea queda como dueño de ESE taller: no hay rol
- * global, así que no hay escalada posible.
+ * Alta del taller. El que lo crea queda como dueño de ESE taller.
  */
 export async function crearTaller(_previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {
   const parseado = altaTallerSchema.safeParse({
@@ -91,6 +92,14 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
 
   try {
     const supabase = await crearClienteServidor();
+
+    // 1. Verificar si hay usuario con sesión activa
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      redirect("/login");
+    }
+
+    // 2. Ejecutar la función RPC de alta de taller
     const { error } = await supabase.rpc("crear_taller", {
       p_nombre: parseado.data.nombre,
       p_nombre_usuario: parseado.data.nombreUsuario ?? "",
@@ -101,6 +110,9 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
       console.error("[crear_taller]", error.code, error.message);
       if (error.message?.includes("ya pertenece a un taller") || error.code === "23505") {
         redirect("/tablero");
+      }
+      if (error.message?.includes("Sesión requerida")) {
+        redirect("/login");
       }
       return { error: error.message || "No se pudo crear el taller. Probá de nuevo." };
     }
