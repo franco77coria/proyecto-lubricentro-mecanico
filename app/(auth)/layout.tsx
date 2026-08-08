@@ -1,26 +1,38 @@
 import { redirect } from "next/navigation";
+
+import { PanelMarca } from "@/components/auth/PanelMarca";
 import { obtenerSesion } from "@/lib/supabase/server";
 
 /**
- * Layout de las pantallas de autenticación (Login u Onboarding).
+ * Pantallas sin sesión.
  *
- * Si el usuario ya está completamente autenticado con taller activo,
- * lo redirige al tablero sin pasar por el login.
+ * En escritorio va partido: el panel de marca ocupa el espacio que antes
+ * quedaba vacío al costado del formulario, y el formulario se queda con una
+ * columna de ancho cómodo en lugar de estirarse.
+ * En celular el panel no se monta y queda solo el formulario.
+ *
+ * Si la sesión ya está completa no tiene sentido mostrar el login.
  */
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const sesion = await obtenerSesion();
-
-  if (sesion?.estado === "completo") {
-    redirect("/tablero");
-  }
+  if (sesion?.estado === "completo") redirect("/tablero");
 
   return (
-    <div className="flex min-h-dvh flex-col px-5 safe-x pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--safe-bottom)+1rem)] relative overflow-hidden bg-background">
-      {/* Glow ambiental decorativo */}
-      <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-accent/10 blur-[100px]" />
-      <div className="pointer-events-none absolute -bottom-24 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-blue-600/10 blur-[100px]" />
-      
-      {children}
+    <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr]">
+      <PanelMarca />
+
+      <div className="relative flex flex-col overflow-hidden px-5 safe-x pt-[calc(var(--safe-top)+1.5rem)] pb-[calc(var(--safe-bottom)+1.5rem)]">
+        {/* En celular no hay panel de marca, así que el color de la marca entra
+            por acá: un tinte muy suave arriba para que no sea una hoja blanca. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 lg:hidden"
+          style={{
+            background:
+              "radial-gradient(120% 90% at 50% 0%, rgb(194 65 12 / 0.13) 0%, transparent 70%)",
+          }}
+        />
+        {children}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 
 const CENTRO = 120;
@@ -26,6 +26,17 @@ const enArco = (v: number, r: number) => {
 export type EstadoTacometro = "ralenti" | "acelerando" | "corte";
 
 /**
+ * El instrumento se dibuja sobre dos fondos distintos (la tarjeta clara y el
+ * panel de marca oscuro), así que los colores no pueden salir de los tokens
+ * de superficie: sobre el gradiente oscuro, `--muted` y `--border`
+ * desaparecen y el arco se vuelve invisible.
+ */
+const TEMA = {
+  claro: { pista: "var(--muted)", marca: "var(--border)", centro: "var(--card)" },
+  oscuro: { pista: "rgb(255 255 255 / 0.14)", marca: "rgb(255 255 255 / 0.28)", centro: "#0b1220" },
+} as const;
+
+/**
  * Tacómetro del login.
  *
  * Barre de 0 a la zona roja al montar y queda en ralentí. Al entrar, sube y
@@ -39,7 +50,34 @@ export type EstadoTacometro = "ralenti" | "acelerando" | "corte";
  * El ralentí oscila a ~1.4 Hz y no más lento: una animación que se repite sin
  * parar cerca de 0.2 Hz molesta en una pantalla que se mira fijo.
  */
-export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) {
+export function Tacometro({
+  estado = "ralenti",
+  tema = "claro",
+}: {
+  estado?: EstadoTacometro;
+  tema?: keyof typeof TEMA;
+}) {
+  const paleta = TEMA[tema];
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  /**
+   * El ralentí es un loop infinito. En celular el panel de marca está oculto
+   * por CSS pero el componente igual se monta, así que sin esto quedaría una
+   * animación corriendo para siempre sobre algo que nadie ve, gastando batería.
+   * Un elemento con `display: none` nunca intersecta, así que el observer lo
+   * detecta sin necesidad de duplicar los breakpoints en JS.
+   */
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => setVisible(e.isIntersecting));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Un id fijo haría que dos instancias compartan el mismo gradiente.
+  const idGradiente = `taco-${useId().replace(/:/g, "")}`;
   const reducirMovimiento = useReducedMotion();
   const valor = useMotionValue(reducirMovimiento ? RALENTI : 0);
 
@@ -51,41 +89,41 @@ export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) 
 
   // Barrido de bienvenida: 0 → redline → ralentí. Solo al montar.
   useEffect(() => {
-    if (reducirMovimiento) return;
-    const c = animate(valor, [0, REDLINE, RALENTI], {
+    if (reducirMovimiento || !visible) return;
+    const controls = animate(valor, [0, REDLINE, RALENTI], {
       duration: 1.4,
       times: [0, 0.45, 1],
       ease: [0.16, 1, 0.3, 1],
     });
-    return () => c.stop();
-  }, [reducirMovimiento, valor]);
+    return () => controls.stop();
+  }, [reducirMovimiento, visible, valor]);
 
   useEffect(() => {
-    if (reducirMovimiento) return;
+    if (reducirMovimiento || !visible) return;
 
     if (estado === "ralenti") {
-      const c = animate(valor, [RALENTI, RALENTI + 0.022, RALENTI], {
+      const controls = animate(valor, [RALENTI, RALENTI + 0.022, RALENTI], {
         duration: 0.7,
         repeat: Infinity,
         ease: "easeInOut",
         delay: 1.4,
       });
-      return () => c.stop();
+      return () => controls.stop();
     }
 
     const destino = estado === "acelerando" ? 0.6 : 0.97;
-    const c = animate(valor, destino, {
+    const controls = animate(valor, destino, {
       type: "spring",
       bounce: estado === "corte" ? 0.35 : 0.2,
       duration: 0.5,
     });
-    return () => c.stop();
-  }, [estado, reducirMovimiento, valor]);
+    return () => controls.stop();
+  }, [estado, reducirMovimiento, visible, valor]);
 
   return (
-    <svg viewBox="0 0 240 240" className="h-full w-full" aria-hidden>
+    <svg ref={svgRef} viewBox="0 0 240 240" className="h-full w-full" aria-hidden>
       <defs>
-        <linearGradient id="tacoProgreso" x1="0" y1="1" x2="1" y2="0">
+        <linearGradient id={idGradiente} x1="0" y1="1" x2="1" y2="0">
           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.55" />
           <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
@@ -97,7 +135,7 @@ export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) 
         cy={CENTRO}
         r={RADIO}
         fill="none"
-        stroke="var(--muted)"
+        stroke={paleta.pista}
         strokeWidth={9}
         strokeLinecap="round"
         strokeDasharray={`${LARGO_ARCO} ${CIRCUNFERENCIA}`}
@@ -124,7 +162,7 @@ export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) 
         cy={CENTRO}
         r={RADIO}
         fill="none"
-        stroke="url(#tacoProgreso)"
+        stroke={`url(#${idGradiente})`}
         strokeWidth={9}
         strokeLinecap="round"
         style={{ strokeDasharray: dashProgreso }}
@@ -145,7 +183,7 @@ export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) 
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke={v >= REDLINE ? "var(--destructive)" : "var(--border)"}
+            stroke={v >= REDLINE ? "var(--destructive)" : paleta.marca}
             strokeWidth={mayor ? 3 : 1.75}
             strokeLinecap="round"
             opacity={v >= REDLINE ? 0.6 : 1}
@@ -163,7 +201,7 @@ export function Tacometro({ estado = "ralenti" }: { estado?: EstadoTacometro }) 
         strokeWidth={3.5}
         strokeLinecap="round"
       />
-      <circle cx={CENTRO} cy={CENTRO} r={9} fill="var(--card)" stroke="var(--accent)" strokeWidth={3} />
+      <circle cx={CENTRO} cy={CENTRO} r={9} fill={paleta.centro} stroke="var(--accent)" strokeWidth={3} />
     </svg>
   );
 }

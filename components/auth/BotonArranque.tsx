@@ -45,7 +45,16 @@ export function BotonArranque({ modo, cargando, exito = false }: BotonArranquePr
       onPointerCancel={() => setApretado(false)}
       onPointerLeave={() => setApretado(false)}
       aria-label={descripcion}
-      className="relative grid h-32 w-32 place-items-center rounded-full bg-card shadow-[0_8px_28px_rgb(15_23_42/0.14)] transition-transform active:scale-[0.97] disabled:cursor-wait"
+      // El gradiente va de blanco a un crema apenas teñido: el botón se lee
+      // como una pieza con volumen y no como un círculo plano. El glow
+      // exterior toma el color del acento y se intensifica al apretar.
+      style={{
+        backgroundImage: "linear-gradient(160deg, #ffffff 0%, #fffaf6 55%, var(--accent-suave) 100%)",
+        boxShadow: apretado
+          ? "0 4px 14px rgb(194 65 12 / 0.32), 0 0 0 6px rgb(194 65 12 / 0.10)"
+          : "0 10px 30px rgb(15 23 42 / 0.14), 0 0 0 0 rgb(194 65 12 / 0)",
+      }}
+      className="relative grid h-32 w-32 place-items-center rounded-full transition-[box-shadow,transform] duration-200 active:scale-[0.97] disabled:cursor-wait"
     >
       <svg viewBox="0 0 128 128" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
         <circle cx={64} cy={64} r={RADIO} fill="none" stroke="var(--border)" strokeWidth={4} />
