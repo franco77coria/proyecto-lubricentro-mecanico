@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Car,
+  Users,
   LayoutGrid,
   type LucideIcon,
   Package,
@@ -30,6 +31,7 @@ export interface ItemNav {
 export const ITEMS_NAV: readonly ItemNav[] = [
   { href: "/tablero", etiqueta: "Tablero", icono: LayoutGrid },
   { href: "/vehiculos", etiqueta: "Autos", icono: Car },
+  { href: "/clientes", etiqueta: "Clientes", icono: Users },
   { href: "/stock", etiqueta: "Stock", icono: Package },
   { href: "/caja", etiqueta: "Caja", icono: Wallet, soloDueno: true },
   { href: "/reportes", etiqueta: "Reportes", icono: BarChart3, soloDueno: true },
@@ -40,7 +42,7 @@ export const ITEMS_NAV: readonly ItemNav[] = [
  *  que se usan estando parado al lado de un auto. Caja y reportes son de
  *  escritorio, se miran sentado. */
 export const ITEMS_BARRA: readonly ItemNav[] = ITEMS_NAV.filter(
-  (i) => i.href !== "/caja" && i.href !== "/reportes",
+  (i) => !["/caja", "/reportes", "/clientes"].includes(i.href),
 );
 
 export function esRutaActiva(pathname: string, href: string): boolean {
