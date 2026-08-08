@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Script suelto en la raíz que no forma parte de la app.
+    "kimi-proxy.js",
   ]),
   {
     // Los scripts de verificación usan `condición ? ok(...) : fail(...)` como

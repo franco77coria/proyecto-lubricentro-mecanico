@@ -26,7 +26,8 @@
     "verify:db": "node scripts/verificar-db.mjs",
     "verify:tenant": "node scripts/verificar-tenant.mjs",
     "verify:storage": "node scripts/verificar-storage.mjs",
-    "verify": "npm run verify:db && npm run verify:tenant && npm run verify:storage"
+    "verify:flujo": "node scripts/verificar-flujo.mjs",
+    "verify": "npm run verify:db && npm run verify:tenant && npm run verify:storage && npm run verify:flujo"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

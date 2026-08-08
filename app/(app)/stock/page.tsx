@@ -1,6 +1,7 @@
 import { AlertTriangle, Package } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { AccionesProducto } from "@/components/stock/AccionesProducto";
 import { FormNuevoProducto } from "@/components/stock/FormNuevoProducto";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
@@ -37,6 +38,8 @@ export default async function PaginaStock({
   }
 
   const { data: productos } = await query;
+  // El mecánico ve el stock para saber si hay repuesto, pero no lo mueve.
+  const puedeMover = sesion.perfil.rol !== "mecanico";
   const lista = productos ?? [];
   const bajos = lista.filter((p) => p.bajo_stock).length;
 
@@ -107,6 +110,15 @@ export default async function PaginaStock({
                       {money(Number(p.precio_venta ?? 0))}
                     </span>
                   </span>
+
+                  {puedeMover && (
+                    <AccionesProducto
+                      productoId={p.id}
+                      nombre={p.nombre}
+                      stock={stock}
+                      unidad={p.unidad}
+                    />
+                  )}
                 </li>
               );
             })}

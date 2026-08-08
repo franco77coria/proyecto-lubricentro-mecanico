@@ -13,7 +13,7 @@ export function FormNuevoProducto() {
   const [nombre, setNombre] = useState("");
   const [marca, setMarca] = useState("");
   const [categoria, setCategoria] = useState("");
-  const [unidad, setUnidad] = useState("unid");
+  const [unidad, setUnidad] = useState("unidad");
   const [precioVenta, setPrecioVenta] = useState("");
   const [costoUnitario, setCostoUnitario] = useState("");
   const [stockInicial, setStockInicial] = useState("");
@@ -110,6 +110,27 @@ export function FormNuevoProducto() {
                     className="mt-1 min-h-10 w-full rounded-xl border border-border bg-muted px-3 text-xs text-foreground focus:border-accent focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* La unidad estaba fija en "unid" y no se podía cambiar: un
+                  lubricentro carga el aceite por litro, y con 20 unidades de
+                  aceite el stock no significa nada. */}
+              <div>
+                <label htmlFor="unidad-producto" className="text-caption text-muted-foreground">
+                  Se mide en
+                </label>
+                <select
+                  id="unidad-producto"
+                  value={unidad}
+                  onChange={(e) => setUnidad(e.target.value)}
+                  className="mt-1 min-h-10 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+                >
+                  <option value="unidad">Unidades</option>
+                  <option value="litro">Litros</option>
+                  <option value="kg">Kilos</option>
+                  <option value="metro">Metros</option>
+                  <option value="juego">Juegos</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

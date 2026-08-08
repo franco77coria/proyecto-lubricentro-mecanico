@@ -46,3 +46,9 @@ next-env.d.ts
 # Nunca commitear nada que lleve la service_role key: saltea RLS por completo
 # y con ella se lee y escribe todo, de todos los talleres.
 /scripts/crear-usuario-admin.mjs
+
+# Herramientas locales del desarrollador, ajenas a la app.
+# kimi-proxy.js lleva una API key embebida y no debe versionarse.
+/kimi-proxy.js
+/start-claude-kimi.bat
+/start-claude-kimi.ps1

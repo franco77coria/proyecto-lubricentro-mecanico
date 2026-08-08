@@ -5,6 +5,15 @@ import { useState, useTransition } from "react";
 
 import { METODOS_PAGO, MetodoPago, registrarPagoOT } from "@/lib/actions/caja";
 
+const ETIQUETA_METODO: Record<MetodoPago, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+  tarjeta_credito: "Tarjeta crédito",
+  tarjeta_debito: "Tarjeta débito",
+  mercado_pago: "Mercado Pago",
+  otro: "Otro",
+};
+
 interface Pago {
   id: string;
   metodo: string;
@@ -120,12 +129,14 @@ export function SeccionPagos({
                 onChange={(e) => setMetodo(e.target.value as MetodoPago)}
                 className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               >
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta_credito">Tarjeta Crédito</option>
-                <option value="tarjeta_debito">Tarjeta Débito</option>
-                <option value="mercado_pago">Mercado Pago</option>
-                <option value="otro">Otro</option>
+                {/* Se derivan de la constante, que es la misma que valida el
+                    Server Action. Escritas a mano, agregar un método implicaba
+                    acordarse de tocar los dos lados. */}
+                {METODOS_PAGO.map((m) => (
+                  <option key={m} value={m}>
+                    {ETIQUETA_METODO[m]}
+                  </option>
+                ))}
               </select>
             </div>
 

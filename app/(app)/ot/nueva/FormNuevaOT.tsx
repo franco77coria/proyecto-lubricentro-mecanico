@@ -244,6 +244,24 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
             </ul>
           )}
         </div>
+
+        {/* El campo ya se enviaba al servidor pero no había dónde escribirlo,
+            así que llegaba siempre vacío. Va separado de las anomalías: eso es
+            lo que dice el cliente, esto es lo que anota el taller. */}
+        <div>
+          <label htmlFor="obs-ot" className="text-caption text-muted-foreground">
+            Observaciones internas (opcional)
+          </label>
+          <textarea
+            id="obs-ot"
+            rows={2}
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            placeholder="Ej. el cliente lo pasa a buscar el viernes"
+            maxLength={500}
+            className="mt-1 w-full resize-none rounded-xl border border-border bg-muted px-3 py-2 text-xs text-foreground focus:border-accent focus:outline-none"
+          />
+        </div>
       </section>
 
       <button

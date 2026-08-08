@@ -1,5 +1,4 @@
-import { CreditCard, DollarSign, Lock, Receipt, Smartphone, Wallet } from "lucide-react";
-import Link from "next/link";
+import { CreditCard, DollarSign, Smartphone, Wallet } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { BotonCierreCaja } from "./BotonCierreCaja";
@@ -149,6 +148,35 @@ export default async function PaginaCaja() {
             )}
           </div>
         </section>
+
+        {/* Cierres anteriores. Se consultaban pero no se mostraban en ningún
+            lado: sin esto no hay forma de revisar lo que se cerró ayer. */}
+        {(cierres ?? []).length > 0 && (
+          <section className="space-y-3">
+            <h2 className="t-seccion">Últimos cierres</h2>
+            <ul className="tarjeta divide-y divide-border overflow-hidden">
+              {cierres!.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-3 px-3.5 py-3">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">
+                      {new Intl.DateTimeFormat("es-AR", {
+                        weekday: "short",
+                        day: "2-digit",
+                        month: "short",
+                      }).format(new Date(`${c.fecha}T12:00:00`))}
+                    </span>
+                    {c.notas && (
+                      <span className="block truncate text-caption text-muted-foreground">{c.notas}</span>
+                    )}
+                  </span>
+                  <span className="tabular shrink-0 text-sm font-bold text-foreground">
+                    $ {Number(c.total || 0).toLocaleString("es-AR")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );
