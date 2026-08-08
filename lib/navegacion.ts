@@ -1,4 +1,12 @@
-import { Car, LayoutGrid, type LucideIcon, Package, Settings, Wallet } from "lucide-react";
+import {
+  BarChart3,
+  Car,
+  LayoutGrid,
+  type LucideIcon,
+  Package,
+  Settings,
+  Wallet,
+} from "lucide-react";
 
 export interface ItemNav {
   href: string;
@@ -24,12 +32,15 @@ export const ITEMS_NAV: readonly ItemNav[] = [
   { href: "/vehiculos", etiqueta: "Autos", icono: Car },
   { href: "/stock", etiqueta: "Stock", icono: Package },
   { href: "/caja", etiqueta: "Caja", icono: Wallet, soloDueno: true },
+  { href: "/reportes", etiqueta: "Reportes", icono: BarChart3, soloDueno: true },
   { href: "/config", etiqueta: "Ajustes", icono: Settings },
 ];
 
-/** En el celular no entran cinco ítems más el botón central. */
+/** En el celular no entran seis ítems más el botón central: quedan los cuatro
+ *  que se usan estando parado al lado de un auto. Caja y reportes son de
+ *  escritorio, se miran sentado. */
 export const ITEMS_BARRA: readonly ItemNav[] = ITEMS_NAV.filter(
-  (i) => i.href !== "/caja",
+  (i) => i.href !== "/caja" && i.href !== "/reportes",
 );
 
 export function esRutaActiva(pathname: string, href: string): boolean {

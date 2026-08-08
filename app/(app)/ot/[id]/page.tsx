@@ -3,10 +3,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
+import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
 import { EstadoSwitcher } from "@/components/ot/EstadoSwitcher";
+import { FirmaCliente } from "@/components/ot/FirmaCliente";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
+import { fotosDeOT } from "@/lib/actions/fotos";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -130,6 +133,13 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
 
   const anomalias = (notas || []).filter((n) => n.tipo === "anomalia");
 
+  // Fotos con URL firmada y estado de la firma del cliente. En paralelo: son
+  // dos consultas independientes y encadenarlas solo suma latencia.
+  const [fotos, { data: recepcion }] = await Promise.all([
+    fotosDeOT(ot.id),
+    supabase.from("ot_recepcion").select("firma_recepcion_url").eq("ot_id", ot.id).maybeSingle(),
+  ]);
+
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
       <div className="contenedor-angosto space-y-6">
@@ -224,6 +234,18 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
           </h2>
           <ChecklistEditor items={checklist || []} />
         </section>
+
+        {/* Recepción: fotos del estado del auto y conformidad del cliente.
+            Van juntas porque son las dos caras de lo mismo: dejar constancia
+            de cómo entró el vehículo. */}
+        <CapturaFotos otId={ot.id} tallerId={sesion.perfil.taller_id} fotos={fotos} />
+
+        <FirmaCliente
+          otId={ot.id}
+          tallerId={sesion.perfil.taller_id}
+          momento="recepcion"
+          yaFirmada={Boolean(recepcion?.firma_recepcion_url)}
+        />
       </div>
     </main>
   );

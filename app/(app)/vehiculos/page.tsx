@@ -79,8 +79,11 @@ export default async function PaginaVehiculos({
                 const desc = [v.marca?.nombre, v.modelo?.nombre, v.anio].filter(Boolean).join(" ");
                 return (
                   <li key={v.id} className="entrar" style={{ "--i": i + 2 } as React.CSSProperties}>
+                    {/* Lleva al historial y no a crear una orden: al tocar un
+                        auto lo primero que se quiere ver es qué se le hizo
+                        antes. Crear la orden es una acción de esa ficha. */}
                     <Link
-                      href={`/ot/nueva?patente=${encodeURIComponent(v.patente)}`}
+                      href={`/vehiculos/${encodeURIComponent(v.patente)}`}
                       className="tarjeta tarjeta-accion flex h-full flex-col gap-3 p-4"
                     >
                       <div className="flex items-start justify-between gap-2">

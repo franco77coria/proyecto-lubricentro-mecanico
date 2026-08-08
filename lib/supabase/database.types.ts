@@ -299,6 +299,24 @@ export type Database = {
           },
         ]
       }
+      intento_auth: {
+        Row: {
+          clave: string
+          creado_en: string
+          id: number
+        }
+        Insert: {
+          clave: string
+          creado_en?: string
+          id?: number
+        }
+        Update: {
+          clave?: string
+          creado_en?: string
+          id?: number
+        }
+        Relationships: []
+      }
       invitacion: {
         Row: {
           aceptada_en: string | null
@@ -1513,6 +1531,10 @@ export type Database = {
     }
     Functions: {
       aceptar_invitacion: { Args: { p_token: string }; Returns: string }
+      chequear_rate_limit: {
+        Args: { p_clave: string; p_max?: number; p_ventana?: string }
+        Returns: Json
+      }
       crear_checklist_default: { Args: { p_taller: string }; Returns: string }
       crear_taller: {
         Args: {
@@ -1525,6 +1547,11 @@ export type Database = {
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       es_dueno: { Args: never; Returns: boolean }
+      limpiar_rate_limit: { Args: { p_clave: string }; Returns: undefined }
+      metricas_taller: {
+        Args: { p_desde?: string; p_hasta?: string }
+        Returns: Json
+      }
       normalizar: { Args: { t: string }; Returns: string }
       ot_costos: {
         Args: { p_ot: string }
@@ -1543,6 +1570,7 @@ export type Database = {
       }
       siguiente_numero_ot: { Args: { p_taller: string }; Returns: string }
       taller_actual: { Args: never; Returns: string }
+      tiempo_promedio_taller: { Args: { p_desde?: string }; Returns: number }
       verificar_saldos_stock: {
         Args: never
         Returns: {
