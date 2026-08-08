@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AlertOctagon, LogIn } from "lucide-react";
@@ -6,10 +5,6 @@ import { AlertOctagon, LogIn } from "lucide-react";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-/** El token sobrevive al desvío por el login. Sin esto, quien recibe la
- *  invitación y todavía no tiene cuenta pierde el link al registrarse. */
-export const COOKIE_INVITACION = "invitacion_pendiente";
 
 /**
  * Aceptación de una invitación al taller.
@@ -27,14 +22,10 @@ export default async function AceptarInvitacion({
   const sesion = await obtenerSesion();
 
   if (!sesion) {
-    const store = await cookies();
-    store.set(COOKIE_INVITACION, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
+    // El token viaja en la URL del login y vuelve acá al terminar. No se
+    // guarda en una cookie porque un Server Component no puede escribirlas:
+    // intentarlo devolvía un 500 y rompía el flujo entero.
+    const volver = `/invitacion/${encodeURIComponent(token)}`;
 
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-[22rem] flex-col justify-center gap-5 px-5 py-8 text-center">
@@ -43,7 +34,7 @@ export default async function AceptarInvitacion({
           Creá tu cuenta o iniciá sesión y quedás adentro automáticamente.
         </p>
         <Link
-          href="/login"
+          href={`/login?volver=${encodeURIComponent(volver)}`}
           className="flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-accent text-sm font-semibold text-accent-foreground"
         >
           <LogIn className="h-4 w-4" aria-hidden />
@@ -83,7 +74,5 @@ export default async function AceptarInvitacion({
     );
   }
 
-  // Ya se usó: la cookie no tiene por qué seguir dando vueltas.
-  (await cookies()).delete(COOKIE_INVITACION);
   redirect("/tablero");
 }

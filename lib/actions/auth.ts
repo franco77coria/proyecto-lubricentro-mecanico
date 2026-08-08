@@ -13,6 +13,18 @@ export interface ResultadoAuth {
 }
 
 /**
+ * A dónde ir después de entrar.
+ *
+ * Solo se aceptan rutas internas: un destino con host propio convertiría el
+ * login en un redirector abierto, útil para mandar a alguien a una copia
+ * falsa del sistema desde un link que parece nuestro.
+ */
+function destinoSeguro(valor: FormDataEntryValue | null, porDefecto: string): string {
+  const v = typeof valor === "string" ? valor : "";
+  return v.startsWith("/") && !v.startsWith("//") ? v : porDefecto;
+}
+
+/**
  * Traduce errores de Supabase Auth a algo que se pueda mostrar.
  *
  * El detalle real va SIEMPRE al log del servidor y nunca a la pantalla.
@@ -80,6 +92,9 @@ export async function iniciarSesion(_previo: ResultadoAuth, formData: FormData):
 
   revalidatePath("/", "layout");
 
+  const volver = destinoSeguro(formData.get("volver"), "");
+  if (volver) redirect(volver);
+
   const sesion = await obtenerSesion();
   if (sesion?.estado === "onboarding") {
     redirect("/onboarding");
@@ -123,7 +138,7 @@ export async function crearCuenta(_previo: ResultadoAuth, formData: FormData): P
   }
 
   revalidatePath("/", "layout");
-  redirect("/onboarding");
+  redirect(destinoSeguro(formData.get("volver"), "/onboarding"));
 }
 
 export async function autenticar(previo: ResultadoAuth, formData: FormData): Promise<ResultadoAuth> {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { AlertOctagon, Wrench } from "lucide-react";
 
@@ -18,6 +19,8 @@ type Modo = (typeof MODOS)[number]["id"];
 
 export default function Login() {
   const [modo, setModo] = useState<Modo>("login");
+  // Cuando se llega desde una invitación, hay que volver ahí al terminar.
+  const volver = useSearchParams().get("volver") ?? "";
   const [estado, accion, pendiente] = useActionState<ResultadoAuth, FormData>(autenticar, {});
   const reducirMovimiento = useReducedMotion();
 
@@ -86,6 +89,7 @@ export default function Login() {
 
       <form action={accion} className="flex flex-col gap-4">
         <input type="hidden" name="modo" value={modo} />
+        <input type="hidden" name="volver" value={volver} />
 
         <div className="space-y-3">
           <CampoAnimado

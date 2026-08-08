@@ -535,6 +535,7 @@ export type Database = {
       }
       orden_trabajo: {
         Row: {
+          anulada_en: string | null
           asignado_a: string | null
           cliente_id: string | null
           creado_en: string
@@ -544,6 +545,7 @@ export type Database = {
           fecha_ingreso: string
           id: string
           km_ingreso: number | null
+          motivo_anulacion: string | null
           numero: string
           observaciones: string | null
           taller_id: string
@@ -554,6 +556,7 @@ export type Database = {
           vehiculo_id: string
         }
         Insert: {
+          anulada_en?: string | null
           asignado_a?: string | null
           cliente_id?: string | null
           creado_en?: string
@@ -563,6 +566,7 @@ export type Database = {
           fecha_ingreso?: string
           id?: string
           km_ingreso?: number | null
+          motivo_anulacion?: string | null
           numero: string
           observaciones?: string | null
           taller_id: string
@@ -573,6 +577,7 @@ export type Database = {
           vehiculo_id: string
         }
         Update: {
+          anulada_en?: string | null
           asignado_a?: string | null
           cliente_id?: string | null
           creado_en?: string
@@ -582,6 +587,7 @@ export type Database = {
           fecha_ingreso?: string
           id?: string
           km_ingreso?: number | null
+          motivo_anulacion?: string | null
           numero?: string
           observaciones?: string | null
           taller_id?: string
@@ -1544,6 +1550,7 @@ export type Database = {
     }
     Functions: {
       aceptar_invitacion: { Args: { p_token: string }; Returns: string }
+      anular_orden: { Args: { p_motivo: string; p_ot: string }; Returns: Json }
       chequear_rate_limit: {
         Args: { p_clave: string; p_max?: number; p_ventana?: string }
         Returns: Json

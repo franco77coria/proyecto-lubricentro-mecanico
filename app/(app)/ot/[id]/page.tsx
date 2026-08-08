@@ -1,7 +1,8 @@
-import { ArrowLeft, Car, User, Wrench } from "lucide-react";
+import { ArrowLeft, Ban, Car, User, Wrench } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AnularOrden } from "@/components/ot/AnularOrden";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
@@ -249,6 +250,20 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
             Van juntas porque son las dos caras de lo mismo: dejar constancia
             de cómo entró el vehículo. */}
         <CapturaFotos otId={ot.id} tallerId={sesion.perfil.taller_id} fotos={fotos} />
+
+        {ot.estado === "anulado" ? (
+          <p className="tarjeta flex items-start gap-2.5 border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            <Ban className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              <strong>Orden anulada.</strong>{" "}
+              {ot.motivo_anulacion || "Sin motivo registrado."}
+            </span>
+          </p>
+        ) : (
+          <div className="flex justify-end">
+            <AnularOrden otId={ot.id} estadoActual={ot.estado} />
+          </div>
+        )}
 
         <FirmaCliente
           otId={ot.id}
