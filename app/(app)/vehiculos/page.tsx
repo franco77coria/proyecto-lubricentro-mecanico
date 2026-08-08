@@ -1,8 +1,10 @@
-import { Car, Plus, Search } from "lucide-react";
+import { Car, Gauge, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { formatearPatente } from "@/lib/patente";
 
 export const dynamic = "force-dynamic";
 
@@ -16,96 +18,100 @@ export default async function PaginaVehiculos({
 
   const { q } = await searchParams;
   const supabase = await crearClienteServidor();
-  const tallerId = sesion.perfil.taller_id;
 
   let query = supabase
     .from("vehiculo")
-    .select(`
-      id, patente, anio, color, km_actual,
-      marca:marca_id(nombre),
-      modelo:modelo_id(nombre)
-    `)
-    .eq("taller_id", tallerId)
+    .select(
+      `id, patente, anio, color, km_actual,
+       marca:marca_id(nombre), modelo:modelo_id(nombre)`,
+    )
+    .eq("taller_id", sesion.perfil.taller_id)
     .order("creado_en", { ascending: false })
-    .limit(30);
+    .limit(60);
 
-  if (q && q.trim()) {
-    const limpio = q.trim().toUpperCase();
-    query = query.or(`patente_norm.ilike.%${limpio}%,patente.ilike.%${limpio}%`);
+  if (q?.trim()) {
+    // Se busca contra la columna normalizada para que "ab 123 cd" y
+    // "AB-123-CD" encuentren el mismo auto.
+    const limpio = q.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    query = query.ilike("patente_norm", `%${limpio}%`);
   }
 
   const { data: vehiculos } = await query;
+  const lista = vehiculos ?? [];
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[28rem] space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-caption font-semibold text-muted-foreground">Catálogo del Taller</p>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Vehículos</h1>
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor space-y-5">
+        <EncabezadoPantalla
+          seccion="Autos"
+          titulo={q ? `Resultados de "${q}"` : "Autos del taller"}
+          accion={
+            <Link
+              href="/ot/nueva"
+              className="flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+              Recibir auto
+            </Link>
+          }
+        />
+
+        <Buscador valor={q} placeholder="Buscar por patente" />
+
+        {lista.length === 0 ? (
+          <div className="tarjeta entrar flex flex-col items-center gap-3 px-6 py-14 text-center">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-suave text-accent">
+              <Car className="h-6 w-6" aria-hidden />
+            </span>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              {q
+                ? "Ninguna patente coincide con esa búsqueda."
+                : "Todavía no hay autos cargados. Se dan de alta al recibir el primero."}
+            </p>
           </div>
-          <Link
-            href="/ot/nueva"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-xs font-bold text-white shadow-md transition-transform active:scale-95"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Nuevo Auto</span>
-          </Link>
-        </div>
-
-        {/* Buscador */}
-        <form method="GET" className="relative">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q || ""}
-            placeholder="Buscar por patente (ej: AB123CD)..."
-            className="min-h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none shadow-sm"
-          />
-          <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-        </form>
-
-        {/* Lista de vehículos */}
-        <div className="space-y-3">
-          {vehiculos && vehiculos.length > 0 ? (
-            vehiculos.map((v) => {
-              const desc = [v.marca?.nombre, v.modelo?.nombre, v.anio].filter(Boolean).join(" ");
-              return (
-                <div
-                  key={v.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-display font-bold text-accent text-lg">{v.patente}</span>
-                      {v.km_actual && (
-                        <span className="text-caption text-muted-foreground">
-                          {v.km_actual.toLocaleString()} km
+        ) : (
+          <>
+            <p className="text-caption text-muted-foreground">
+              {lista.length} {lista.length === 1 ? "auto" : "autos"}
+            </p>
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {lista.map((v, i) => {
+                const desc = [v.marca?.nombre, v.modelo?.nombre, v.anio].filter(Boolean).join(" ");
+                return (
+                  <li key={v.id} className="entrar" style={{ "--i": i + 2 } as React.CSSProperties}>
+                    <Link
+                      href={`/ot/nueva?patente=${encodeURIComponent(v.patente)}`}
+                      className="tarjeta tarjeta-accion flex h-full flex-col gap-3 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-display text-xl text-foreground">
+                          {formatearPatente(v.patente)}
                         </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-foreground">{desc || "Sin marca/modelo"}</p>
-                  </div>
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-muted text-muted-foreground">
+                          <Car className="h-4.5 w-4.5" aria-hidden />
+                        </span>
+                      </div>
 
-                  <Link
-                    href={`/ot/nueva?patente=${v.patente}`}
-                    className="inline-flex h-9 items-center justify-center rounded-lg bg-muted px-3 text-xs font-semibold text-foreground hover:bg-accent hover:text-white transition-colors"
-                  >
-                    Crear OT
-                  </Link>
-                </div>
-              );
-            })
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-2">
-              <Car className="mx-auto h-8 w-8 text-muted-foreground opacity-50" />
-              <p className="text-xs font-medium text-muted-foreground">
-                {q ? "No se encontraron vehículos para esa búsqueda." : "No tenés vehículos registrados."}
-              </p>
-            </div>
-          )}
-        </div>
+                      <p className="text-sm font-medium text-foreground">
+                        {desc || "Sin marca ni modelo"}
+                      </p>
+
+                      <div className="mt-auto flex items-center gap-3 text-caption text-muted-foreground">
+                        {v.km_actual != null && (
+                          <span className="flex items-center gap-1">
+                            <Gauge className="h-3.5 w-3.5" aria-hidden />
+                            <span className="tabular">{v.km_actual.toLocaleString("es-AR")} km</span>
+                          </span>
+                        )}
+                        {v.color && <span className="truncate">{v.color}</span>}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
       </div>
     </main>
   );

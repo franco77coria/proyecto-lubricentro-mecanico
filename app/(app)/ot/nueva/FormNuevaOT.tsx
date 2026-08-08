@@ -57,7 +57,7 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
 
       const resVehiculo = await crearVehiculo({}, formDataVehiculo);
 
-      let vehiculoId = resVehiculo.creado?.id || resVehiculo.duplicado?.id;
+      const vehiculoId = resVehiculo.creado?.id || resVehiculo.duplicado?.id;
 
       if (!vehiculoId) {
         setErrorMsg(resVehiculo.error || "Error al registrar el vehículo.");
@@ -193,7 +193,7 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
           <label className="text-caption text-muted-foreground">Tipo de OT</label>
           <select
             value={tipo}
-            onChange={(e) => setTipo(e.target.value as any)}
+            onChange={(e) => setTipo(e.target.value as typeof tipo)}
             className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-semibold text-foreground focus:border-accent focus:outline-none"
           >
             <option value="lubricentro">Lubricentro / Service Rápido</option>

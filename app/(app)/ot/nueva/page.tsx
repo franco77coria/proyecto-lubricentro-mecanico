@@ -18,8 +18,8 @@ export default async function PaginaNuevaOT() {
     .limit(100);
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[26rem]">
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor-angosto">
         <FormNuevaOT marcas={marcas || []} />
       </div>
     </main>

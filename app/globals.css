@@ -66,6 +66,20 @@
      no quede tapado por la isla ni por la barra inferior. */
   --isla-height: 3.25rem;
   --barra-height: 4.25rem;
+  --sidebar-ancho: 15rem;
+
+  /* --- Sombras en capas ---
+     Una sola sombra grande se ve como una mancha. Dos capas —una corta y
+     cerrada para definir el borde, otra larga y difusa para la distancia—
+     es lo que hace que una tarjeta parezca apoyada sobre el fondo. */
+  --sombra-sutil: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  --sombra-media: 0 2px 4px rgb(15 23 42 / 0.04), 0 6px 16px rgb(15 23 42 / 0.08);
+  --sombra-alta: 0 4px 8px rgb(15 23 42 / 0.06), 0 16px 40px rgb(15 23 42 / 0.14);
+
+  /* Tinte del acento para fondos suaves, sin tener que escribir opacidades
+     sueltas en cada componente. */
+  --accent-suave: #fff1e9;
+  --accent-borde: #fbd5c0;
 }
 
 @theme inline {
@@ -97,6 +111,13 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-barlow-condensed), var(--font-sans);
+
+  --color-accent-suave: var(--accent-suave);
+  --color-accent-borde: var(--accent-borde);
+
+  --shadow-sutil: var(--sombra-sutil);
+  --shadow-media: var(--sombra-media);
+  --shadow-alta: var(--sombra-alta);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -167,6 +188,149 @@ nav {
   letter-spacing: 0.01em;
 }
 
+/* --- Escala tipográfica ---
+   La jerarquía nace del salto entre niveles. Cuando el título de pantalla y
+   el de sección miden casi lo mismo, todo se lee como una lista plana y la
+   pantalla parece genérica. Estos saltos son grandes a propósito. */
+
+.t-pantalla {
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.t-seccion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.t-dato {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Movimiento de entrada
+
+   En CSS y no en JS a propósito: así las listas del servidor pueden animarse
+   sin convertir la pantalla entera en Client Component solo para eso.
+   El escalonado se pasa con `style={{ '--i': indice }}`.
+   ========================================================================== */
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.entrar {
+  animation: entrar 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* Tope del escalonado: con listas largas, el último elemento entraría varios
+   segundos después y se leería como que la app se colgó. */
+.entrar:nth-child(n + 13) {
+  animation-delay: 540ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrar {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Contenedor
+   El ancho crece con la pantalla en vez de quedar clavado en el del celular:
+   una columna de 450px centrada en un monitor desperdicia dos tercios del
+   espacio y hace que la herramienta parezca una web vieja.
+   ========================================================================== */
+
+.contenedor {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 30rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 768px) {
+  .contenedor {
+    max-width: 46rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contenedor {
+    max-width: 68rem;
+    padding-inline: 2rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .contenedor {
+    max-width: 80rem;
+  }
+}
+
+/* Para formularios y fichas: el ancho completo hace líneas de texto
+   incómodas de leer y campos de entrada absurdamente largos. */
+.contenedor-angosto {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 44rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 768px) {
+  .contenedor-angosto {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* --- Tarjeta ---
+   Base de casi todas las superficies de contenido. El hover solo se activa
+   donde hay puntero fino: en touch, `hover` se queda pegado después del tap. */
+.tarjeta {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--sombra-sutil);
+}
+
+@media (hover: hover) {
+  .tarjeta-accion {
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .tarjeta-accion:hover {
+    box-shadow: var(--sombra-media);
+    border-color: var(--accent-borde);
+    transform: translateY(-2px);
+  }
+}
+
+.tarjeta-accion:active {
+  transform: scale(0.995);
+}
+
 /* ==========================================================================
    Utilidades de layout nativo
    ========================================================================== */
@@ -187,6 +351,14 @@ nav {
    a 7px de la barra y se lee como si estuviera cortado. */
 .scroll-inset {
   padding-bottom: calc(var(--barra-height) + var(--safe-bottom) + 1.5rem);
+}
+
+/* En escritorio la barra inferior no existe (la navegación vive en el
+   sidebar), así que reservar su alto deja un hueco muerto al final. */
+@media (min-width: 1024px) {
+  .scroll-inset {
+    padding-bottom: 3rem;
+  }
 }
 
 /* Scroll edge effect: el contenido se desvanece contra el chrome flotante,

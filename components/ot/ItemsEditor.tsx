@@ -139,7 +139,7 @@ export function ItemsEditor({ otId, items: initialItems }: { otId: string; items
               <label className="text-caption text-muted-foreground">Tipo</label>
               <select
                 value={tipo}
-                onChange={(e) => setTipo(e.target.value as any)}
+                onChange={(e) => setTipo(e.target.value as typeof tipo)}
                 className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               >
                 <option value="mano_obra">Mano de obra</option>

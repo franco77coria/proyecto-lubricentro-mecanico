@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Scripts locales con credenciales embebidas.
+# Nunca commitear nada que lleve la service_role key: saltea RLS por completo
+# y con ella se lee y escribe todo, de todos los talleres.
+/scripts/crear-usuario-admin.mjs

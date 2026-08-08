@@ -55,8 +55,8 @@ export default async function PaginaCaja() {
     .limit(7);
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[28rem] space-y-6">
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

@@ -1,10 +1,14 @@
-import { AlertTriangle, Package, Search } from "lucide-react";
+import { AlertTriangle, Package } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { FormNuevoProducto } from "@/components/stock/FormNuevoProducto";
+import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+const money = (n: number) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export default async function PaginaStock({
   searchParams,
@@ -16,92 +20,98 @@ export default async function PaginaStock({
 
   const { q } = await searchParams;
   const supabase = await crearClienteServidor();
-  const tallerId = sesion.perfil.taller_id;
 
   let query = supabase
     .from("producto")
     .select("id, sku, nombre, marca, categoria, unidad, stock, stock_min, precio_venta, bajo_stock")
-    .eq("taller_id", tallerId)
+    // Los que están bajo mínimo van primero: es lo que hay que ir a comprar.
+    .order("bajo_stock", { ascending: false })
     .order("nombre", { ascending: true })
-    .limit(50);
+    .eq("taller_id", sesion.perfil.taller_id)
+    .eq("activo", true)
+    .limit(120);
 
-  if (q && q.trim()) {
+  if (q?.trim()) {
     const limpio = q.trim();
     query = query.or(`nombre.ilike.%${limpio}%,sku.ilike.%${limpio}%,marca.ilike.%${limpio}%`);
   }
 
   const { data: productos } = await query;
+  const lista = productos ?? [];
+  const bajos = lista.filter((p) => p.bajo_stock).length;
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[28rem] space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-caption font-semibold text-muted-foreground">Inventario</p>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Control de Stock</h1>
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor space-y-5">
+        <EncabezadoPantalla seccion="Inventario" titulo="Stock" accion={<FormNuevoProducto />} />
+
+        <Buscador valor={q} placeholder="Buscar repuesto, filtro, aceite" />
+
+        {bajos > 0 && (
+          <p
+            className="entrar flex items-center gap-2 rounded-[var(--radius-sm)] bg-amber-50 px-3.5 py-2.5 text-sm text-amber-800"
+            style={{ "--i": 2 } as React.CSSProperties}
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+            {bajos} {bajos === 1 ? "producto está" : "productos están"} bajo el mínimo
+          </p>
+        )}
+
+        {lista.length === 0 ? (
+          <div className="tarjeta entrar flex flex-col items-center gap-3 px-6 py-14 text-center">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-suave text-accent">
+              <Package className="h-6 w-6" aria-hidden />
+            </span>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              {q
+                ? "Ningún producto coincide con esa búsqueda."
+                : "Todavía no hay productos cargados en el inventario."}
+            </p>
           </div>
-          <FormNuevoProducto />
-        </div>
-
-        {/* Buscador */}
-        <form method="GET" className="relative">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q || ""}
-            placeholder="Buscar repuesto, filtro, aceite..."
-            className="min-h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none shadow-sm"
-          />
-          <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-        </form>
-
-        {/* Lista de Productos */}
-        <div className="space-y-2.5">
-          {productos && productos.length > 0 ? (
-            productos.map((prod) => {
-              const stockCalculado = prod.stock ?? 0;
-              const esBajo = prod.bajo_stock ?? stockCalculado <= prod.stock_min;
-
+        ) : (
+          <ul className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3">
+            {lista.map((p, i) => {
+              const stock = Number(p.stock ?? 0);
+              const bajo = p.bajo_stock ?? stock <= Number(p.stock_min);
               return (
-                <div
-                  key={prod.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm"
+                <li
+                  key={p.id}
+                  className={`tarjeta entrar flex items-center gap-3 p-3.5 ${bajo ? "border-amber-200 bg-amber-50/40" : ""}`}
+                  style={{ "--i": i + 3 } as React.CSSProperties}
                 >
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-foreground truncate">{prod.nombre}</p>
-                      {esBajo && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                          <AlertTriangle className="h-3 w-3" /> Bajo Stock
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      {[prod.marca, prod.categoria].filter(Boolean).join(" • ") || "Sin categoría"}
-                    </p>
-                  </div>
+                  <span
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] ${
+                      bajo ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {bajo ? (
+                      <AlertTriangle className="h-4.5 w-4.5" aria-hidden />
+                    ) : (
+                      <Package className="h-4.5 w-4.5" aria-hidden />
+                    )}
+                  </span>
 
-                  <div className="text-right ml-4">
-                    <p className="text-lg font-black text-foreground tabular">
-                      {stockCalculado} <span className="text-xs font-semibold text-muted-foreground">{prod.unidad}</span>
-                    </p>
-                    <p className="text-caption font-bold text-accent tabular">
-                      $ {Number(prod.precio_venta || 0).toLocaleString("es-AR")}
-                    </p>
-                  </div>
-                </div>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-foreground">{p.nombre}</span>
+                    <span className="block truncate text-caption text-muted-foreground">
+                      {[p.marca, p.categoria].filter(Boolean).join(" · ") || "Sin categoría"}
+                    </span>
+                  </span>
+
+                  <span className="shrink-0 text-right">
+                    <span className={`tabular block text-base font-bold ${bajo ? "text-amber-700" : "text-foreground"}`}>
+                      {stock}
+                      <span className="ml-1 text-caption font-medium text-muted-foreground">{p.unidad}</span>
+                    </span>
+                    <span className="tabular block text-caption text-muted-foreground">
+                      {money(Number(p.precio_venta ?? 0))}
+                    </span>
+                  </span>
+                </li>
               );
-            })
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-2">
-              <Package className="mx-auto h-8 w-8 text-muted-foreground opacity-50" />
-              <p className="text-xs font-medium text-muted-foreground">
-                {q ? "No se encontraron productos en el inventario." : "No tenés productos cargados en stock."}
-              </p>
-            </div>
-          )}
-        </div>
+            })}
+          </ul>
+        )}
       </div>
     </main>
   );

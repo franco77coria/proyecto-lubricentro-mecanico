@@ -60,30 +60,42 @@ export function FilaSkeleton() {
  * abajo, igual que las pantallas reales: si no, el contenido salta al cargar.
  */
 export function PantallaSkeleton({
+  seccion,
   titulo,
   variante = "tarjetas",
 }: {
+  seccion: string;
   titulo: string;
   variante?: "tarjetas" | "filas";
 }) {
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] scroll-inset" aria-busy="true">
-      <div className="mx-auto max-w-[26rem] space-y-4">
-        {/* El título se muestra de verdad: ya se sabe, y ver el nombre de la
-            pantalla al instante es la mitad de la sensación de velocidad. */}
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{titulo}</h1>
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset" aria-busy="true">
+      {/* Mismo contenedor y mismo encabezado que la pantalla real: si el
+          esqueleto tuviera otro ancho u otra altura de título, al llegar los
+          datos todo se correría de lugar y se vería peor que sin esqueleto. */}
+      <div className="contenedor space-y-5">
+        <div className="space-y-0.5">
+          <p className="t-seccion">{seccion}</p>
+          {/* El título se muestra de verdad: ya se sabe cuál es, y verlo al
+              instante es la mitad de la sensación de velocidad. */}
+          <h1 className="t-pantalla text-foreground">{titulo}</h1>
+        </div>
         <span className="sr-only">Cargando…</span>
 
+        <Bloque className="h-12 w-full" />
+
         {variante === "tarjetas" ? (
-          <div className="space-y-3">
-            <TarjetaOTSkeleton />
-            <TarjetaOTSkeleton />
-            <TarjetaOTSkeleton />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }, (_, i) => (
+              <TarjetaOTSkeleton key={i} />
+            ))}
           </div>
         ) : (
-          <div className="divide-y divide-border rounded-[var(--radius-md)] bg-card px-3">
-            {Array.from({ length: 6 }, (_, i) => (
-              <FilaSkeleton key={i} />
+          <div className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className="tarjeta px-3">
+                <FilaSkeleton />
+              </div>
             ))}
           </div>
         )}

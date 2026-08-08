@@ -1,34 +1,23 @@
-import { AlertTriangle, Car, ChevronRight, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Car,
+  ClipboardList,
+  Clock,
+  PackageSearch,
+  Plus,
+  Wrench,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 
 export const dynamic = "force-dynamic";
 
-const ESTADO_BADGE_STYLE: Record<string, string> = {
-  presupuesto: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  aprobado: "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  recibido: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
-  en_trabajo: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  esperando_repuesto: "bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  listo: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  entregado: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-  cerrado: "bg-slate-900 text-white",
-  anulado: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-};
-
-const ESTADO_LABEL: Record<string, string> = {
-  presupuesto: "Presupuesto",
-  aprobado: "Aprobado",
-  recibido: "Recibido",
-  en_trabajo: "En Trabajo",
-  esperando_repuesto: "Esperando Repuesto",
-  listo: "Listo para entregar",
-  entregado: "Entregado",
-  cerrado: "Cerrado",
-  anulado: "Anulado",
-};
+const money = (n: number) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 
 export default async function PaginaTablero() {
   const sesion = await obtenerSesion();
@@ -36,149 +25,213 @@ export default async function PaginaTablero() {
 
   const supabase = await crearClienteServidor();
   const tallerId = sesion.perfil.taller_id;
+  const esDueno = sesion.perfil.rol === "dueno";
 
-  // 1. Obtener nombre del taller
-  const { data: taller } = await supabase
-    .from("taller")
-    .select("nombre")
-    .eq("id", tallerId)
-    .single();
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
 
-  // 2. Obtener OTs activas
-  const { data: ordenes } = await supabase
-    .from("orden_trabajo")
-    .select(`
-      id, numero, estado, tipo, fecha_ingreso, total,
-      vehiculo:vehiculo_id (
-        patente, marca:marca_id(nombre), modelo:modelo_id(nombre)
-      ),
-      cliente:cliente_id (
-        nombre, apellido
+  const [{ data: ordenes }, { data: bajoStock }, { data: delMes }] = await Promise.all([
+    supabase
+      .from("orden_trabajo")
+      .select(
+        `id, numero, estado, fecha_ingreso, total,
+         vehiculo:vehiculo_id ( patente, marca:marca_id(nombre), modelo:modelo_id(nombre) ),
+         cliente:cliente_id ( nombre, apellido )`,
       )
-    `)
-    .eq("taller_id", tallerId)
-    .order("fecha_ingreso", { ascending: false })
-    .limit(20);
+      .eq("taller_id", tallerId)
+      .order("fecha_ingreso", { ascending: false })
+      .limit(12),
+    supabase
+      .from("producto")
+      .select("id, nombre, stock, stock_min")
+      .eq("taller_id", tallerId)
+      .eq("bajo_stock", true)
+      .eq("activo", true)
+      .limit(4),
+    supabase
+      .from("orden_trabajo")
+      .select("total, estado")
+      .eq("taller_id", tallerId)
+      .gte("fecha_ingreso", inicioMes.toISOString()),
+  ]);
 
-  // 3. Contadores
-  const otList = ordenes || [];
-  const enTrabajo = otList.filter((o) => o.estado === "en_trabajo").length;
-  const listos = otList.filter((o) => o.estado === "listo").length;
-  const esperandoRepuesto = otList.filter((o) => o.estado === "esperando_repuesto").length;
+  const otList = ordenes ?? [];
+  const cuenta = (e: string) => otList.filter((o) => o.estado === e).length;
 
-  // 4. Productos con stock bajo
-  const { data: bajoStock } = await supabase
-    .from("producto")
-    .select("id, nombre, stock_min")
-    .eq("taller_id", tallerId)
-    .eq("bajo_stock", true)
-    .limit(5);
+  const facturadoMes = (delMes ?? [])
+    .filter((o) => ["entregado", "cerrado"].includes(o.estado))
+    .reduce((s, o) => s + Number(o.total ?? 0), 0);
+
+  const metricas = [
+    { etiqueta: "En trabajo", valor: cuenta("en_trabajo"), icono: Wrench, tono: "text-amber-600 bg-amber-50" },
+    { etiqueta: "Listos", valor: cuenta("listo"), icono: ClipboardList, tono: "text-emerald-600 bg-emerald-50" },
+    { etiqueta: "Esperando rep.", valor: cuenta("esperando_repuesto"), icono: Clock, tono: "text-violet-600 bg-violet-50" },
+    { etiqueta: "Presupuestos", valor: cuenta("presupuesto"), icono: PackageSearch, tono: "text-sky-600 bg-sky-50" },
+  ];
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[28rem] space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-caption font-semibold text-muted-foreground">{taller?.nombre || "Mi Taller"}</p>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Tablero General</h1>
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor space-y-6">
+        <header className="entrar flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-0.5">
+            <p className="t-seccion">Tablero</p>
+            <h1 className="t-pantalla text-foreground">Hoy en el taller</h1>
           </div>
+          {/* En celular esta acción ya vive en la barra inferior. */}
           <Link
             href="/ot/nueva"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-xs font-bold text-white shadow-md transition-transform active:scale-95"
+            className="hidden min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98] sm:flex"
           >
-            <Plus className="h-4 w-4" />
-            <span>Nueva OT</span>
+            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            Nueva orden
           </Link>
-        </div>
+        </header>
 
-        {/* Alerta de Stock Bajo */}
-        {bajoStock && bajoStock.length > 0 && (
-          <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-300">
-            <div className="flex items-center gap-2 font-medium">
-              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-              <span>{bajoStock.length} producto(s) con stock bajo mínimo.</span>
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {metricas.map((m, i) => {
+            const Icono = m.icono;
+            return (
+              <div
+                key={m.etiqueta}
+                className="tarjeta entrar flex items-center gap-3 p-3.5"
+                style={{ "--i": i + 1 } as React.CSSProperties}
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] ${m.tono}`}>
+                  <Icono className="h-5 w-5" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="t-dato block text-foreground">{m.valor}</span>
+                  <span className="block truncate text-caption text-muted-foreground">{m.etiqueta}</span>
+                </span>
+              </div>
+            );
+          })}
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="space-y-3 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <h2 className="t-seccion">Órdenes recientes</h2>
+              {otList.length > 0 && (
+                <Link
+                  href="/vehiculos"
+                  className="flex items-center gap-1 text-caption font-medium text-accent hover:underline"
+                >
+                  Ver autos <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              )}
             </div>
-            <Link href="/stock" className="font-bold underline text-amber-700 dark:text-amber-400">
-              Ver Stock
-            </Link>
-          </div>
-        )}
 
-        {/* Métricas rápidas */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-card p-3 shadow-sm text-center">
-            <p className="text-display text-2xl font-black text-amber-600">{enTrabajo}</p>
-            <p className="text-caption text-muted-foreground">En trabajo</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-3 shadow-sm text-center">
-            <p className="text-display text-2xl font-black text-emerald-600">{listos}</p>
-            <p className="text-caption text-muted-foreground">Listos</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-3 shadow-sm text-center">
-            <p className="text-display text-2xl font-black text-purple-600">{esperandoRepuesto}</p>
-            <p className="text-caption text-muted-foreground">Esperando rep.</p>
-          </div>
-        </div>
-
-        {/* Lista de Órdenes de Trabajo */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Órdenes Recientes ({otList.length})
-            </h2>
-          </div>
-
-          <div className="space-y-2.5">
-            {otList.length > 0 ? (
-              otList.map((ot) => {
-                const descVehiculo = [ot.vehiculo?.marca?.nombre, ot.vehiculo?.modelo?.nombre]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <Link
-                    key={ot.id}
-                    href={`/ot/${ot.id}`}
-                    className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent/50 active:scale-[0.99]"
-                  >
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-display font-bold text-foreground">#{ot.numero}</span>
-                        <span className="text-caption font-bold text-accent">{ot.vehiculo?.patente}</span>
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${ESTADO_BADGE_STYLE[ot.estado] || ""}`}>
-                          {ESTADO_LABEL[ot.estado] || ot.estado}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground font-medium truncate">
-                        {descVehiculo || "Sin modelo"} • {ot.cliente ? `${ot.cliente.nombre} ${ot.cliente.apellido || ""}` : "Sin cliente"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-foreground tabular">
-                        $ {Number(ot.total || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </Link>
-                );
-              })
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-3">
-                <Car className="mx-auto h-8 w-8 text-muted-foreground opacity-50" />
-                <p className="text-xs font-medium text-muted-foreground">
-                  No tenés órdenes de trabajo cargadas todavía.
+            {otList.length === 0 ? (
+              <div className="tarjeta entrar flex flex-col items-center gap-3 px-6 py-12 text-center">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-suave text-accent">
+                  <Car className="h-6 w-6" aria-hidden />
+                </span>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  Todavía no cargaste ninguna orden. Empezá por recibir un auto.
                 </p>
                 <Link
                   href="/ot/nueva"
-                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-accent px-4 text-xs font-bold text-white"
+                  className="mt-1 flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground transition-transform hover:brightness-110 active:scale-[0.98]"
                 >
-                  Crear la primera OT
+                  <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                  Crear la primera orden
                 </Link>
               </div>
+            ) : (
+              <ul className="space-y-2">
+                {otList.map((ot, i) => (
+                  <li key={ot.id} className="entrar" style={{ "--i": i + 2 } as React.CSSProperties}>
+                    <Link
+                      href={`/ot/${ot.id}`}
+                      className="tarjeta tarjeta-accion flex items-center gap-3 p-3"
+                    >
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-muted text-muted-foreground">
+                        <Car className="h-5 w-5" aria-hidden />
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-2">
+                          <span className="text-display text-base tracking-normal text-foreground">
+                            {ot.vehiculo?.patente ?? "Sin patente"}
+                          </span>
+                          <span className="truncate text-caption text-muted-foreground">
+                            {[ot.vehiculo?.marca?.nombre, ot.vehiculo?.modelo?.nombre]
+                              .filter(Boolean)
+                              .join(" ") || "Sin modelo"}
+                          </span>
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-2">
+                          <span className="text-caption text-muted-foreground">{ot.numero}</span>
+                          {ot.cliente && (
+                            <span className="truncate text-caption text-muted-foreground">
+                              · {ot.cliente.nombre} {ot.cliente.apellido}
+                            </span>
+                          )}
+                        </span>
+                      </span>
+
+                      <span className="flex shrink-0 flex-col items-end gap-1">
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[0.6875rem] font-semibold ${ESTADO_TONO[ot.estado] ?? ""}`}
+                        >
+                          {ESTADO_LABEL[ot.estado] ?? ot.estado}
+                        </span>
+                        {esDueno && Number(ot.total) > 0 && (
+                          <span className="tabular text-caption font-semibold text-foreground">
+                            {money(Number(ot.total))}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </section>
+          </section>
+
+          <aside className="space-y-6">
+            {esDueno && (
+              <section className="space-y-3">
+                <h2 className="t-seccion">Facturado este mes</h2>
+                <div className="tarjeta entrar space-y-1 p-4">
+                  <p className="t-dato text-foreground">{money(facturadoMes)}</p>
+                  <p className="text-caption text-muted-foreground">
+                    Órdenes entregadas o cerradas desde el 1°
+                  </p>
+                </div>
+              </section>
+            )}
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="t-seccion">Bajo mínimo</h2>
+                <Link href="/stock" className="text-caption font-medium text-accent hover:underline">
+                  Ver stock
+                </Link>
+              </div>
+
+              {(bajoStock ?? []).length === 0 ? (
+                <p className="tarjeta px-4 py-5 text-caption text-muted-foreground">
+                  Todo el stock está por encima del mínimo.
+                </p>
+              ) : (
+                <ul className="tarjeta divide-y divide-border overflow-hidden">
+                  {bajoStock!.map((p) => (
+                    <li key={p.id} className="flex items-center gap-2.5 px-3.5 py-3">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-estado-observado" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{p.nombre}</span>
+                      <span className="tabular shrink-0 text-caption font-semibold text-estado-observado">
+                        {Number(p.stock)} / {Number(p.stock_min)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
   );

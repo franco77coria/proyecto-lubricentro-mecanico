@@ -131,8 +131,8 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
   const anomalias = (notas || []).filter((n) => n.tipo === "anomalia");
 
   return (
-    <main className="flex-1 px-4 pt-[calc(var(--safe-top)+4.5rem)] pb-24 scroll-inset">
-      <div className="mx-auto max-w-[32rem] space-y-6">
+    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <div className="contenedor-angosto space-y-6">
         {/* Nav Back */}
         <div className="flex items-center justify-between">
           <Link
