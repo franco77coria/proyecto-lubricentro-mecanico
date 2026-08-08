@@ -75,7 +75,7 @@ export function GestionEquipo({
   }
 
   async function copiarLink(token: string) {
-    const url = `${window.location.origin}/login?invitacion=${token}`;
+    const url = `${window.location.origin}/invitacion/${token}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopiado(token);

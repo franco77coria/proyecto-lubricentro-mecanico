@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { PanelMarca } from "@/components/auth/PanelMarca";
@@ -16,6 +17,13 @@ import { obtenerSesion } from "@/lib/supabase/server";
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const sesion = await obtenerSesion();
   if (sesion?.estado === "completo") redirect("/tablero");
+
+  // Quien llegó por una invitación y se acaba de registrar vuelve al link en
+  // lugar de caer en "creá tu taller": venía a sumarse a uno que ya existe.
+  if (sesion?.estado === "onboarding") {
+    const token = (await cookies()).get("invitacion_pendiente")?.value;
+    if (token) redirect(`/invitacion/${token}`);
+  }
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr]">
