@@ -3,6 +3,7 @@ import { Barlow_Condensed } from "next/font/google";
 
 import { RegistrarSW } from "@/components/RegistrarSW";
 import "./globals.css";
+import "./comprobante.css";
 
 /* Solo para números grandes: patente, N° de OT, kilómetros, totales, tacómetro.
    El cuerpo usa la font del sistema (ver --font-sans en globals.css). */

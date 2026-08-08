@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
+import { EditorNotas } from "@/components/ot/EditorNotas";
 import { EstadoSwitcher } from "@/components/ot/EstadoSwitcher";
 import { FirmaCliente } from "@/components/ot/FirmaCliente";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
@@ -113,6 +114,17 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
       estado: chk.estado,
       nota: chk.nota,
     })),
+    // Los tres bloques de texto van separados en el comprobante: lo que dijo
+    // el cliente, lo que encontró el taller, y lo que queda presupuestado.
+    anomalias: (notas || [])
+      .filter((n) => n.tipo === "anomalia")
+      .map((n) => ({ texto: n.texto })),
+    descargos: (notas || [])
+      .filter((n) => n.tipo === "descargo")
+      .map((n) => ({ texto: n.texto })),
+    recomendados: (notas || [])
+      .filter((n) => n.tipo === "recomendado")
+      .map((n) => ({ texto: n.texto, precio_estimado: n.precio_estimado })),
   };
 
   const itemsMapeados = (items || []).map((it) => ({
@@ -131,7 +143,12 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     fecha: p.fecha,
   }));
 
-  const anomalias = (notas || []).filter((n) => n.tipo === "anomalia");
+  const notasEditor = (notas || []).map((n) => ({
+    id: n.id,
+    tipo: n.tipo,
+    texto: n.texto,
+    precio_estimado: n.precio_estimado,
+  }));
 
   // Fotos con URL firmada y estado de la firma del cliente. En paralelo: son
   // dos consultas independientes y encadenarlas solo suma latencia.
@@ -200,19 +217,12 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         {/* Registro de Pagos */}
         <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
 
-        {/* Anomalías reportadas */}
-        {anomalias.length > 0 && (
-          <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-              Anomalías Reportadas por el Cliente
-            </h3>
-            <ul className="list-disc list-inside space-y-1 text-xs text-foreground font-medium">
-              {anomalias.map((a) => (
-                <li key={a.id}>{a.texto}</li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* Los tres bloques de texto de la orden. Antes las anomalías eran
+            de solo lectura y no había forma de cargar el diagnóstico ni un
+            presupuesto de lo no autorizado desde la ficha. */}
+        <EditorNotas otId={ot.id} tipo="anomalia" notas={notasEditor} />
+        <EditorNotas otId={ot.id} tipo="descargo" notas={notasEditor} />
+        <EditorNotas otId={ot.id} tipo="recomendado" notas={notasEditor} />
 
         {/* Trabajos y Repuestos */}
         <section className="space-y-3">

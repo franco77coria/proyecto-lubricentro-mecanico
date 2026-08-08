@@ -454,6 +454,7 @@ export type Database = {
           id: string
           motivo: string | null
           ot_id: string | null
+          ot_item_id: string | null
           producto_id: string
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
@@ -467,6 +468,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           ot_id?: string | null
+          ot_item_id?: string | null
           producto_id: string
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
@@ -480,6 +482,7 @@ export type Database = {
           id?: string
           motivo?: string | null
           ot_id?: string | null
+          ot_item_id?: string | null
           producto_id?: string
           taller_id?: string
           tipo?: Database["public"]["Enums"]["tipo_movimiento"]
@@ -498,6 +501,13 @@ export type Database = {
             columns: ["ot_id"]
             isOneToOne: false
             referencedRelation: "orden_trabajo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimiento_stock_ot_item_id_fkey"
+            columns: ["ot_item_id"]
+            isOneToOne: false
+            referencedRelation: "ot_item"
             referencedColumns: ["id"]
           },
           {
@@ -881,6 +891,7 @@ export type Database = {
           id: string
           orden: number
           ot_id: string
+          precio_estimado: number | null
           responde_a_id: string | null
           taller_id: string
           texto: string
@@ -892,6 +903,7 @@ export type Database = {
           id?: string
           orden?: number
           ot_id: string
+          precio_estimado?: number | null
           responde_a_id?: string | null
           taller_id: string
           texto: string
@@ -903,6 +915,7 @@ export type Database = {
           id?: string
           orden?: number
           ot_id?: string
+          precio_estimado?: number | null
           responde_a_id?: string | null
           taller_id?: string
           texto?: string
@@ -1564,6 +1577,7 @@ export type Database = {
           precio_unitario: number
         }[]
       }
+      precio_sugerido_producto: { Args: { p_producto: string }; Returns: Json }
       rol_actual: {
         Args: never
         Returns: Database["public"]["Enums"]["rol_usuario"]
@@ -1571,6 +1585,7 @@ export type Database = {
       siguiente_numero_ot: { Args: { p_taller: string }; Returns: string }
       taller_actual: { Args: never; Returns: string }
       tiempo_promedio_taller: { Args: { p_desde?: string }; Returns: number }
+      total_recomendado: { Args: { p_ot: string }; Returns: number }
       verificar_saldos_stock: {
         Args: never
         Returns: {
