@@ -2,6 +2,7 @@ import { ArrowLeft, Car, Gauge, Phone, Plus, User } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { EditarVehiculo } from "@/components/vehiculos/EditarVehiculo";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { formatearPatente, normalizarPatente } from "@/lib/patente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
@@ -48,7 +49,7 @@ export default async function HistorialVehiculo({
 
   if (!vehiculo) notFound();
 
-  const [{ data: ordenes }, { data: duenos }] = await Promise.all([
+  const [{ data: ordenes }, { data: duenos }, { data: clientesTaller }] = await Promise.all([
     supabase
       .from("orden_trabajo")
       .select("id, numero, estado, fecha_ingreso, km_ingreso, total")
@@ -56,9 +57,16 @@ export default async function HistorialVehiculo({
       .order("fecha_ingreso", { ascending: false }),
     supabase
       .from("vehiculo_cliente")
-      .select("desde, hasta, cliente:cliente_id(nombre, apellido, telefono)")
+      .select("desde, hasta, cliente:cliente_id(id, nombre, apellido, telefono)")
       .eq("vehiculo_id", vehiculo.id)
       .order("desde", { ascending: false }),
+    supabase
+      .from("cliente")
+      .select("id, nombre, apellido")
+      .eq("taller_id", sesion.perfil.taller_id)
+      .eq("archivado", false)
+      .order("nombre")
+      .limit(200),
   ]);
 
   const lista = ordenes ?? [];
@@ -152,6 +160,18 @@ export default async function HistorialVehiculo({
                 {vehiculo.combustible && <Dato etiqueta="Combustible" valor={vehiculo.combustible} />}
                 {vehiculo.vin && <Dato etiqueta="Chasis" valor={vehiculo.vin} />}
               </dl>
+              <EditarVehiculo
+                vehiculo={{
+                  id: vehiculo.id,
+                  anio: vehiculo.anio,
+                  color: vehiculo.color,
+                  vin: vehiculo.vin,
+                  km_actual: vehiculo.km_actual,
+                  combustible: vehiculo.combustible,
+                }}
+                clientes={clientesTaller ?? []}
+                duenoActualId={vigente?.cliente?.id ?? null}
+              />
             </section>
 
             {esDueno && gastado > 0 && (

@@ -1,19 +1,14 @@
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { DatosTaller } from "@/components/config/DatosTaller";
 import { EditorChecklist } from "@/components/config/EditorChecklist";
+import { GestionEquipo } from "@/components/config/GestionEquipo";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const NOMBRE_ROL: Record<string, string> = {
-  dueno: "Dueño",
-  mostrador: "Mostrador",
-  mecanico: "Mecánico",
-};
 
 export default async function Config() {
   const sesion = await obtenerSesion();
@@ -22,7 +17,8 @@ export default async function Config() {
   const supabase = await crearClienteServidor();
   const esDueno = sesion.perfil.rol === "dueno";
 
-  const [{ data: taller }, { data: plantilla }, { data: equipo }] = await Promise.all([
+  const [{ data: taller }, { data: plantilla }, { data: equipo }, { data: invitaciones }] =
+    await Promise.all([
     supabase
       .from("taller")
       .select("nombre, cuit, direccion, telefono")
@@ -39,6 +35,13 @@ export default async function Config() {
       .select("user_id, nombre, rol, activo")
       .eq("taller_id", sesion.perfil.taller_id)
       .order("rol"),
+    supabase
+      .from("invitacion")
+      .select("id, email, rol, token, expira_en")
+      .eq("taller_id", sesion.perfil.taller_id)
+      .is("aceptada_en", null)
+      .gt("expira_en", new Date().toISOString())
+      .order("creado_en", { ascending: false }),
   ]);
 
   const items = (plantilla?.checklist_plantilla_item ?? [])
@@ -75,40 +78,14 @@ export default async function Config() {
             )}
           </div>
 
-          <section className="tarjeta entrar space-y-3 p-4" style={{ "--i": 3 } as React.CSSProperties}>
-            <div>
-              <h2 className="t-seccion">Equipo</h2>
-              <p className="mt-1 text-caption text-muted-foreground">
-                Quiénes tienen acceso a este taller.
-              </p>
-            </div>
-            <ul className="divide-y divide-border">
-              {(equipo ?? []).map((p) => (
-                <li key={p.user_id} className="flex items-center gap-2.5 py-2.5">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
-                    <User className="h-4 w-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-foreground">
-                      {p.nombre || "Sin nombre"}
-                      {p.user_id === sesion.user.id && (
-                        <span className="ml-1.5 text-caption font-normal text-muted-foreground">(vos)</span>
-                      )}
-                    </span>
-                    <span className="block text-caption text-muted-foreground">
-                      {NOMBRE_ROL[p.rol] ?? p.rol}
-                      {!p.activo && " · inactivo"}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {esDueno && (
-              <p className="text-caption text-muted-foreground">
-                Para sumar gente al taller falta la pantalla de invitaciones.
-              </p>
-            )}
-          </section>
+          <div className="entrar" style={{ "--i": 3 } as React.CSSProperties}>
+            <GestionEquipo
+              miembros={equipo ?? []}
+              invitaciones={invitaciones ?? []}
+              yoSoy={sesion.user.id}
+              esDueno={esDueno}
+            />
+          </div>
 
           <section className="tarjeta entrar space-y-3 p-4" style={{ "--i": 4 } as React.CSSProperties}>
             <h2 className="t-seccion">Sesión</h2>
