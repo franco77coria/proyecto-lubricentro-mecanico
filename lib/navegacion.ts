@@ -2,6 +2,7 @@ import {
   BarChart3,
   BellRing,
   Car,
+  Columns3,
   Users,
   LayoutGrid,
   type LucideIcon,
@@ -40,6 +41,7 @@ export interface ItemNav {
  */
 export const ITEMS_NAV: readonly ItemNav[] = [
   { href: "/tablero", etiqueta: "Tablero", icono: LayoutGrid },
+  { href: "/kanban", etiqueta: "En el taller", icono: Columns3 },
   { href: "/vehiculos", etiqueta: "Autos", icono: Car },
   { href: "/clientes", etiqueta: "Clientes", icono: Users },
   { href: "/avisos", etiqueta: "Avisos", icono: BellRing, sinMecanico: true },

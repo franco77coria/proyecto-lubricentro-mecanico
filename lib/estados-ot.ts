@@ -45,3 +45,26 @@ export const FLUJO_ESTADOS = [
   "entregado",
   "cerrado",
 ] as const;
+
+export type EstadoDb = (typeof FLUJO_ESTADOS)[number];
+
+/**
+ * Las columnas del tablero de pared.
+ *
+ * Termina en `listo` y no incluye entregado ni cerrado: el tablero muestra lo
+ * que HAY en el taller. Un auto entregado ya no está, y dejarlo en una columna
+ * hace que el tablero crezca para siempre hasta volverse ilegible — que es
+ * exactamente lo que le pasa al pizarrón de verdad.
+ */
+export const COLUMNAS_KANBAN: readonly EstadoDb[] = [
+  "presupuesto",
+  "aprobado",
+  "recibido",
+  "en_trabajo",
+  "esperando_repuesto",
+  "listo",
+];
+
+export function etiquetaEstado(estado: string): string {
+  return ESTADO_LABEL[estado] ?? estado;
+}
