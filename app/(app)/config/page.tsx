@@ -1,12 +1,14 @@
 import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { AprobarCatalogo } from "@/components/config/AprobarCatalogo";
 import { CatalogoServicios } from "@/components/config/CatalogoServicios";
 import { DatosTaller } from "@/components/config/DatosTaller";
 import { EditorChecklist } from "@/components/config/EditorChecklist";
 import { GestionEquipo } from "@/components/config/GestionEquipo";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { cerrarSesion } from "@/lib/actions/auth";
+import { listarPendientesCatalogo } from "@/lib/actions/catalogo-aprobacion";
 import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -25,6 +27,7 @@ export default async function Config() {
     { data: equipo },
     { data: invitaciones },
     servicios,
+    pendientesCatalogo,
   ] = await Promise.all([
     supabase
       .from("taller")
@@ -50,6 +53,7 @@ export default async function Config() {
       .gt("expira_en", new Date().toISOString())
       .order("creado_en", { ascending: false }),
     listarServicios(),
+    listarPendientesCatalogo(),
   ]);
 
   const items = (plantilla?.checklist_plantilla_item ?? [])
@@ -88,6 +92,12 @@ export default async function Config() {
 
           <div className="entrar" style={{ "--i": 3 } as React.CSSProperties}>
             <CatalogoServicios servicios={servicios} editable={esDueno} />
+          </div>
+
+          {/* Solo aparece si hay algo por revisar: el componente devuelve null
+              cuando la lista está vacía. */}
+          <div className="entrar" style={{ "--i": 4 } as React.CSSProperties}>
+            <AprobarCatalogo pendientes={pendientesCatalogo} editable={esDueno} />
           </div>
 
           <div className="entrar" style={{ "--i": 4 } as React.CSSProperties}>

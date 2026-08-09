@@ -393,6 +393,7 @@ export type Database = {
           nombre: string
           nombre_norm: string | null
           origen: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id: string | null
         }
         Insert: {
           activa?: boolean
@@ -403,6 +404,7 @@ export type Database = {
           nombre: string
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id?: string | null
         }
         Update: {
           activa?: boolean
@@ -413,8 +415,17 @@ export type Database = {
           nombre?: string
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marca_taller_origen_id_fkey"
+            columns: ["taller_origen_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       modelo: {
         Row: {
@@ -428,6 +439,7 @@ export type Database = {
           nombre: string
           nombre_norm: string | null
           origen: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id: string | null
         }
         Insert: {
           anio_desde?: number | null
@@ -440,6 +452,7 @@ export type Database = {
           nombre: string
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id?: string | null
         }
         Update: {
           anio_desde?: number | null
@@ -452,6 +465,7 @@ export type Database = {
           nombre?: string
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
+          taller_origen_id?: string | null
         }
         Relationships: [
           {
@@ -466,6 +480,13 @@ export type Database = {
             columns: ["marca_id"]
             isOneToOne: false
             referencedRelation: "marca"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modelo_taller_origen_id_fkey"
+            columns: ["taller_origen_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
             referencedColumns: ["id"]
           },
         ]
@@ -485,6 +506,7 @@ export type Database = {
           nombre_norm: string | null
           origen: Database["public"]["Enums"]["origen_catalogo"]
           potencia_cv: number | null
+          taller_origen_id: string | null
         }
         Insert: {
           anio_desde?: number | null
@@ -500,6 +522,7 @@ export type Database = {
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
           potencia_cv?: number | null
+          taller_origen_id?: string | null
         }
         Update: {
           anio_desde?: number | null
@@ -515,6 +538,7 @@ export type Database = {
           nombre_norm?: string | null
           origen?: Database["public"]["Enums"]["origen_catalogo"]
           potencia_cv?: number | null
+          taller_origen_id?: string | null
         }
         Relationships: [
           {
@@ -529,6 +553,13 @@ export type Database = {
             columns: ["modelo_id"]
             isOneToOne: false
             referencedRelation: "modelo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motorizacion_taller_origen_id_fkey"
+            columns: ["taller_origen_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
             referencedColumns: ["id"]
           },
         ]
@@ -1665,6 +1696,16 @@ export type Database = {
     Functions: {
       aceptar_invitacion: { Args: { p_token: string }; Returns: string }
       anular_orden: { Args: { p_motivo: string; p_ot: string }; Returns: Json }
+      catalogo_pendiente: {
+        Args: never
+        Returns: {
+          contexto: string
+          creado_en: string
+          id: string
+          nivel: string
+          nombre: string
+        }[]
+      }
       chequear_rate_limit: {
         Args: { p_clave: string; p_max?: number; p_ventana?: string }
         Returns: Json
@@ -1723,6 +1764,15 @@ export type Database = {
           vehiculo_id: string
           vence_por: string
         }[]
+      }
+      resolver_catalogo: {
+        Args: {
+          p_estado: Database["public"]["Enums"]["estado_catalogo"]
+          p_fusionar_en?: string
+          p_id: string
+          p_nivel: string
+        }
+        Returns: undefined
       }
       resolver_vehiculo_cedula: {
         Args: { p_marca?: string; p_modelo?: string }
