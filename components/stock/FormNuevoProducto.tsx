@@ -1,15 +1,19 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus, ScanBarcode, X } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { LectorCodigo } from "@/components/campos/LectorCodigo";
+import { FORMATOS_PRODUCTO } from "@/lib/codigo";
 import { crearProducto } from "@/lib/actions/stock";
 
 export function FormNuevoProducto() {
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [escaneando, setEscaneando] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [codigoBarras, setCodigoBarras] = useState("");
   const [nombre, setNombre] = useState("");
   const [marca, setMarca] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -25,6 +29,7 @@ export function FormNuevoProducto() {
 
     startTransition(async () => {
       const res = await crearProducto({
+        codigoBarras: codigoBarras.trim() || undefined,
         nombre: nombre.trim(),
         marca: marca.trim() || undefined,
         categoria: categoria.trim() || undefined,
@@ -38,6 +43,7 @@ export function FormNuevoProducto() {
       if (res.error) {
         setErrorMsg(res.error);
       } else {
+        setCodigoBarras("");
         setNombre("");
         setMarca("");
         setCategoria("");
@@ -51,6 +57,19 @@ export function FormNuevoProducto() {
 
   return (
     <>
+      {escaneando && (
+        <LectorCodigo
+          titulo="Escanear código de barras"
+          ayuda="Apuntá al código del bidón o de la caja del filtro."
+          formatos={FORMATOS_PRODUCTO}
+          onLeido={(codigo) => {
+            setCodigoBarras(codigo);
+            setEscaneando(false);
+          }}
+          onCerrar={() => setEscaneando(false)}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => setModalAbierto(true)}
@@ -77,6 +96,34 @@ export function FormNuevoProducto() {
             {errorMsg && <p className="text-xs font-bold text-red-600">{errorMsg}</p>}
 
             <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Primero el código: escanear el bidón es más rápido y más
+                  confiable que tipear "Elaion F50 5W-40", y deja el producto
+                  listo para encontrarlo escaneando la próxima vez. */}
+              <div>
+                <label htmlFor="codigo-barras" className="text-caption text-muted-foreground">
+                  Código de barras
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    id="codigo-barras"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Escaneá o tipeá el código del envase"
+                    value={codigoBarras}
+                    onChange={(e) => setCodigoBarras(e.target.value)}
+                    className="min-h-10 flex-1 rounded-xl border border-border bg-muted px-3 text-xs text-foreground focus:border-accent focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEscaneando(true)}
+                    aria-label="Escanear el código de barras"
+                    className="grid min-h-10 w-11 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent transition-transform active:scale-95"
+                  >
+                    <ScanBarcode className="h-4 w-4" aria-hidden />
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="text-caption text-muted-foreground">Nombre del Producto *</label>
                 <input

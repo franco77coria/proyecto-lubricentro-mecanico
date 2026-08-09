@@ -1205,6 +1205,7 @@ export type Database = {
           activo: boolean
           bajo_stock: boolean | null
           categoria: string | null
+          codigo_barras: string | null
           creado_en: string
           id: string
           marca: string | null
@@ -1221,6 +1222,7 @@ export type Database = {
           activo?: boolean
           bajo_stock?: boolean | null
           categoria?: string | null
+          codigo_barras?: string | null
           creado_en?: string
           id?: string
           marca?: string | null
@@ -1237,6 +1239,7 @@ export type Database = {
           activo?: boolean
           bajo_stock?: boolean | null
           categoria?: string | null
+          codigo_barras?: string | null
           creado_en?: string
           id?: string
           marca?: string | null

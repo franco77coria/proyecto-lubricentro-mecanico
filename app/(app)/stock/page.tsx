@@ -2,6 +2,7 @@ import { AlertTriangle, Package } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { AccionesProducto } from "@/components/stock/AccionesProducto";
+import { EscanearProducto } from "@/components/stock/EscanearProducto";
 import { FormNuevoProducto } from "@/components/stock/FormNuevoProducto";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
@@ -24,7 +25,9 @@ export default async function PaginaStock({
 
   let query = supabase
     .from("producto")
-    .select("id, sku, nombre, marca, categoria, unidad, stock, stock_min, precio_venta, bajo_stock")
+    .select(
+      "id, sku, codigo_barras, nombre, marca, categoria, unidad, stock, stock_min, precio_venta, bajo_stock",
+    )
     // Los que están bajo mínimo van primero: es lo que hay que ir a comprar.
     .order("bajo_stock", { ascending: false })
     .order("nombre", { ascending: true })
@@ -34,7 +37,11 @@ export default async function PaginaStock({
 
   if (q?.trim()) {
     const limpio = q.trim();
-    query = query.or(`nombre.ilike.%${limpio}%,sku.ilike.%${limpio}%,marca.ilike.%${limpio}%`);
+    // `codigo_barras` va acá para que escanear un bidón deje el producto solo en
+    // la lista, con sus botones de stock al lado.
+    query = query.or(
+      `nombre.ilike.%${limpio}%,sku.ilike.%${limpio}%,marca.ilike.%${limpio}%,codigo_barras.ilike.%${limpio}%`,
+    );
   }
 
   const { data: productos } = await query;
@@ -46,7 +53,16 @@ export default async function PaginaStock({
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
-        <EncabezadoPantalla seccion="Inventario" titulo="Stock" accion={<FormNuevoProducto />} />
+        <EncabezadoPantalla
+          seccion="Inventario"
+          titulo="Stock"
+          accion={
+            <div className="flex gap-2">
+              <EscanearProducto />
+              <FormNuevoProducto />
+            </div>
+          }
+        />
 
         <Buscador valor={q} placeholder="Buscar repuesto, filtro, aceite" />
 
@@ -66,9 +82,19 @@ export default async function PaginaStock({
               <Package className="h-6 w-6" aria-hidden />
             </span>
             <p className="max-w-xs text-sm text-muted-foreground">
-              {q
-                ? "Ningún producto coincide con esa búsqueda."
-                : "Todavía no hay productos cargados en el inventario."}
+              {q ? (
+                <>
+                  Ningún producto coincide con <strong>{q}</strong>.
+                  {/* Después de escanear un código que no está, lo que sigue es
+                      cargarlo — y hay que poder copiar el código de acá. */}
+                  <span className="mt-1.5 block text-caption">
+                    Si lo acabás de escanear, cargalo con <strong>Nuevo Producto</strong> y pegá ese
+                    código en el campo de código de barras.
+                  </span>
+                </>
+              ) : (
+                "Todavía no hay productos cargados en el inventario."
+              )}
             </p>
           </div>
         ) : (

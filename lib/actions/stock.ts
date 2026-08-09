@@ -2,23 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { z } from "zod";
 
+import { productoSchema, type DatosProducto } from "@/lib/schemas/producto";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
-
-export const productoSchema = z.object({
-  sku: z.string().trim().max(40).optional(),
-  nombre: z.string().trim().min(1, { message: "El nombre es obligatorio" }).max(100),
-  marca: z.string().trim().max(50).optional(),
-  categoria: z.string().trim().max(50).optional(),
-  unidad: z.string().trim().default("unid"),
-  stockMin: z.coerce.number().int().min(0).default(0),
-  precioVenta: z.coerce.number().min(0).default(0),
-  costoUnitario: z.coerce.number().min(0).default(0),
-  stockInicial: z.coerce.number().min(0).default(0),
-});
-
-export type DatosProducto = z.infer<typeof productoSchema>;
 
 export async function crearProducto(datos: DatosProducto): Promise<{ productoId?: string; error?: string }> {
   const sesion = await obtenerSesion();
@@ -38,6 +24,7 @@ export async function crearProducto(datos: DatosProducto): Promise<{ productoId?
       .insert({
         taller_id: tallerId,
         sku: d.sku || null,
+        codigo_barras: d.codigoBarras || null,
         nombre: d.nombre,
         marca: d.marca || null,
         categoria: d.categoria || null,
@@ -49,6 +36,15 @@ export async function crearProducto(datos: DatosProducto): Promise<{ productoId?
       .single();
 
     if (error || !prod) {
+      // Escanear el bidón de un producto que ya está cargado es lo más normal
+      // del mundo. Decirlo así evita que el mostrador cree un duplicado.
+      if (error?.code === "23505") {
+        return {
+          error: error.message.includes("codigo_barras")
+            ? "Ese código de barras ya está en otro producto. Buscalo en la lista."
+            : "Ese SKU ya está usado por otro producto.",
+        };
+      }
       console.error("[crearProducto]", error?.code);
       return { error: "No se pudo crear el producto." };
     }
