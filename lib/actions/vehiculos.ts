@@ -5,7 +5,11 @@ import { unstable_rethrow } from "next/navigation";
 
 import { vehiculoEspecialSchema, vehiculoSchema } from "@/lib/schemas/vehiculo";
 import { normalizarTelefono } from "@/lib/telefono";
+import type { Database } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+
+/** Solo las columnas que la app puede tocar, con los tipos de la base. */
+type ParcheVehiculo = Database["public"]["Tables"]["vehiculo"]["Update"];
 
 export interface ResultadoVehiculo {
   error?: string;
@@ -71,14 +75,55 @@ export async function crearVehiculo(
       if (error.code === CODIGO_UNICIDAD) {
         const { data: existente } = await supabase
           .from("vehiculo")
-          .select("id, patente, anio, marca:marca_id(nombre), modelo:modelo_id(nombre)")
+          .select(
+            `id, patente, anio, color, combustible, vin, km_actual,
+             marca_id, modelo_id, motorizacion_id,
+             marca:marca_id(nombre), modelo:modelo_id(nombre),
+             motorizacion:motorizacion_id(nombre)`,
+          )
           .eq("patente_norm", d.patente)
           .maybeSingle();
 
         if (existente) {
+          // El auto ya estaba. Se COMPLETA lo que le falta y no se pisa nada de
+          // lo que ya tiene: la ficha vieja puede haber sido corregida a mano y
+          // una recepción apurada no tiene por qué ganarle.
+          //
+          // Sin esto, la motorización que el mostrador acaba de elegir se
+          // descartaba en silencio — y como la columna es nueva, TODOS los autos
+          // ya cargados la tienen vacía. Es decir: por este camino nunca se
+          // llenaba, que es justo el dato que necesita la ficha técnica.
+          const parche: ParcheVehiculo = {};
+          if (d.marcaId && !existente.marca_id) parche.marca_id = d.marcaId;
+          if (d.modeloId && !existente.modelo_id) parche.modelo_id = d.modeloId;
+          if (d.motorizacionId && !existente.motorizacion_id) {
+            parche.motorizacion_id = d.motorizacionId;
+          }
+          if (d.anio !== "" && existente.anio == null) parche.anio = Number(d.anio);
+          if (d.color && !existente.color) parche.color = d.color;
+          if (d.combustible && !existente.combustible) parche.combustible = d.combustible;
+
+          // El kilometraje es la excepción: no se "completa", se actualiza. Pero
+          // solo hacia arriba. Un odómetro no baja, así que un número menor al
+          // guardado es un error de tipeo y pisarlo perdería el dato bueno.
+          if (d.km !== "" && Number(d.km) > (existente.km_actual ?? -1)) {
+            parche.km_actual = Number(d.km);
+            parche.km_actualizado_en = new Date().toISOString();
+          }
+
+          if (Object.keys(parche).length > 0) {
+            const { error: errorParche } = await supabase
+              .from("vehiculo")
+              .update(parche)
+              .eq("id", existente.id)
+              .eq("taller_id", tallerId);
+            if (errorParche) console.error("[crearVehiculo/completar]", errorParche.code);
+          }
+
           const partes = [
             existente.marca?.nombre,
             existente.modelo?.nombre,
+            existente.motorizacion?.nombre,
             existente.anio ? String(existente.anio) : null,
           ].filter(Boolean);
           return {

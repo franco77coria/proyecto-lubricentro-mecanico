@@ -19,7 +19,8 @@ export async function crearOrdenTrabajo(datos: DatosCrearOT): Promise<{ otId?: s
   const parseado = crearOTSchema.safeParse(datos);
   if (!parseado.success) return { error: parseado.error.issues[0].message };
 
-  const { vehiculoId, clienteId, tipo, kmIngreso, observaciones, anomalias } = parseado.data;
+  const { vehiculoId, clienteId, tipo, kmIngreso, observaciones, anomalias, cedulaPayload } =
+    parseado.data;
   const tallerId = sesion.perfil.taller_id;
 
   try {
@@ -60,7 +61,20 @@ export async function crearOrdenTrabajo(datos: DatosCrearOT): Promise<{ otId?: s
       await supabase.from("ot_nota").insert(notas);
     }
 
-    // 3. Traer la plantilla activa del taller para armar el checklist de la OT
+    // 3. Recepción. La tabla existía desde 0006 y nunca se escribía, así que el
+    //    km de ingreso y lo leído de la cédula no quedaban en ningún lado.
+    //    Va sin cortar el alta si falla: la OT ya está creada y perder el
+    //    trabajo hecho por un dato accesorio sería peor.
+    const { error: errorRecepcion } = await supabase.from("ot_recepcion").insert({
+      ot_id: ot.id,
+      taller_id: tallerId,
+      km: kmIngreso || null,
+      cedula_payload: cedulaPayload || null,
+      recibido_por: sesion.user.id,
+    });
+    if (errorRecepcion) console.error("[crearOrdenTrabajo/recepcion]", errorRecepcion.code);
+
+    // 4. Traer la plantilla activa del taller para armar el checklist de la OT
     const { data: plantilla } = await supabase
       .from("checklist_plantilla")
       .select("id")

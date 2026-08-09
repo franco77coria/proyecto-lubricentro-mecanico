@@ -39,6 +39,11 @@ export const crearOTSchema = z.object({
   kmIngreso: z.coerce.number().int().min(0, { message: "Kilometraje inválido" }),
   observaciones: z.string().trim().max(1000).optional(),
   anomalias: z.array(z.string().trim().min(1)).optional(),
+
+  // Lo que se leyó del código de la cédula, crudo. Se guarda aunque el parseo
+  // haya entendido poco: es la única forma de descubrir los formatos que varían
+  // entre provincias sin volver a pedirle el documento al cliente.
+  cedulaPayload: z.string().trim().max(4000).optional(),
 });
 
 export type DatosCrearOT = z.infer<typeof crearOTSchema>;

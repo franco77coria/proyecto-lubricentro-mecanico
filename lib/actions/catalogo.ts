@@ -111,6 +111,61 @@ export async function listarMotorizaciones(modeloId: string): Promise<OpcionCata
   }
 }
 
+/**
+ * Lleva la marca y el modelo que dice la cédula a filas del catálogo.
+ *
+ * La heurística vive en `resolver_vehiculo_cedula` (0022): el texto de la
+ * cédula trae razones sociales largas y versiones ("GOL TREND 1.6 POWER"), así
+ * que el matcheo exacto no alcanza.
+ *
+ * No inventa nada: si no reconoce, devuelve vacío y el mostrador elige a mano.
+ */
+export interface VehiculoResuelto {
+  marcaId: string;
+  modeloId: string;
+  /** Para confirmarle al usuario qué se reconoció, sin que tenga que mirar. */
+  descripcion: string;
+}
+
+export async function resolverDesdeCedula(
+  marca?: string,
+  modelo?: string,
+): Promise<VehiculoResuelto> {
+  const vacio: VehiculoResuelto = { marcaId: "", modeloId: "", descripcion: "" };
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil || (!marca && !modelo)) return vacio;
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { data, error } = await supabase
+      // Van como `undefined` y no como `null`: la función tiene defaults, así
+      // que el argumento ausente ya vale null del lado de Postgres.
+      .rpc("resolver_vehiculo_cedula", { p_marca: marca, p_modelo: modelo })
+      .maybeSingle();
+
+    if (error || !data?.marca_id) return vacio;
+
+    const marcaId = data.marca_id;
+    const modeloId = data.modelo_id ?? "";
+
+    const [{ data: filaMarca }, { data: filaModelo }] = await Promise.all([
+      supabase.from("marca").select("nombre").eq("id", marcaId).maybeSingle(),
+      modeloId
+        ? supabase.from("modelo").select("nombre").eq("id", modeloId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    return {
+      marcaId,
+      modeloId,
+      descripcion: [filaMarca?.nombre, filaModelo?.nombre].filter(Boolean).join(" "),
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+    return vacio;
+  }
+}
+
 export interface ResultadoPropuesta {
   id?: string;
   error?: string;

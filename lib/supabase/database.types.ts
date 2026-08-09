@@ -1692,6 +1692,13 @@ export type Database = {
         Args: { p_modelo_id: string; p_nombre: string }
         Returns: string
       }
+      resolver_vehiculo_cedula: {
+        Args: { p_marca?: string; p_modelo?: string }
+        Returns: {
+          marca_id: string
+          modelo_id: string
+        }[]
+      }
       rol_actual: {
         Args: never
         Returns: Database["public"]["Enums"]["rol_usuario"]

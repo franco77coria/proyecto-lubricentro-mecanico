@@ -14,7 +14,9 @@
     "iOS >= 16",
     "not dead"
   ],
+  "//postinstall": "El .wasm del lector se sirve desde /public y no del CDN de jsDelivr (default de la librería): el taller tiene señal mala y un lector que baja 1 MB de un CDN ajeno no sirve al lado de la fosa. Copiarlo en postinstall evita que quede viejo al actualizar zxing-wasm. La copia está commiteada igual, para que la app no dependa de que el hook corra en el build.",
   "scripts": {
+    "postinstall": "node -e \"require('node:fs').copyFileSync('node_modules/zxing-wasm/dist/reader/zxing_reader.wasm','public/zxing_reader.wasm')\"",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
