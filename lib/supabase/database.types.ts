@@ -1709,6 +1709,21 @@ export type Database = {
         Args: { p_modelo_id: string; p_nombre: string }
         Returns: string
       }
+      recordatorios_a_contactar: {
+        Args: { p_dias_antes?: number }
+        Returns: {
+          cliente_nombre: string
+          descripcion: string
+          fecha_objetivo: string
+          id: string
+          km_actual: number
+          km_objetivo: number
+          patente: string
+          telefono: string
+          vehiculo_id: string
+          vence_por: string
+        }[]
+      }
       resolver_vehiculo_cedula: {
         Args: { p_marca?: string; p_modelo?: string }
         Returns: {

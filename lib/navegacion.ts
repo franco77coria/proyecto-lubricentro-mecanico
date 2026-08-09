@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BellRing,
   Car,
   Users,
   LayoutGrid,
@@ -41,6 +42,7 @@ export const ITEMS_NAV: readonly ItemNav[] = [
   { href: "/tablero", etiqueta: "Tablero", icono: LayoutGrid },
   { href: "/vehiculos", etiqueta: "Autos", icono: Car },
   { href: "/clientes", etiqueta: "Clientes", icono: Users },
+  { href: "/avisos", etiqueta: "Avisos", icono: BellRing, sinMecanico: true },
   { href: "/stock", etiqueta: "Stock", icono: Package },
   { href: "/compras", etiqueta: "Compras", icono: Truck, sinMecanico: true },
   { href: "/caja", etiqueta: "Caja", icono: Wallet, soloDueno: true },
@@ -52,7 +54,7 @@ export const ITEMS_NAV: readonly ItemNav[] = [
  *  que se usan estando parado al lado de un auto. Caja y reportes son de
  *  escritorio, se miran sentado. */
 export const ITEMS_BARRA: readonly ItemNav[] = ITEMS_NAV.filter(
-  (i) => !["/caja", "/reportes", "/clientes", "/compras"].includes(i.href),
+  (i) => !["/caja", "/reportes", "/clientes", "/compras", "/avisos"].includes(i.href),
 );
 
 /** Qué ítems corresponden a un rol. Una sola regla para sidebar y barra. */
