@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { AnularOrden } from "@/components/ot/AnularOrden";
+import { AsistenteIA } from "@/components/ot/AsistenteIA";
 import { CompartirSeguimiento } from "@/components/ot/CompartirSeguimiento";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
@@ -15,6 +16,7 @@ import { PanelFicha } from "@/components/ot/PanelFicha";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
 import { fotosDeOT } from "@/lib/actions/fotos";
 import { obtenerFicha } from "@/lib/actions/ficha";
+import { asistenteHabilitado } from "@/lib/actions/ia";
 import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -157,11 +159,12 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
 
   // Fotos, firma y los dos catálogos que alimentan el editor de ítems. Todo en
   // paralelo: son consultas independientes y encadenarlas solo suma latencia.
-  const [fotos, { data: recepcion }, servicios, ficha, { data: productos }] = await Promise.all([
+  const [fotos, { data: recepcion }, servicios, ficha, hayIA, { data: productos }] = await Promise.all([
     fotosDeOT(ot.id),
     supabase.from("ot_recepcion").select("firma_recepcion_url").eq("ot_id", ot.id).maybeSingle(),
     listarServicios(),
     obtenerFicha(ot.vehiculo.id),
+    asistenteHabilitado(),
     supabase
       .from("producto")
       .select("id, nombre, precio_venta, stock, unidad")
@@ -256,6 +259,18 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         <EditorNotas otId={ot.id} tipo="anomalia" notas={notasEditor} />
         <EditorNotas otId={ot.id} tipo="descargo" notas={notasEditor} />
         <EditorNotas otId={ot.id} tipo="recomendado" notas={notasEditor} />
+
+        {/* El asistente solo aparece si el taller tiene la clave configurada:
+            un botón que falla siempre es peor que no tenerlo. */}
+        {hayIA && (
+          <AsistenteIA
+            otId={ot.id}
+            patente={ot.vehiculo.patente}
+            telefonoCliente={ot.cliente?.telefono ?? null}
+            nombreCliente={ot.cliente?.nombre ?? null}
+            tallerNombre={taller?.nombre ?? "el taller"}
+          />
+        )}
 
         {/* Lo que lleva este motor. Va antes de los ítems porque es lo que se
             consulta para armarlos. */}

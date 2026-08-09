@@ -1300,6 +1300,76 @@ export type Database = {
           },
         ]
       }
+      ot_sugerencia_ia: {
+        Row: {
+          acerto: boolean | null
+          causa_real: string | null
+          creado_en: string
+          creado_por: string | null
+          entrada: string
+          id: string
+          modelo: string
+          ot_id: string
+          salida: Json
+          taller_id: string
+          tipo: string
+          tokens_entrada: number | null
+          tokens_salida: number | null
+        }
+        Insert: {
+          acerto?: boolean | null
+          causa_real?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          entrada: string
+          id?: string
+          modelo: string
+          ot_id: string
+          salida: Json
+          taller_id: string
+          tipo: string
+          tokens_entrada?: number | null
+          tokens_salida?: number | null
+        }
+        Update: {
+          acerto?: boolean | null
+          causa_real?: string | null
+          creado_en?: string
+          creado_por?: string | null
+          entrada?: string
+          id?: string
+          modelo?: string
+          ot_id?: string
+          salida?: Json
+          taller_id?: string
+          tipo?: string
+          tokens_entrada?: number | null
+          tokens_salida?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ot_sugerencia_ia_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "perfil"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ot_sugerencia_ia_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "orden_trabajo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ot_sugerencia_ia_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pago: {
         Row: {
           fecha: string
@@ -1841,6 +1911,15 @@ export type Database = {
     }
     Functions: {
       aceptar_invitacion: { Args: { p_token: string }; Returns: string }
+      antecedentes_modelo: {
+        Args: { p_limite?: number; p_vehiculo: string }
+        Returns: {
+          anomalia: string
+          descargo: string
+          fecha: string
+          patente: string
+        }[]
+      }
       anular_orden: { Args: { p_motivo: string; p_ot: string }; Returns: Json }
       aprobar_presupuesto_publico: { Args: { p_token: string }; Returns: Json }
       catalogo_pendiente: {
