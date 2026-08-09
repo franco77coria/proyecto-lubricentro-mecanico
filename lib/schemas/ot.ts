@@ -51,10 +51,20 @@ export type DatosCrearOT = z.infer<typeof crearOTSchema>;
 export const itemOTSchema = z.object({
   tipo: z.enum(TIPOS_ITEM, { message: "Tipo de ítem inválido" }),
   descripcion: z.string().trim().min(1, { message: "La descripción es requerida" }).max(200),
+
+  // Vincular el ítem al producto es lo que dispara el descuento de stock
+  // (trigger de 0014). Sin esto el inventario nunca baja.
   productoId: z.string().uuid().optional().or(z.literal("")),
+  /** Solo informativo: de dónde salió el precio. No cambia el cálculo. */
+  servicioId: z.string().uuid().optional().or(z.literal("")),
+
   cantidad: z.coerce.number().min(0.01, { message: "La cantidad debe ser mayor a 0" }),
-  costoUnitario: z.coerce.number().min(0, { message: "Costo inválido" }).default(0),
   precioUnitario: z.coerce.number().min(0, { message: "Precio inválido" }),
+
+  // `costoUnitario` NO está y no vuelve: la UI lo mandaba siempre en 0, y un
+  // campo que el cliente puede escribir es superficie de ataque aunque la
+  // pantalla no lo muestre (lección #41). El costo lo resuelve el servidor
+  // contra el ledger, que es la única fuente que no se puede falsear.
 });
 
 export type DatosItemOT = z.infer<typeof itemOTSchema>;

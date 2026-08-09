@@ -1,11 +1,13 @@
 import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { CatalogoServicios } from "@/components/config/CatalogoServicios";
 import { DatosTaller } from "@/components/config/DatosTaller";
 import { EditorChecklist } from "@/components/config/EditorChecklist";
 import { GestionEquipo } from "@/components/config/GestionEquipo";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { cerrarSesion } from "@/lib/actions/auth";
+import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +19,13 @@ export default async function Config() {
   const supabase = await crearClienteServidor();
   const esDueno = sesion.perfil.rol === "dueno";
 
-  const [{ data: taller }, { data: plantilla }, { data: equipo }, { data: invitaciones }] =
-    await Promise.all([
+  const [
+    { data: taller },
+    { data: plantilla },
+    { data: equipo },
+    { data: invitaciones },
+    servicios,
+  ] = await Promise.all([
     supabase
       .from("taller")
       .select("nombre, cuit, direccion, telefono")
@@ -42,6 +49,7 @@ export default async function Config() {
       .is("aceptada_en", null)
       .gt("expira_en", new Date().toISOString())
       .order("creado_en", { ascending: false }),
+    listarServicios(),
   ]);
 
   const items = (plantilla?.checklist_plantilla_item ?? [])
@@ -79,6 +87,10 @@ export default async function Config() {
           </div>
 
           <div className="entrar" style={{ "--i": 3 } as React.CSSProperties}>
+            <CatalogoServicios servicios={servicios} editable={esDueno} />
+          </div>
+
+          <div className="entrar" style={{ "--i": 4 } as React.CSSProperties}>
             <GestionEquipo
               miembros={equipo ?? []}
               invitaciones={invitaciones ?? []}
@@ -87,7 +99,7 @@ export default async function Config() {
             />
           </div>
 
-          <section className="tarjeta entrar space-y-3 p-4" style={{ "--i": 4 } as React.CSSProperties}>
+          <section className="tarjeta entrar space-y-3 p-4" style={{ "--i": 5 } as React.CSSProperties}>
             <h2 className="t-seccion">Sesión</h2>
             <p className="text-caption text-muted-foreground">
               Entraste como {sesion.user.email}.

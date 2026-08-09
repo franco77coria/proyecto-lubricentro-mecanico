@@ -14,16 +14,82 @@ interface ItemTabla {
   subtotal: number;
 }
 
-export function ItemsEditor({ otId, items: initialItems }: { otId: string; items: ItemTabla[] }) {
+export interface OpcionServicio {
+  id: string;
+  nombre: string;
+  precioManoObra: number;
+}
+
+export interface OpcionProducto {
+  id: string;
+  nombre: string;
+  precioVenta: number;
+  stock: number;
+  unidad: string;
+}
+
+type TipoItem = "repuesto" | "mano_obra" | "servicio" | "insumo" | "tercero";
+
+/** Los tipos que salen del depósito y por lo tanto mueven stock. */
+const TIPOS_CON_STOCK: TipoItem[] = ["repuesto", "insumo"];
+/** Los tipos que se cobran como trabajo del taller. */
+const TIPOS_CON_SERVICIO: TipoItem[] = ["mano_obra", "servicio"];
+
+export function ItemsEditor({
+  otId,
+  items: initialItems,
+  servicios = [],
+  productos = [],
+}: {
+  otId: string;
+  items: ItemTabla[];
+  servicios?: OpcionServicio[];
+  productos?: OpcionProducto[];
+}) {
   const [items, setItems] = useState(initialItems);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [tipo, setTipo] = useState<"repuesto" | "mano_obra" | "servicio" | "insumo" | "tercero">("mano_obra");
+  const [tipo, setTipo] = useState<TipoItem>("mano_obra");
   const [descripcion, setDescripcion] = useState("");
   const [cantidad, setCantidad] = useState("1");
   const [precio, setPrecio] = useState("");
+  // Cuál fila del catálogo se eligió. Para el producto importa de verdad: es lo
+  // que hace que el stock baje.
+  const [productoId, setProductoId] = useState("");
+  const [servicioId, setServicioId] = useState("");
+
+  const usaStock = TIPOS_CON_STOCK.includes(tipo);
+  const usaServicio = TIPOS_CON_SERVICIO.includes(tipo);
+
+  /** Cambiar el tipo invalida la referencia al catálogo del tipo anterior. */
+  const handleTipo = (nuevo: TipoItem) => {
+    setTipo(nuevo);
+    setProductoId("");
+    setServicioId("");
+  };
+
+  /**
+   * Elegir del catálogo COMPLETA los campos, no los congela: el mismo trabajo
+   * puede costar más en una camioneta que en un Gol, y el mostrador tiene que
+   * poder corregir el precio antes de guardar.
+   */
+  const handleServicio = (id: string) => {
+    setServicioId(id);
+    const s = servicios.find((x) => x.id === id);
+    if (!s) return;
+    setDescripcion(s.nombre);
+    setPrecio(String(s.precioManoObra));
+  };
+
+  const handleProducto = (id: string) => {
+    setProductoId(id);
+    const p = productos.find((x) => x.id === id);
+    if (!p) return;
+    setDescripcion(p.nombre);
+    setPrecio(String(p.precioVenta));
+  };
 
   const handleAgregar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +116,12 @@ export function ItemsEditor({ otId, items: initialItems }: { otId: string; items
         tipo,
         descripcion: descripcion.trim(),
         cantidad: numCant,
-        costoUnitario: 0,
         precioUnitario: numPrecio,
+        // Sin esto el trigger de 0014 no tiene a qué producto descontarle, y el
+        // inventario nunca baja. Era el motivo por el que el descuento
+        // automático de stock no funcionaba.
+        productoId: usaStock ? productoId || undefined : undefined,
+        servicioId: usaServicio ? servicioId || undefined : undefined,
       });
 
       if (res.error) {
@@ -60,6 +130,8 @@ export function ItemsEditor({ otId, items: initialItems }: { otId: string; items
         setDescripcion("");
         setPrecio("");
         setCantidad("1");
+        setProductoId("");
+        setServicioId("");
         setMostrarForm(false);
       }
     });
@@ -139,7 +211,7 @@ export function ItemsEditor({ otId, items: initialItems }: { otId: string; items
               <label className="text-caption text-muted-foreground">Tipo</label>
               <select
                 value={tipo}
-                onChange={(e) => setTipo(e.target.value as typeof tipo)}
+                onChange={(e) => handleTipo(e.target.value as TipoItem)}
                 className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               >
                 <option value="mano_obra">Mano de obra</option>
@@ -162,6 +234,60 @@ export function ItemsEditor({ otId, items: initialItems }: { otId: string; items
               />
             </div>
           </div>
+
+          {/* Elegir del catálogo antes de escribir: completa la descripción y el
+              precio, y en los repuestos vincula el producto para que el stock
+              baje solo. Los campos quedan editables. */}
+          {usaServicio && servicios.length > 0 && (
+            <div>
+              <label htmlFor="servicio-item" className="text-caption text-muted-foreground">
+                Trabajo del catálogo
+              </label>
+              <select
+                id="servicio-item"
+                value={servicioId}
+                onChange={(e) => handleServicio(e.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Escribir a mano…</option>
+                {servicios.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre} — ${s.precioManoObra.toLocaleString("es-AR")}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {usaStock && (
+            <div>
+              <label htmlFor="producto-item" className="text-caption text-muted-foreground">
+                Producto del stock
+              </label>
+              <select
+                id="producto-item"
+                value={productoId}
+                onChange={(e) => handleProducto(e.target.value)}
+                className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+              >
+                <option value="">Sin vincular (no descuenta stock)</option>
+                {productos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre} — {p.stock} {p.unidad}
+                  </option>
+                ))}
+              </select>
+              {productoId ? (
+                <p className="mt-1 text-caption text-muted-foreground">
+                  Al guardar se descuentan {cantidad || "0"} del inventario.
+                </p>
+              ) : (
+                <p className="mt-1 text-caption text-amber-700">
+                  Sin vincular el producto, el stock no baja.
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="text-caption text-muted-foreground">Descripción</label>

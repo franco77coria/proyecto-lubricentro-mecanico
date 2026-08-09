@@ -202,6 +202,27 @@ export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ 
   try {
     const supabase = await crearClienteServidor();
 
+    // El costo sale del ledger, no del cliente. Es la diferencia entre un
+    // reporte de rentabilidad real y uno donde el margen es igual al precio de
+    // venta porque el costo llegaba siempre en 0.
+    //
+    // Va por RPC porque `movimiento_stock.costo_unitario` tiene el SELECT
+    // revocado para `authenticated` (0007), y el Server Action corre con ese
+    // mismo rol: por la tabla no lo puede leer ni él.
+    let costoUnitario = 0;
+    if (d.productoId) {
+      const { data: costo, error: errorCosto } = await supabase.rpc("costo_actual_producto", {
+        p_producto: d.productoId,
+      });
+      if (errorCosto) {
+        // Sin costo el ítem se carga igual: perder la línea del presupuesto por
+        // no poder calcular un margen sería peor.
+        console.error("[agregarItemOT/costo]", errorCosto.code);
+      } else {
+        costoUnitario = Number(costo ?? 0);
+      }
+    }
+
     const { error } = await supabase.from("ot_item").insert({
       taller_id: sesion.perfil.taller_id,
       ot_id: otId,
@@ -209,17 +230,27 @@ export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ 
       descripcion: d.descripcion,
       producto_id: d.productoId || null,
       cantidad: d.cantidad,
-      costo_unitario: d.costoUnitario,
+      costo_unitario: costoUnitario,
       precio_unitario: d.precioUnitario,
       creado_por: sesion.user.id,
     });
 
     if (error) {
+      // El trigger del ledger (0005) rechaza dejar el stock en negativo.
+      if (error.message?.includes("stock") || error.code === "P0001") {
+        return {
+          error:
+            "No hay stock suficiente de ese producto. Cargá la compra primero o ajustá la cantidad.",
+        };
+      }
       console.error("[agregarItemOT]", error.code);
       return { error: "No se pudo agregar el ítem." };
     }
 
     revalidatePath(`/ot/${otId}`);
+    // Cargar un repuesto mueve el inventario: si no se revalida, el stock se
+    // sigue viendo con el saldo de antes.
+    if (d.productoId) revalidatePath("/stock");
     return { ok: true };
   } catch (err) {
     unstable_rethrow(err);
@@ -246,6 +277,8 @@ export async function eliminarItemOT(otId: string, itemId: string): Promise<{ ok
     }
 
     revalidatePath(`/ot/${otId}`);
+    // Borrar un repuesto devuelve el stock (cascada de `ot_item_id` en 0014).
+    revalidatePath("/stock");
     return { ok: true };
   } catch (err) {
     unstable_rethrow(err);

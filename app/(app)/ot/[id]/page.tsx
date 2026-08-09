@@ -12,6 +12,7 @@ import { FirmaCliente } from "@/components/ot/FirmaCliente";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
 import { fotosDeOT } from "@/lib/actions/fotos";
+import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -151,12 +152,28 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     precio_estimado: n.precio_estimado,
   }));
 
-  // Fotos con URL firmada y estado de la firma del cliente. En paralelo: son
-  // dos consultas independientes y encadenarlas solo suma latencia.
-  const [fotos, { data: recepcion }] = await Promise.all([
+  // Fotos, firma y los dos catálogos que alimentan el editor de ítems. Todo en
+  // paralelo: son consultas independientes y encadenarlas solo suma latencia.
+  const [fotos, { data: recepcion }, servicios, { data: productos }] = await Promise.all([
     fotosDeOT(ot.id),
     supabase.from("ot_recepcion").select("firma_recepcion_url").eq("ot_id", ot.id).maybeSingle(),
+    listarServicios(),
+    supabase
+      .from("producto")
+      .select("id, nombre, precio_venta, stock, unidad")
+      .eq("taller_id", sesion.perfil.taller_id)
+      .eq("activo", true)
+      .order("nombre", { ascending: true })
+      .limit(500),
   ]);
+
+  const productosOpcion = (productos ?? []).map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    precioVenta: Number(p.precio_venta ?? 0),
+    stock: Number(p.stock ?? 0),
+    unidad: p.unidad,
+  }));
 
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
@@ -235,7 +252,12 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
               </h2>
             </div>
           </div>
-          <ItemsEditor otId={ot.id} items={itemsMapeados} />
+          <ItemsEditor
+            otId={ot.id}
+            items={itemsMapeados}
+            servicios={servicios}
+            productos={productosOpcion}
+          />
         </section>
 
         {/* Inspección / Checklist */}

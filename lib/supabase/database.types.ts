@@ -544,6 +544,7 @@ export type Database = {
           ot_id: string | null
           ot_item_id: string | null
           producto_id: string
+          secuencia: number
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id: string | null
@@ -558,6 +559,7 @@ export type Database = {
           ot_id?: string | null
           ot_item_id?: string | null
           producto_id: string
+          secuencia?: never
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id?: string | null
@@ -572,6 +574,7 @@ export type Database = {
           ot_id?: string | null
           ot_item_id?: string | null
           producto_id?: string
+          secuencia?: never
           taller_id?: string
           tipo?: Database["public"]["Enums"]["tipo_movimiento"]
           usuario_id?: string | null
@@ -1656,6 +1659,7 @@ export type Database = {
         Args: { p_clave: string; p_max?: number; p_ventana?: string }
         Returns: Json
       }
+      costo_actual_producto: { Args: { p_producto: string }; Returns: number }
       crear_checklist_default: { Args: { p_taller: string }; Returns: string }
       crear_taller: {
         Args: {
