@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 
-import { esRutaActiva, ITEMS_BARRA } from "@/lib/navegacion";
+import { esRutaActiva, itemsVisibles, ITEMS_BARRA } from "@/lib/navegacion";
 
 /**
  * Navegación de celular.
@@ -19,7 +19,7 @@ import { esRutaActiva, ITEMS_BARRA } from "@/lib/navegacion";
  */
 export function BarraInferior({ rol }: { rol?: string }) {
   const pathname = usePathname();
-  const items = ITEMS_BARRA.filter((i) => !i.soloDueno || rol === "dueno");
+  const items = itemsVisibles(ITEMS_BARRA, rol ?? "");
   const mitad = Math.ceil(items.length / 2);
 
   return (

@@ -537,6 +537,7 @@ export type Database = {
         Row: {
           cantidad: number
           compra_id: string | null
+          compra_item_id: string | null
           costo_unitario: number
           creado_en: string
           id: string
@@ -552,6 +553,7 @@ export type Database = {
         Insert: {
           cantidad: number
           compra_id?: string | null
+          compra_item_id?: string | null
           costo_unitario?: number
           creado_en?: string
           id?: string
@@ -567,6 +569,7 @@ export type Database = {
         Update: {
           cantidad?: number
           compra_id?: string | null
+          compra_item_id?: string | null
           costo_unitario?: number
           creado_en?: string
           id?: string
@@ -585,6 +588,13 @@ export type Database = {
             columns: ["compra_id"]
             isOneToOne: false
             referencedRelation: "compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimiento_stock_compra_item_id_fkey"
+            columns: ["compra_item_id"]
+            isOneToOne: false
+            referencedRelation: "compra_item"
             referencedColumns: ["id"]
           },
           {

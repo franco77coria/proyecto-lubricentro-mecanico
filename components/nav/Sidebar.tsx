@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Plus, Wrench } from "lucide-react";
 
-import { esRutaActiva, ITEMS_NAV } from "@/lib/navegacion";
+import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
 
 export interface SidebarProps {
@@ -55,7 +55,7 @@ export function Sidebar({ taller, usuario, rol }: SidebarProps) {
       </div>
 
       <nav aria-label="Navegación principal" className="flex-1 space-y-0.5 px-3">
-        {ITEMS_NAV.filter((i) => !i.soloDueno || rol === "dueno").map((item) => {
+        {itemsVisibles(ITEMS_NAV, rol).map((item) => {
           const activo = esRutaActiva(pathname, item.href);
           const Icono = item.icono;
           return (
