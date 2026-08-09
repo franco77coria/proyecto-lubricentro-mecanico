@@ -32,6 +32,28 @@ export async function crearClienteServidor() {
 }
 
 /**
+ * Cliente sin sesión, para el portal público de seguimiento.
+ *
+ * No lee ni escribe cookies a propósito: si usara el cliente normal, la sesión
+ * del taller que abre el link del cliente cambiaría lo que se consulta, y una
+ * pantalla pública que se comporta distinto según quién la mira es imposible de
+ * razonar. Acá siempre se consulta como `anon`, que no tiene privilegios sobre
+ * ninguna tabla: todo entra por las funciones de 0030.
+ */
+export function crearClienteAnonimo() {
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      },
+    },
+  );
+}
+
+/**
  * Sesión y contexto del usuario.
  *
  * Devuelve:

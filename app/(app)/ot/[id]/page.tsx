@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { AnularOrden } from "@/components/ot/AnularOrden";
+import { CompartirSeguimiento } from "@/components/ot/CompartirSeguimiento";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
@@ -231,6 +232,17 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
             </div>
           </div>
         </div>
+
+        {/* El link para el cliente. Va arriba del detalle porque en una orden en
+            presupuesto es la acción que sigue: mandarlo para que apruebe. */}
+        <CompartirSeguimiento
+          otId={ot.id}
+          patente={ot.vehiculo.patente}
+          tokenExistente={ot.token_publico}
+          telefonoCliente={ot.cliente?.telefono ?? null}
+          nombreCliente={ot.cliente?.nombre ?? null}
+          tallerNombre={taller?.nombre ?? "el taller"}
+        />
 
         {/* Registro de Pagos */}
         <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />

@@ -668,6 +668,7 @@ export type Database = {
       orden_trabajo: {
         Row: {
           anulada_en: string | null
+          aprobado_cliente_en: string | null
           asignado_a: string | null
           cliente_id: string | null
           creado_en: string
@@ -682,6 +683,8 @@ export type Database = {
           observaciones: string | null
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_ot"]
+          token_expira_en: string | null
+          token_publico: string | null
           total: number
           total_mano_obra: number
           total_repuestos: number
@@ -689,6 +692,7 @@ export type Database = {
         }
         Insert: {
           anulada_en?: string | null
+          aprobado_cliente_en?: string | null
           asignado_a?: string | null
           cliente_id?: string | null
           creado_en?: string
@@ -703,6 +707,8 @@ export type Database = {
           observaciones?: string | null
           taller_id: string
           tipo?: Database["public"]["Enums"]["tipo_ot"]
+          token_expira_en?: string | null
+          token_publico?: string | null
           total?: number
           total_mano_obra?: number
           total_repuestos?: number
@@ -710,6 +716,7 @@ export type Database = {
         }
         Update: {
           anulada_en?: string | null
+          aprobado_cliente_en?: string | null
           asignado_a?: string | null
           cliente_id?: string | null
           creado_en?: string
@@ -724,6 +731,8 @@ export type Database = {
           observaciones?: string | null
           taller_id?: string
           tipo?: Database["public"]["Enums"]["tipo_ot"]
+          token_expira_en?: string | null
+          token_publico?: string | null
           total?: number
           total_mano_obra?: number
           total_repuestos?: number
@@ -1034,6 +1043,7 @@ export type Database = {
           taller_id: string
           texto: string
           tipo: Database["public"]["Enums"]["tipo_nota_ot"]
+          visible_cliente: boolean
         }
         Insert: {
           creado_en?: string
@@ -1046,6 +1056,7 @@ export type Database = {
           taller_id: string
           texto: string
           tipo: Database["public"]["Enums"]["tipo_nota_ot"]
+          visible_cliente?: boolean
         }
         Update: {
           creado_en?: string
@@ -1058,6 +1069,7 @@ export type Database = {
           taller_id?: string
           texto?: string
           tipo?: Database["public"]["Enums"]["tipo_nota_ot"]
+          visible_cliente?: boolean
         }
         Relationships: [
           {
@@ -1696,6 +1708,7 @@ export type Database = {
     Functions: {
       aceptar_invitacion: { Args: { p_token: string }; Returns: string }
       anular_orden: { Args: { p_motivo: string; p_ot: string }; Returns: Json }
+      aprobar_presupuesto_publico: { Args: { p_token: string }; Returns: Json }
       catalogo_pendiente: {
         Args: never
         Returns: {
@@ -1723,6 +1736,10 @@ export type Database = {
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       es_dueno: { Args: never; Returns: boolean }
+      generar_token_seguimiento: {
+        Args: { p_dias?: number; p_ot: string }
+        Returns: string
+      }
       limpiar_rate_limit: { Args: { p_clave: string }; Returns: undefined }
       metricas_taller: {
         Args: { p_desde?: string; p_hasta?: string }
@@ -1785,6 +1802,8 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["rol_usuario"]
       }
+      seguimiento_por_patente: { Args: { p_patente: string }; Returns: Json }
+      seguimiento_por_token: { Args: { p_token: string }; Returns: Json }
       siguiente_numero_ot: { Args: { p_taller: string }; Returns: string }
       taller_actual: { Args: never; Returns: string }
       tiempo_promedio_taller: { Args: { p_desde?: string }; Returns: number }
