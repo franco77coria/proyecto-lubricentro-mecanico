@@ -15,6 +15,7 @@ export const vehiculoSchema = z.object({
     }),
   marcaId: z.string().uuid().optional().or(z.literal("")),
   modeloId: z.string().uuid().optional().or(z.literal("")),
+  motorizacionId: z.string().uuid().optional().or(z.literal("")),
   anio: z.coerce
     .number()
     .int()

@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { PatenteInput } from "@/components/campos/PatenteInput";
+import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
+import type { OpcionCatalogo } from "@/lib/actions/catalogo";
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 
-interface MarcaOption {
-  id: string;
-  nombre: string;
-}
+const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 
-export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
+export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -22,7 +21,7 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
   // Form campos
   const [patente, setPatente] = useState("");
   const [formatoEspecial, setFormatoEspecial] = useState(false);
-  const [marcaId, setMarcaId] = useState("");
+  const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [km, setKm] = useState("");
   const [tipo, setTipo] = useState<"lubricentro" | "mecanica" | "mixto">("lubricentro");
   const [clienteNombre, setClienteNombre] = useState("");
@@ -50,7 +49,10 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
       const formDataVehiculo = new FormData();
       formDataVehiculo.append("patente", patente);
       if (formatoEspecial) formDataVehiculo.append("formatoEspecial", "on");
-      if (marcaId) formDataVehiculo.append("marcaId", marcaId);
+      if (vehiculo.marcaId) formDataVehiculo.append("marcaId", vehiculo.marcaId);
+      if (vehiculo.modeloId) formDataVehiculo.append("modeloId", vehiculo.modeloId);
+      if (vehiculo.motorizacionId)
+        formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
       if (km) formDataVehiculo.append("km", km);
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
@@ -123,33 +125,22 @@ export function FormNuevaOT({ marcas }: { marcas: MarcaOption[] }) {
           onFormatoEspecialChange={setFormatoEspecial}
         />
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-caption text-muted-foreground">Marca</label>
-            <select
-              value={marcaId}
-              onChange={(e) => setMarcaId(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-            >
-              <option value="">Seleccionar marca...</option>
-              {marcas.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
+        <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />
 
-          <div>
-            <label className="text-caption text-muted-foreground">KM de Ingreso</label>
-            <input
-              type="number"
-              placeholder="Ej: 85000"
-              value={km}
-              onChange={(e) => setKm(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-            />
-          </div>
+        <div>
+          <label htmlFor="km-ingreso" className="text-caption text-muted-foreground">
+            KM de Ingreso
+          </label>
+          <input
+            id="km-ingreso"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            placeholder="Ej: 85000"
+            value={km}
+            onChange={(e) => setKm(e.target.value)}
+            className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base font-medium text-foreground focus:border-accent focus:outline-none"
+          />
         </div>
       </section>
 

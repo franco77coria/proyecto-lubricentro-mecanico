@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       checklist_plantilla: {
@@ -441,6 +466,69 @@ export type Database = {
             columns: ["marca_id"]
             isOneToOne: false
             referencedRelation: "marca"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motorizacion: {
+        Row: {
+          anio_desde: number | null
+          anio_hasta: number | null
+          cilindrada_cc: number | null
+          combustible: Database["public"]["Enums"]["tipo_combustible"] | null
+          creado_en: string
+          estado: Database["public"]["Enums"]["estado_catalogo"]
+          fusionado_en_id: string | null
+          id: string
+          modelo_id: string
+          nombre: string
+          nombre_norm: string | null
+          origen: Database["public"]["Enums"]["origen_catalogo"]
+          potencia_cv: number | null
+        }
+        Insert: {
+          anio_desde?: number | null
+          anio_hasta?: number | null
+          cilindrada_cc?: number | null
+          combustible?: Database["public"]["Enums"]["tipo_combustible"] | null
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          fusionado_en_id?: string | null
+          id?: string
+          modelo_id: string
+          nombre: string
+          nombre_norm?: string | null
+          origen?: Database["public"]["Enums"]["origen_catalogo"]
+          potencia_cv?: number | null
+        }
+        Update: {
+          anio_desde?: number | null
+          anio_hasta?: number | null
+          cilindrada_cc?: number | null
+          combustible?: Database["public"]["Enums"]["tipo_combustible"] | null
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          fusionado_en_id?: string | null
+          id?: string
+          modelo_id?: string
+          nombre?: string
+          nombre_norm?: string | null
+          origen?: Database["public"]["Enums"]["origen_catalogo"]
+          potencia_cv?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motorizacion_fusionado_en_id_fkey"
+            columns: ["fusionado_en_id"]
+            isOneToOne: false
+            referencedRelation: "motorizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motorizacion_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelo"
             referencedColumns: ["id"]
           },
         ]
@@ -1428,6 +1516,7 @@ export type Database = {
           km_actualizado_en: string | null
           marca_id: string | null
           modelo_id: string | null
+          motorizacion_id: string | null
           notas: string | null
           patente: string
           patente_norm: string | null
@@ -1445,6 +1534,7 @@ export type Database = {
           km_actualizado_en?: string | null
           marca_id?: string | null
           modelo_id?: string | null
+          motorizacion_id?: string | null
           notas?: string | null
           patente: string
           patente_norm?: string | null
@@ -1462,6 +1552,7 @@ export type Database = {
           km_actualizado_en?: string | null
           marca_id?: string | null
           modelo_id?: string | null
+          motorizacion_id?: string | null
           notas?: string | null
           patente?: string
           patente_norm?: string | null
@@ -1481,6 +1572,13 @@ export type Database = {
             columns: ["modelo_id"]
             isOneToOne: false
             referencedRelation: "modelo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehiculo_motorizacion_id_fkey"
+            columns: ["motorizacion_id"]
+            isOneToOne: false
+            referencedRelation: "motorizacion"
             referencedColumns: ["id"]
           },
           {
@@ -1585,6 +1683,15 @@ export type Database = {
         }[]
       }
       precio_sugerido_producto: { Args: { p_producto: string }; Returns: Json }
+      proponer_marca: { Args: { p_nombre: string }; Returns: string }
+      proponer_modelo: {
+        Args: { p_marca_id: string; p_nombre: string }
+        Returns: string
+      }
+      proponer_motorizacion: {
+        Args: { p_modelo_id: string; p_nombre: string }
+        Returns: string
+      }
       rol_actual: {
         Args: never
         Returns: Database["public"]["Enums"]["rol_usuario"]
@@ -1766,6 +1873,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       estado_catalogo: ["aprobado", "pendiente", "rechazado"],

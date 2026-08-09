@@ -32,6 +32,7 @@ export async function crearVehiculo(
     patente: formData.get("patente"),
     marcaId: formData.get("marcaId") ?? "",
     modeloId: formData.get("modeloId") ?? "",
+    motorizacionId: formData.get("motorizacionId") ?? "",
     anio: formData.get("anio") ?? "",
     color: formData.get("color") ?? "",
     combustible: formData.get("combustible") ?? "",
@@ -56,6 +57,7 @@ export async function crearVehiculo(
         formato_especial: especial,
         marca_id: d.marcaId || null,
         modelo_id: d.modeloId || null,
+        motorizacion_id: d.motorizacionId || null,
         anio: d.anio === "" ? null : Number(d.anio),
         color: d.color || null,
         combustible: d.combustible || null,
@@ -126,47 +128,6 @@ export async function crearVehiculo(
   }
 }
 
-/**
- * Alta de un modelo que no está en el catálogo.
- *
- * Queda como `pendiente` para que un humano lo apruebe o lo fusione después.
- * Lo importante es que no frena a nadie: el mostrador carga el auto y sigue.
- */
-export async function proponerModelo(
-  marcaId: string,
-  nombre: string,
-): Promise<{ id?: string; error?: string }> {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) return { error: "Sesión vencida" };
-
-  const limpio = nombre.trim();
-  if (limpio.length < 1 || limpio.length > 60) return { error: "Nombre de modelo inválido" };
-
-  try {
-    const supabase = await crearClienteServidor();
-    const { data, error } = await supabase
-      .from("modelo")
-      .insert({ marca_id: marcaId, nombre: limpio, origen: "manual", estado: "pendiente" })
-      .select("id")
-      .single();
-
-    if (error) {
-      // Ya existía: se usa el que hay en vez de duplicar.
-      if (error.code === CODIGO_UNICIDAD) {
-        const { data: existente } = await supabase
-          .from("modelo")
-          .select("id")
-          .eq("marca_id", marcaId)
-          .ilike("nombre", limpio)
-          .maybeSingle();
-        if (existente) return { id: existente.id };
-      }
-      console.error("[proponerModelo]", error.code);
-      return { error: "No se pudo agregar el modelo" };
-    }
-    return { id: data.id };
-  } catch (error) {
-    unstable_rethrow(error);
-    return { error: "No se pudo conectar" };
-  }
-}
+// El alta de marca / modelo / motorización que no están en el catálogo vive en
+// `lib/actions/catalogo.ts`: la resolución de duplicados tiene que usar el
+// mismo `normalizar()` que el índice único, así que corre en Postgres.
