@@ -324,6 +324,140 @@ export type Database = {
           },
         ]
       }
+      ficha_tecnica: {
+        Row: {
+          aceite_litros: number | null
+          aceite_norma: string | null
+          aceite_viscosidad: string | null
+          actualizado_en: string
+          caja_aceite: string | null
+          caja_tipo: string | null
+          creado_en: string
+          diferencial: string | null
+          direccion_hidraulica: string | null
+          estado: Database["public"]["Enums"]["estado_catalogo"]
+          filtro_aceite: string | null
+          filtro_aire: string | null
+          filtro_combustible: string | null
+          filtro_habitaculo: string | null
+          liquido_frenos: string | null
+          motorizacion_id: string
+          notas: string | null
+          refrigerante: string | null
+          service_km: number | null
+          service_meses: number | null
+          taller_origen_id: string | null
+          verificada: boolean
+        }
+        Insert: {
+          aceite_litros?: number | null
+          aceite_norma?: string | null
+          aceite_viscosidad?: string | null
+          actualizado_en?: string
+          caja_aceite?: string | null
+          caja_tipo?: string | null
+          creado_en?: string
+          diferencial?: string | null
+          direccion_hidraulica?: string | null
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          filtro_aceite?: string | null
+          filtro_aire?: string | null
+          filtro_combustible?: string | null
+          filtro_habitaculo?: string | null
+          liquido_frenos?: string | null
+          motorizacion_id: string
+          notas?: string | null
+          refrigerante?: string | null
+          service_km?: number | null
+          service_meses?: number | null
+          taller_origen_id?: string | null
+          verificada?: boolean
+        }
+        Update: {
+          aceite_litros?: number | null
+          aceite_norma?: string | null
+          aceite_viscosidad?: string | null
+          actualizado_en?: string
+          caja_aceite?: string | null
+          caja_tipo?: string | null
+          creado_en?: string
+          diferencial?: string | null
+          direccion_hidraulica?: string | null
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          filtro_aceite?: string | null
+          filtro_aire?: string | null
+          filtro_combustible?: string | null
+          filtro_habitaculo?: string | null
+          liquido_frenos?: string | null
+          motorizacion_id?: string
+          notas?: string | null
+          refrigerante?: string | null
+          service_km?: number | null
+          service_meses?: number | null
+          taller_origen_id?: string | null
+          verificada?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ficha_tecnica_motorizacion_id_fkey"
+            columns: ["motorizacion_id"]
+            isOneToOne: true
+            referencedRelation: "motorizacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ficha_tecnica_taller_origen_id_fkey"
+            columns: ["taller_origen_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      filtro_equivalencia: {
+        Row: {
+          codigo_a: string
+          codigo_b: string
+          creado_en: string
+          estado: Database["public"]["Enums"]["estado_catalogo"]
+          id: string
+          marca_a: string | null
+          marca_b: string | null
+          taller_origen_id: string | null
+          tipo: string | null
+        }
+        Insert: {
+          codigo_a: string
+          codigo_b: string
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          id?: string
+          marca_a?: string | null
+          marca_b?: string | null
+          taller_origen_id?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          codigo_a?: string
+          codigo_b?: string
+          creado_en?: string
+          estado?: Database["public"]["Enums"]["estado_catalogo"]
+          id?: string
+          marca_a?: string | null
+          marca_b?: string | null
+          taller_origen_id?: string | null
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filtro_equivalencia_taller_origen_id_fkey"
+            columns: ["taller_origen_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intento_auth: {
         Row: {
           clave: string
@@ -1735,7 +1869,16 @@ export type Database = {
         Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      equivalencias_filtro: {
+        Args: { p_codigo: string }
+        Returns: {
+          codigo: string
+          marca: string
+          tipo: string
+        }[]
+      }
       es_dueno: { Args: never; Returns: boolean }
+      ficha_de_vehiculo: { Args: { p_vehiculo: string }; Returns: Json }
       generar_token_seguimiento: {
         Args: { p_dias?: number; p_ot: string }
         Returns: string

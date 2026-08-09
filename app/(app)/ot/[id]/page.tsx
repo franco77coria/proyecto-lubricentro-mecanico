@@ -11,8 +11,10 @@ import { EditorNotas } from "@/components/ot/EditorNotas";
 import { EstadoSwitcher } from "@/components/ot/EstadoSwitcher";
 import { FirmaCliente } from "@/components/ot/FirmaCliente";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
+import { PanelFicha } from "@/components/ot/PanelFicha";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
 import { fotosDeOT } from "@/lib/actions/fotos";
+import { obtenerFicha } from "@/lib/actions/ficha";
 import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -155,10 +157,11 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
 
   // Fotos, firma y los dos catálogos que alimentan el editor de ítems. Todo en
   // paralelo: son consultas independientes y encadenarlas solo suma latencia.
-  const [fotos, { data: recepcion }, servicios, { data: productos }] = await Promise.all([
+  const [fotos, { data: recepcion }, servicios, ficha, { data: productos }] = await Promise.all([
     fotosDeOT(ot.id),
     supabase.from("ot_recepcion").select("firma_recepcion_url").eq("ot_id", ot.id).maybeSingle(),
     listarServicios(),
+    obtenerFicha(ot.vehiculo.id),
     supabase
       .from("producto")
       .select("id, nombre, precio_venta, stock, unidad")
@@ -253,6 +256,10 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         <EditorNotas otId={ot.id} tipo="anomalia" notas={notasEditor} />
         <EditorNotas otId={ot.id} tipo="descargo" notas={notasEditor} />
         <EditorNotas otId={ot.id} tipo="recomendado" notas={notasEditor} />
+
+        {/* Lo que lleva este motor. Va antes de los ítems porque es lo que se
+            consulta para armarlos. */}
+        <PanelFicha ficha={ficha} otId={ot.id} vehiculoId={ot.vehiculo.id} />
 
         {/* Trabajos y Repuestos */}
         <section className="space-y-3">
