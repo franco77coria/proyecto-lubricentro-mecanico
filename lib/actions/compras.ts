@@ -69,6 +69,98 @@ export async function crearProveedor(datos: DatosProveedor): Promise<{ id?: stri
   }
 }
 
+export interface LineaRemito {
+  itemId: string;
+  producto: string;
+  unidad: string;
+  cantidad: number;
+  costoUnitario: number;
+  subtotal: number;
+}
+
+/**
+ * El detalle de un remito ya cargado.
+ *
+ * Entra por la función de 0034 y no por la tabla: `compra_item.costo_unitario`
+ * tiene el SELECT revocado para `authenticated` (0007), y el Server Action corre
+ * con ese mismo rol. La guarda de rol vive adentro de la función.
+ */
+export async function obtenerDetalleCompra(
+  compraId: string,
+): Promise<{ lineas?: LineaRemito[]; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { data, error } = await supabase.rpc("compra_detalle", { p_compra: compraId });
+
+    if (error) {
+      console.error("[obtenerDetalleCompra]", error.code);
+      return { error: "No se pudo abrir el remito." };
+    }
+
+    return {
+      lineas: (data ?? []).map((l) => ({
+        itemId: l.item_id,
+        producto: l.producto,
+        unidad: l.unidad,
+        cantidad: Number(l.cantidad),
+        costoUnitario: Number(l.costo_unitario),
+        subtotal: Number(l.subtotal),
+      })),
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar." };
+  }
+}
+
+/**
+ * Borra un renglón mal cargado.
+ *
+ * Es borrar y volver a cargar, no editar: el trigger `compra_item_costo_bu`
+ * (0007) rechaza cambiar un costo ya registrado a propósito, porque un costo que
+ * se puede reescribir después deja de ser evidencia de lo que se pagó.
+ *
+ * El stock se corrige solo — el movimiento cae por la cascada de
+ * `compra_item_id` (0027) y el trigger del ledger descuenta el saldo.
+ */
+export async function borrarLineaRemito(
+  compraId: string,
+  itemId: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Las compras las corrige el mostrador o el dueño." };
+  }
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("compra_item")
+      .delete()
+      .eq("id", itemId)
+      .eq("compra_id", compraId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[borrarLineaRemito]", error.code);
+      return { error: "No se pudo borrar el renglón." };
+    }
+
+    revalidatePath("/compras");
+    // El renglón devolvió su stock: sin esto el inventario se sigue viendo con
+    // el saldo de antes.
+    revalidatePath("/stock");
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar." };
+  }
+}
+
 /**
  * Carga el remito completo.
  *

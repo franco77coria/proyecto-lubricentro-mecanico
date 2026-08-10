@@ -1936,6 +1936,18 @@ export type Database = {
         Args: { p_clave: string; p_max?: number; p_ventana?: string }
         Returns: Json
       }
+      compra_detalle: {
+        Args: { p_compra: string }
+        Returns: {
+          cantidad: number
+          costo_unitario: number
+          item_id: string
+          producto: string
+          producto_id: string
+          subtotal: number
+          unidad: string
+        }[]
+      }
       costo_actual_producto: { Args: { p_producto: string }; Returns: number }
       crear_checklist_default: { Args: { p_taller: string }; Returns: string }
       crear_taller: {

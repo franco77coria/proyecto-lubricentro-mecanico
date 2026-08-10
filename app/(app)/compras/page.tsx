@@ -1,6 +1,7 @@
 import { Truck } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { DetalleRemito } from "@/components/compras/DetalleRemito";
 import { FormCompra } from "@/components/compras/FormCompra";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { listarProveedores } from "@/lib/actions/compras";
@@ -40,6 +41,10 @@ export default async function PaginaCompras() {
   ]);
 
   const lista = compras ?? [];
+  // El mecánico ya salió por el redirect de arriba, así que todo el que llega
+  // acá puede corregir. El prop existe igual para que el componente no tenga
+  // que dar por sentado quién lo está usando.
+  const puedeCorregir = true;
   const productosOpcion = (productos ?? []).map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -85,24 +90,32 @@ export default async function PaginaCompras() {
             {lista.map((c, i) => (
               <li
                 key={c.id}
-                className="tarjeta entrar flex items-center gap-3 p-3.5"
+                className="tarjeta entrar p-3.5"
                 style={{ "--i": i + 2 } as React.CSSProperties}
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-muted text-muted-foreground">
-                  <Truck className="h-4.5 w-4.5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">
-                    {c.proveedor?.nombre ?? "Proveedor sin especificar"}
+                <div className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-muted text-muted-foreground">
+                    <Truck className="h-4.5 w-4.5" aria-hidden />
                   </span>
-                  <span className="block truncate text-caption text-muted-foreground">
-                    {fechaCorta(c.fecha)}
-                    {c.comprobante ? ` · ${c.comprobante}` : ""}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-foreground">
+                      {c.proveedor?.nombre ?? "Proveedor sin especificar"}
+                    </span>
+                    <span className="block truncate text-caption text-muted-foreground">
+                      {fechaCorta(c.fecha)}
+                      {c.comprobante ? ` · ${c.comprobante}` : ""}
+                    </span>
                   </span>
-                </span>
-                <span className="tabular shrink-0 text-sm font-bold text-foreground">
-                  {money(Number(c.total ?? 0))}
-                </span>
+                  <span className="tabular shrink-0 text-sm font-bold text-foreground">
+                    {money(Number(c.total ?? 0))}
+                  </span>
+                </div>
+
+                <DetalleRemito
+                  compraId={c.id}
+                  comprobante={c.comprobante}
+                  puedeCorregir={puedeCorregir}
+                />
               </li>
             ))}
           </ul>
