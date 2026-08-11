@@ -8,7 +8,7 @@ import Anthropic from "@anthropic-ai/sdk";
  * de IA (diagnóstico y traducción) comparten todo eso.
  */
 
-export const MODELO_IA = "claude-opus-5";
+export const MODELO_IA = "claude-3-5-sonnet-latest";
 
 /**
  * La feature es OPCIONAL y tiene que poder no estar.

@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { AnularOrden } from "@/components/ot/AnularOrden";
 import { AsistenteIA } from "@/components/ot/AsistenteIA";
 import { CompartirSeguimiento } from "@/components/ot/CompartirSeguimiento";
+import { BotonCrearPresupuesto } from "@/components/ot/BotonCrearPresupuesto";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
@@ -194,7 +195,10 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
             <ArrowLeft className="h-4 w-4" />
             <span>Volver al Tablero</span>
           </Link>
-          <BotonPDFWhatsApp ot={datosPdf} />
+          <div className="flex items-center gap-2">
+            <BotonCrearPresupuesto otId={ot.id} estadoActual={ot.estado} />
+            <BotonPDFWhatsApp ot={datosPdf} />
+          </div>
         </div>
 
         {/* Encabezado OT */}

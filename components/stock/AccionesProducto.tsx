@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownToLine, ClipboardList, History, X } from "lucide-react";
+import { ArrowDownToLine, ClipboardList, History, Pencil, Trash2, X } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import {
@@ -11,6 +11,7 @@ import {
   ingresarStock,
   type MovimientoHistorial,
 } from "@/lib/actions/movimientos";
+import { editarProducto, eliminarProducto } from "@/lib/actions/stock";
 
 const ETIQUETA_TIPO: Record<string, string> = {
   compra: "Ingreso",
@@ -32,15 +33,24 @@ export function AccionesProducto({
   nombre,
   stock,
   unidad,
+  precioVenta,
+  marca,
 }: {
   productoId: string;
   nombre: string;
   stock: number;
   unidad: string;
+  precioVenta?: number;
+  marca?: string;
 }) {
   const router = useRouter();
   const { notificar } = useIsla();
-  const [abierto, setAbierto] = useState<"ingreso" | "ajuste" | "historial" | null>(null);
+  const [abierto, setAbierto] = useState<"ingreso" | "ajuste" | "historial" | "editar" | "eliminar" | null>(null);
+
+  // Editar fields
+  const [editNombre, setEditNombre] = useState(nombre);
+  const [editMarca, setEditMarca] = useState(marca || "");
+  const [editPrecio, setEditPrecio] = useState(String(precioVenta || 0));
   const [pendiente, iniciar] = useTransition();
   const [historial, setHistorial] = useState<MovimientoHistorial[] | null>(null);
 
@@ -90,6 +100,31 @@ export function AccionesProducto({
     });
   }
 
+  function guardarEdicion(e: React.FormEvent) {
+    e.preventDefault();
+    iniciar(async () => {
+      const res = await editarProducto(productoId, {
+        nombre: editNombre,
+        marca: editMarca || undefined,
+        precioVenta: Number(editPrecio),
+      });
+      if (res.error) return notificar({ tipo: "error", mensaje: res.error });
+      notificar({ tipo: "exito", mensaje: `${editNombre} actualizado` });
+      cerrar();
+      router.refresh();
+    });
+  }
+
+  function confirmarEliminar() {
+    iniciar(async () => {
+      const res = await eliminarProducto(productoId);
+      if (res.error) return notificar({ tipo: "error", mensaje: res.error });
+      notificar({ tipo: "exito", mensaje: `${nombre} eliminado del inventario` });
+      cerrar();
+      router.refresh();
+    });
+  }
+
   return (
     <>
       <div className="flex shrink-0 gap-1">
@@ -101,6 +136,12 @@ export function AccionesProducto({
         </BotonIcono>
         <BotonIcono etiqueta="Ver movimientos" onClick={abrirHistorial}>
           <History className="h-4 w-4" aria-hidden />
+        </BotonIcono>
+        <BotonIcono etiqueta="Editar producto" onClick={() => setAbierto("editar")}>
+          <Pencil className="h-4 w-4" aria-hidden />
+        </BotonIcono>
+        <BotonIcono etiqueta="Eliminar producto" onClick={() => setAbierto("eliminar")}>
+          <Trash2 className="h-4 w-4" aria-hidden />
         </BotonIcono>
       </div>
 
@@ -221,6 +262,57 @@ export function AccionesProducto({
                     ))}
                   </ul>
                 )}
+              </div>
+            )}
+
+            {abierto === "editar" && (
+              <form onSubmit={guardarEdicion} className="space-y-3">
+                <Campo
+                  etiqueta="Nombre del producto"
+                  required
+                  autoFocus
+                  value={editNombre}
+                  onChange={(e) => setEditNombre(e.target.value)}
+                />
+                <Campo
+                  etiqueta="Marca"
+                  value={editMarca}
+                  onChange={(e) => setEditMarca(e.target.value)}
+                />
+                <Campo
+                  etiqueta="Precio de venta ($)"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={editPrecio}
+                  onChange={(e) => setEditPrecio(e.target.value)}
+                />
+                <Enviar pendiente={pendiente} texto="Guardar cambios" />
+              </form>
+            )}
+
+            {abierto === "eliminar" && (
+              <div className="space-y-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  ¿Seguro que querés eliminar <strong>{nombre}</strong>? Si tiene movimientos de stock o fue usado en una orden, no se podrá borrar.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={cerrar}
+                    className="flex-1 min-h-11 rounded-[var(--radius-sm)] border border-border text-sm font-semibold text-foreground hover:bg-muted"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pendiente}
+                    onClick={confirmarEliminar}
+                    className="flex-1 min-h-11 rounded-[var(--radius-sm)] bg-destructive text-sm font-semibold text-white hover:bg-destructive/90 disabled:opacity-60"
+                  >
+                    {pendiente ? "Eliminando…" : "Sí, eliminar"}
+                  </button>
+                </div>
               </div>
             )}
           </div>

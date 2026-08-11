@@ -44,13 +44,20 @@ export function Sidebar({ taller, usuario, rol }: SidebarProps) {
         </span>
       </div>
 
-      <div className="px-3 pb-3">
+      <div className="flex flex-col gap-2 px-3 pb-3">
         <Link
           href="/ot/nueva"
           className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-accent text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Nueva orden
+        </Link>
+        <Link
+          href="/presupuestos/nueva"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-accent bg-transparent text-sm font-semibold text-accent transition-transform hover:bg-accent/10 active:scale-[0.98]"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+          Nuevo presupuesto
         </Link>
       </div>
 

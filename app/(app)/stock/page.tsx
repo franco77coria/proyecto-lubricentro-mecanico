@@ -143,6 +143,8 @@ export default async function PaginaStock({
                       nombre={p.nombre}
                       stock={stock}
                       unidad={p.unidad}
+                      precioVenta={Number(p.precio_venta ?? 0)}
+                      marca={p.marca ?? undefined}
                     />
                   )}
                 </li>

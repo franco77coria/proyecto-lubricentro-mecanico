@@ -88,7 +88,9 @@ export function ComprobanteOT({ ot }: { ot: DatosComprobante }) {
           {ot.taller.cuit && <p className="cmp-taller-datos">CUIT {ot.taller.cuit}</p>}
         </div>
         <div className="cmp-numero-caja">
-          <span className="cmp-etiqueta">Orden de trabajo</span>
+          <span className="cmp-etiqueta">
+            {ot.estado === "presupuesto" ? "Presupuesto" : "Orden de trabajo"}
+          </span>
           <span className="cmp-numero">{ot.numero}</span>
           <span className="cmp-fecha">{fechaLarga(ot.fecha_ingreso)}</span>
         </div>
