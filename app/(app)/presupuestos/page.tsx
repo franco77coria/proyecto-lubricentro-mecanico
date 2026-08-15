@@ -1,4 +1,4 @@
-import { Plus, FileText, Search } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { listarPresupuestos } from "@/lib/actions/presupuestos";
 import { TarjetaPresupuesto } from "./TarjetaPresupuesto";

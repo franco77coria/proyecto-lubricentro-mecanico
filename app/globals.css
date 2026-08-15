@@ -13,73 +13,186 @@
    ========================================================================== */
 
 :root {
-  /* --- Superficies y texto --- */
-  --background: #f8fafc;
-  --card: #ffffff;
-  --foreground: #0f172a;
-  --muted: #e9edf1;
-  --muted-foreground: #64748b; /* 4.6:1 sobre --card */
-  --border: #e2e8f0;
+  /* --- Superficies y texto (Premium Dark/Carbon) --- */
+  --background: #09090b; /* Zinc 950 */
+  --card: #18181b; /* Zinc 900 */
+  --foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa; 
+  --border: #27272a;
 
   /* --- Marca --- */
-  --primary: #1e293b;
-  --primary-foreground: #ffffff;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
 
-  /* Naranja de seguridad.
-     Medido, no elegido a ojo: #f97316 (el naranja "lindo" de Tailwind) no
-     llega ni a 3:1. #ea580c llega a 3:1 —suficiente para iconos y bordes—
-     pero con texto blanco encima da 3.56:1 y el mínimo para texto es 4.5:1.
-     #c2410c da 5.18:1 con blanco encima y 4.95:1 como texto sobre el fondo
-     claro, así que sirve para las dos cosas. Un solo token en vez de dos
-     evita tener que decidir cuál va en cada componente. */
-  --accent: #c2410c;
+  /* Naranja brillante (Neon/Budarina style) */
+  --accent: #f97316;
   --accent-foreground: #ffffff;
 
-  /* Reservado para destructivo y crítico. Nunca como acento decorativo:
-     el checklist necesita que el rojo signifique una sola cosa. */
-  --destructive: #dc2626;
+  /* Destructivo */
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  /* --- Estados del checklist ---
-     Cada uno se acompaña SIEMPRE de un icono distinto en la UI.
-     El color no puede ser el único indicador (sol en el taller + daltonismo). */
-  --estado-ok: #15803d;
-  --estado-observado: #b45309;
-  --estado-critico: #dc2626;
-  --estado-na: #94a3b8;
+  /* --- Estados --- */
+  --estado-ok: #22c55e;
+  --estado-observado: #f59e0b;
+  --estado-critico: #ef4444;
+  --estado-na: #71717a;
 
-  --ring: #c2410c;
+  --ring: #f97316;
 
   /* --- Forma --- */
   --radius-sm: 0.75rem;
   --radius-md: 1rem;
   --radius-lg: 1.5rem;
 
-  /* --- Safe areas (iOS notch / home indicator) --- */
+  /* --- Safe areas --- */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 
-  /* --- Alturas del chrome flotante ---
-     Las listas suman estos valores como padding para que el contenido
-     no quede tapado por la isla ni por la barra inferior. */
   --isla-height: 3.25rem;
   --barra-height: 4.25rem;
   --sidebar-ancho: 15rem;
 
-  /* --- Sombras en capas ---
-     Una sola sombra grande se ve como una mancha. Dos capas —una corta y
-     cerrada para definir el borde, otra larga y difusa para la distancia—
-     es lo que hace que una tarjeta parezca apoyada sobre el fondo. */
-  --sombra-sutil: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
-  --sombra-media: 0 2px 4px rgb(15 23 42 / 0.04), 0 6px 16px rgb(15 23 42 / 0.08);
-  --sombra-alta: 0 4px 8px rgb(15 23 42 / 0.06), 0 16px 40px rgb(15 23 42 / 0.14);
+  /* --- Sombras (Neón/Dark) --- */
+  --sombra-sutil: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --sombra-media: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --sombra-alta: 0 12px 40px rgba(249, 115, 22, 0.15), 0 0 0 1px rgba(249, 115, 22, 0.3);
 
-  /* Tinte del acento para fondos suaves, sin tener que escribir opacidades
-     sueltas en cada componente. */
-  --accent-suave: #fff1e9;
-  --accent-borde: #fbd5c0;
+  --accent-suave: rgba(249, 115, 22, 0.1);
+  --accent-borde: rgba(249, 115, 22, 0.3);
+}
+
+/* ==========================================================================
+   Tema Marketing (Editorial / Budarina)
+   Escopeado al route group (marketing): reusa los mismos nombres de token
+   que el resto de la app (--background, --accent, etc.), así todas las
+   clases bg-background / text-foreground / shadow-alta existentes se
+   reciclan gratis acá dentro, sin tocar el dark carbon del panel interno.
+   ========================================================================== */
+
+.tema-marketing {
+  /* Oscuro, del mismo tono que el video de fondo: las superficies son
+     translúcidas para que el video se insinúe a través de las secciones en
+     vez de taparlo con paneles opacos. */
+  --background: #0a0a0a;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-elevada: rgba(255, 255, 255, 0.09);
+  --foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.12);
+  --muted-foreground: #a2a2a8;
+  --border: rgba(255, 255, 255, 0.12);
+
+  --accent: #e2571f;
+  --accent-foreground: #ffffff;
+  --ring: #e2571f;
+
+  /* En fondo oscuro una sombra no se ve: la elevación la da el borde claro. */
+  --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-media: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --sombra-alta: 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+
+  --accent-suave: rgba(226, 87, 31, 0.14);
+  --accent-borde: rgba(226, 87, 31, 0.35);
+
+  /* Radios grandes — es la firma más reconocible del sistema. */
+  --radius-sm: 1rem;
+  --radius-md: 1.375rem;
+  --radius-lg: 2rem;
+}
+
+/* Titulares: peso 600 y tracking muy apretado (-0.05em) a tamaño grande.
+   Sin esto el sans se lee genérico por más que el tamaño sea correcto.
+   La font se referencia directo — encadenar var() sobre un token de
+   `@theme inline` deja la declaración inválida y cae al font heredado. */
+.tema-marketing :is(.t-hero, .t-titulo, .t-card) {
+  font-family: var(--font-jakarta), var(--font-inter), var(--font-sans);
+}
+
+/* Minimalismo exagerado: el titular es el elemento gráfico de la página, no
+   un rótulo sobre ella. De ahí el salto de tamaño y el interlineado por
+   debajo de 1 — a este cuerpo, 1.1 ya se lee flojo. */
+.tema-marketing .t-hero {
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+  font-size: clamp(3rem, 1.5rem + 7.5vw, 7rem);
+}
+
+.tema-marketing .t-titulo {
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  font-size: clamp(2.5rem, 1.4rem + 4.6vw, 5rem);
+}
+
+.tema-marketing .t-card {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+}
+
+/* Etiqueta de sección: el escalón que le falta a la jerarquía. Sin esto el
+   salto del titular al cuerpo es tan grande que la página se lee plana. */
+.tema-marketing .t-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Números grandes (métricas, pasos): tracking aún más apretado que los
+   titulares, porque las cifras tienen más aire lateral propio. */
+.tema-marketing .t-metrica {
+  font-family: var(--font-jakarta), var(--font-inter), var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.25rem);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ritmo vertical único para todas las secciones: cuando cada una elige su
+   propio padding, la página pierde pulso al scrollear. Escala espaciosa —
+   el aire entre bloques es lo que separa "minimalista" de "vacío". */
+.tema-marketing .seccion {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  padding-block: clamp(6rem, 3rem + 11vw, 12rem);
+}
+
+@media (min-width: 640px) {
+  .tema-marketing .seccion {
+    padding-inline: 2.5rem;
+  }
+}
+
+/* Línea de corte entre secciones: en un layout sin cajas, la hairline es lo
+   único que marca dónde termina un bloque y empieza el siguiente. */
+.tema-marketing .regla {
+  height: 1px;
+  width: 100%;
+  background: var(--border);
+}
+
+/* Sin esto, saltar a un ancla deja el título tapado por la barra flotante. */
+.tema-marketing [id] {
+  scroll-margin-top: 6.5rem;
+}
+
+/* Desplazamiento suave para los saltos de la barra. Se apaga con movimiento
+   reducido: un salto largo animado es justo lo que molesta a quien lo activó. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.tema-marketing) {
+    scroll-behavior: smooth;
+  }
 }
 
 @theme inline {
@@ -111,6 +224,8 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-barlow-condensed), var(--font-sans);
+
+  --color-card-elevada: var(--card-elevada);
 
   --color-accent-suave: var(--accent-suave);
   --color-accent-borde: var(--accent-borde);
@@ -452,13 +567,82 @@ nav {
    se aplica en ningún navegador actual. Las utilidades `backdrop-blur-*` de
    Tailwind sí emiten la propiedad correcta, así que el blur se pone en el
    componente y acá quedan solo el fondo y el borde. */
-.material {
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  border: 1px solid color-mix(in srgb, white 40%, transparent);
-}
-
-/* Elevación de las superficies grandes: leen como más gruesas que los chips.
-   Es un MODIFICADOR — se usa junto a `material`, nunca sola. */
 .material-thick {
   box-shadow: 0 8px 32px rgb(15 23 42 / 0.12);
 }
+
+/* ==========================================================================
+   Utilidades Automotrices & Ergonomía de Fosa / Taller
+   ========================================================================== */
+
+.bg-carbon {
+  background-color: #121215;
+  background-image: 
+    radial-gradient(rgba(249, 115, 22, 0.04) 1px, transparent 0),
+    radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.border-metal {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.touch-target-pit {
+  min-height: 3rem; /* 48px */
+  touch-action: manipulation;
+  user-select: none;
+}
+
+/* Ocultar badge de desarrollo Next.js / dev indicators */
+nextjs-portal,
+[data-nextjs-toast],
+[data-nextjs-dev-indicator],
+#nextjs-dev-indicator {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Listas desplegables (Selects) & Controles de Fecha Modernos
+   ========================================================================== */
+
+select,
+.select-moderno {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--card);
+  color: var(--foreground);
+  color-scheme: dark;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23f97316%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  padding-right: 2.5rem;
+}
+
+select option {
+  background-color: #18181b;
+  color: #f4f4f5;
+  padding: 12px;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.8) sepia(1) saturate(5) hue-rotate(340deg);
+  opacity: 0.85;
+  padding: 4px;
+}
+
+

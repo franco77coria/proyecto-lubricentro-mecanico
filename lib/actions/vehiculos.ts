@@ -13,11 +13,9 @@ type ParcheVehiculo = Database["public"]["Tables"]["vehiculo"]["Update"];
 
 export interface ResultadoVehiculo {
   error?: string;
-  /** Cuando la patente ya existe, se devuelve el auto para poder abrirlo en
-   *  vez de tratarlo como un error. Cargar dos veces el mismo auto no es un
-   *  fallo del usuario: es que el auto ya estuvo acá. */
-  duplicado?: { id: string; patente: string; descripcion: string };
-  creado?: { id: string; patente: string };
+  duplicado?: { id: string; patente: string; descripcion: string; clienteId?: string };
+  creado?: { id: string; patente: string; clienteId?: string };
+  clienteId?: string;
 }
 
 const CODIGO_UNICIDAD = "23505";
@@ -120,18 +118,29 @@ export async function crearVehiculo(
             if (errorParche) console.error("[crearVehiculo/completar]", errorParche.code);
           }
 
+          // Buscar si el auto ya tiene cliente activo
+          const { data: vc } = await supabase
+            .from("vehiculo_cliente")
+            .select("cliente_id")
+            .eq("vehiculo_id", existente.id)
+            .is("hasta", null)
+            .maybeSingle();
+
           const partes = [
             existente.marca?.nombre,
             existente.modelo?.nombre,
             existente.motorizacion?.nombre,
             existente.anio ? String(existente.anio) : null,
           ].filter(Boolean);
+
           return {
             duplicado: {
               id: existente.id,
               patente: existente.patente,
               descripcion: partes.length ? partes.join(" ") : "sin datos de modelo",
+              clienteId: vc?.cliente_id,
             },
+            clienteId: vc?.cliente_id,
           };
         }
       }
@@ -141,6 +150,7 @@ export async function crearVehiculo(
 
     // Cliente opcional. Si falla, el auto ya quedó cargado: se avisa pero no
     // se pierde el trabajo hecho.
+    let nuevoClienteId: string | undefined = undefined;
     if (d.clienteNombre?.trim()) {
       const { data: cliente, error: errorCliente } = await supabase
         .from("cliente")
@@ -158,6 +168,7 @@ export async function crearVehiculo(
         return { creado: vehiculo, error: "El auto se guardó, pero el cliente no. Cargalo desde la ficha." };
       }
 
+      nuevoClienteId = cliente.id;
       await supabase.from("vehiculo_cliente").insert({
         taller_id: tallerId,
         vehiculo_id: vehiculo.id,
@@ -166,7 +177,10 @@ export async function crearVehiculo(
     }
 
     revalidatePath("/vehiculos");
-    return { creado: vehiculo };
+    return {
+      creado: { id: vehiculo.id, patente: vehiculo.patente, clienteId: nuevoClienteId },
+      clienteId: nuevoClienteId,
+    };
   } catch (error) {
     unstable_rethrow(error);
     return { error: "No se pudo conectar. Probá de nuevo." };

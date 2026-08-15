@@ -147,9 +147,12 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         });
       }
 
+      const clienteId = resVehiculo.clienteId || resVehiculo.creado?.clienteId || resVehiculo.duplicado?.clienteId;
+
       // 2. Crear la Orden de Trabajo
       const resOT = await crearOrdenTrabajo({
         vehiculoId,
+        clienteId,
         tipo,
         kmIngreso: km ? Number(km) : 0,
         observaciones: observaciones.trim() || undefined,

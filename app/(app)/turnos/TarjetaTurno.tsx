@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useOptimistic } from "react";
-import { Clock, MoreVertical, CheckCircle2, User, Car, Phone } from "lucide-react";
+import { Clock, CheckCircle2, User, Car, Phone } from "lucide-react";
 import { type Turno, cambiarEstadoTurno, type EstadoTurno } from "@/lib/actions/turnos";
 import { useIsla } from "@/components/isla/IslaContext";
 

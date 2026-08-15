@@ -1,6 +1,5 @@
 import { Client } from 'pg';
 import fs from 'fs';
-import path from 'path';
 
 const envContent = fs.readFileSync('.env.local', 'utf8');
 let dbUrl = '';

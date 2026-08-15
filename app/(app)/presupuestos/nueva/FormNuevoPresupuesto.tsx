@@ -42,38 +42,31 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   
   // Ficha Tecnica
   const [ficha, setFicha] = useState<Partial<FichaTecnica> | null>(null);
-  const [cargandoFicha, setCargandoFicha] = useState(false);
 
   useEffect(() => {
     let ignore = false;
     
-    if (!vehiculo.motorizacionId) {
-      setFicha(null);
-      return;
+    if (vehiculo.motorizacionId) {
+      obtenerFichaPorMotorizacion(vehiculo.motorizacionId)
+        .then(data => {
+          if (!ignore) {
+            setFicha(data ?? null);
+          }
+        })
+        .catch(err => {
+          console.error("Error al cargar ficha:", err);
+          if (!ignore) {
+            setFicha(null);
+          }
+        });
     }
-    
-    setCargandoFicha(true);
-    
-    obtenerFichaPorMotorizacion(vehiculo.motorizacionId)
-      .then(data => {
-        if (!ignore) {
-          // Si data es nulo/indefinido, dejamos la ficha en null para no renderizar tarjetas vacías
-          setFicha(data ?? null);
-          setCargandoFicha(false);
-        }
-      })
-      .catch(err => {
-        console.error("Error al cargar ficha:", err);
-        if (!ignore) {
-          setFicha(null);
-          setCargandoFicha(false);
-        }
-      });
       
     return () => {
       ignore = true;
     };
   }, [vehiculo.motorizacionId]);
+
+  const fichaAMostrar = vehiculo.motorizacionId ? ficha : null;
 
   const handleAgregarItem = () => {
     setItems((prev) => [
@@ -82,7 +75,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
     ]);
   };
 
-  const handleUpdateItem = (id: string, campo: keyof ItemTemporal, valor: any) => {
+  const handleUpdateItem = (id: string, campo: keyof ItemTemporal, valor: string | number) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [campo]: valor } : it)));
   };
 
@@ -188,26 +181,24 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         {vehiculo.motorizacionId && (
           <div className="rounded-xl border-2 border-blue-500/20 bg-blue-500/5 p-4 mt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-2">Base Técnica del Vehículo</h3>
-            {cargandoFicha ? (
-              <p className="text-sm text-muted-foreground animate-pulse">Cargando especificaciones...</p>
-            ) : ficha ? (
+            {fichaAMostrar ? (
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {ficha.aceite_litros && (
-                  <div><span className="text-muted-foreground font-medium">Aceite:</span> {ficha.aceite_litros}L {ficha.aceite_viscosidad}</div>
+                {fichaAMostrar.aceite_litros && (
+                  <div><span className="text-muted-foreground font-medium">Aceite:</span> {fichaAMostrar.aceite_litros}L {fichaAMostrar.aceite_viscosidad}</div>
                 )}
-                {ficha.filtro_aceite && (
-                  <div><span className="text-muted-foreground font-medium">F. Aceite:</span> {ficha.filtro_aceite}</div>
+                {fichaAMostrar.filtro_aceite && (
+                  <div><span className="text-muted-foreground font-medium">F. Aceite:</span> {fichaAMostrar.filtro_aceite}</div>
                 )}
-                {ficha.filtro_aire && (
-                  <div><span className="text-muted-foreground font-medium">F. Aire:</span> {ficha.filtro_aire}</div>
+                {fichaAMostrar.filtro_aire && (
+                  <div><span className="text-muted-foreground font-medium">F. Aire:</span> {fichaAMostrar.filtro_aire}</div>
                 )}
-                {ficha.filtro_combustible && (
-                  <div><span className="text-muted-foreground font-medium">F. Comb.:</span> {ficha.filtro_combustible}</div>
+                {fichaAMostrar.filtro_combustible && (
+                  <div><span className="text-muted-foreground font-medium">F. Comb.:</span> {fichaAMostrar.filtro_combustible}</div>
                 )}
-                {ficha.filtro_habitaculo && (
-                  <div><span className="text-muted-foreground font-medium">F. Hab.:</span> {ficha.filtro_habitaculo}</div>
+                {fichaAMostrar.filtro_habitaculo && (
+                  <div><span className="text-muted-foreground font-medium">F. Hab.:</span> {fichaAMostrar.filtro_habitaculo}</div>
                 )}
-                {!ficha.aceite_litros && !ficha.filtro_aceite && (
+                {!fichaAMostrar.aceite_litros && !fichaAMostrar.filtro_aceite && (
                   <div className="col-span-2 text-muted-foreground text-xs italic">La ficha existe pero está incompleta.</div>
                 )}
               </div>
@@ -225,23 +216,23 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
             <input
               id="cli-nombre"
               type="text"
-              placeholder="Ej: Juan Pérez"
+              placeholder="Ej: Marcelo"
               value={clienteNombre}
               onChange={(e) => setClienteNombre(e.target.value)}
-              className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
           <div>
             <label htmlFor="cli-tel" className="text-caption text-muted-foreground">
-              WhatsApp
+              Teléfono (WhatsApp)
             </label>
             <input
               id="cli-tel"
               type="tel"
-              placeholder="Ej: 1123456789"
+              placeholder="Ej: 11 2345-6789"
               value={clienteTelefono}
               onChange={(e) => setClienteTelefono(e.target.value)}
-              className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
         </div>
@@ -269,7 +260,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {items.map((it, idx) => (
+            {items.map((it) => (
               <div key={it.id} className="flex flex-col gap-2 rounded-xl bg-muted/40 p-3">
                 <div className="flex items-start gap-2">
                   <select

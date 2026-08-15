@@ -1,10 +1,10 @@
-import { Car, Mail, Phone, Users } from "lucide-react";
+import { Mail, Phone, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { FormCliente } from "@/components/clientes/FormCliente";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
-import { formatearPatente } from "@/lib/patente";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -87,8 +87,8 @@ export default async function PaginaClientes({
                     style={{ "--i": i + 2 } as React.CSSProperties}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-base font-semibold text-foreground">
+                      <Link href={`/clientes/${c.id}`} className="min-w-0 group">
+                        <p className="truncate text-base font-bold text-foreground group-hover:text-accent transition-colors">
                           {c.nombre} {c.apellido}
                         </p>
                         {c.telefono && (
@@ -96,20 +96,19 @@ export default async function PaginaClientes({
                             {formatearTelefono(c.telefono)}
                           </p>
                         )}
-                      </div>
+                      </Link>
                       <FormCliente cliente={c} />
                     </div>
 
                     {autos.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {autos.map((p) => (
                           <Link
                             key={p}
                             href={`/vehiculos/${encodeURIComponent(p)}`}
-                            className="text-display flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-sm tracking-normal text-foreground transition-colors hover:bg-accent-suave hover:text-accent"
+                            className="inline-block transition-transform hover:scale-105 active:scale-95"
                           >
-                            <Car className="h-3.5 w-3.5" aria-hidden />
-                            {formatearPatente(p)}
+                            <PlacaPatente patente={p} size="sm" />
                           </Link>
                         ))}
                       </div>

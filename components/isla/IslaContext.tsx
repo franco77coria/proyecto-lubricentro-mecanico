@@ -13,7 +13,7 @@ export type EstadoIsla =
   | { tipo: "oculta" }
   /** Persistente: la OT sobre la que se está trabajando. En un taller siempre
    *  se está adentro de un auto, así que esto casi nunca está vacío. */
-  | { tipo: "ot"; otId: string; numero: string; patente: string; estado: string }
+  | { tipo: "ot"; otId: string; numero: string; patente: string; estado: string; telefonoCliente?: string | null }
   | { tipo: "progreso"; mensaje: string; actual: number; total: number }
   | { tipo: "exito"; mensaje: string }
   | { tipo: "alerta"; mensaje: string }

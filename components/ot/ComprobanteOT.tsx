@@ -70,13 +70,19 @@ const ESTADO_CHECK: Record<string, { texto: string; clase: string }> = {
  * librería: sale el mismo archivo, en el celular aparece "Guardar como PDF" y
  * evita sumar medio megabyte de dependencia al bundle.
  */
-export function ComprobanteOT({ ot }: { ot: DatosComprobante }) {
+export function ComprobanteOT({
+  ot,
+  modo = "a4",
+}: {
+  ot: DatosComprobante;
+  modo?: "a4" | "termico";
+}) {
   const totalRecomendado = ot.recomendados.reduce((s, r) => s + Number(r.precio_estimado ?? 0), 0);
   const hayChecklist = ot.checklist.some((c) => c.estado);
   const observados = ot.checklist.filter((c) => c.estado === "observado" || c.estado === "critico");
 
   return (
-    <article className="comprobante">
+    <article className={modo === "termico" ? "comprobante comprobante-termico" : "comprobante"}>
       <header className="cmp-cabecera">
         <div>
           <h1 className="cmp-taller">{ot.taller.nombre}</h1>
@@ -261,6 +267,18 @@ export function ComprobanteOT({ ot }: { ot: DatosComprobante }) {
           <p className="cmp-parrafo">{ot.observaciones}</p>
         </section>
       )}
+
+      <div className="cmp-qr-box">
+        <p className="cmp-etiqueta" style={{ textAlign: "center", marginBottom: "1mm" }}>
+          Seguimiento en Vivo
+        </p>
+        <p style={{ fontSize: "8pt", textAlign: "center", margin: 0, color: "var(--cmp-tinta)" }}>
+          Consultá el avance y fotos de tu vehículo desde tu celular:
+        </p>
+        <p style={{ fontSize: "9pt", fontWeight: "bold", textAlign: "center", margin: "1mm 0 0", color: "var(--cmp-acento)" }}>
+          /seguimiento/{ot.vehiculo.patente}
+        </p>
+      </div>
 
       <footer className="cmp-pie">
         <div className="cmp-firma">

@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Trash2, UserPlus, X } from "lucide-react";
+import { Check, Copy, Trash2, UserPlus } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
+import { Sheet } from "@/components/sheet/Sheet";
 import { cambiarRolMiembro, cancelarInvitacion, invitarAlTaller } from "@/lib/actions/equipo";
 
 export interface Miembro {
@@ -208,86 +209,69 @@ export function GestionEquipo({
         </div>
       )}
 
-      {abierto && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Invitar al taller"
-        >
-          <div className="w-full rounded-t-[var(--radius-lg)] bg-card p-5 pb-[calc(var(--safe-bottom)+1.25rem)] shadow-[var(--sombra-alta)] sm:max-w-md sm:rounded-[var(--radius-lg)] sm:pb-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-foreground">Invitar al taller</h3>
-              <button
-                type="button"
-                onClick={() => setAbierto(false)}
-                aria-label="Cerrar"
-                className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4.5 w-4.5" aria-hidden />
-              </button>
-            </div>
+      <Sheet
+        abierto={abierto}
+        onCerrar={() => setAbierto(false)}
+        titulo="Invitar al Taller"
+      >
+        <form onSubmit={invitar} className="space-y-4 p-5">
+          <label className="block space-y-1.5">
+            <span className="text-caption font-semibold text-muted-foreground">Email del empleado</span>
+            <input
+              type="email"
+              required
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="empleado@ejemplo.com"
+              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base text-foreground outline-none focus:border-accent"
+            />
+          </label>
 
-            <form onSubmit={invitar} className="space-y-3">
-              <label className="block space-y-1.5">
-                <span className="text-caption font-medium text-muted-foreground">Email</span>
+          <fieldset className="space-y-2">
+            <legend className="text-caption font-semibold text-muted-foreground mb-1">Permisos en el sistema</legend>
+            {ROLES.map((r) => (
+              <label
+                key={r.v}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors ${
+                  rol === r.v ? "border-accent bg-accent/10" : "border-border bg-card"
+                }`}
+              >
                 <input
-                  type="email"
-                  required
-                  autoFocus
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="empleado@ejemplo.com"
-                  className="min-h-11 w-full rounded-[var(--radius-sm)] border border-border bg-card px-3 text-base text-foreground outline-none focus:border-accent"
+                  type="radio"
+                  name="rol"
+                  value={r.v}
+                  checked={rol === r.v}
+                  onChange={() => setRol(r.v)}
+                  className="mt-1 h-4 w-4 accent-[var(--accent)]"
                 />
+                <div>
+                  <span className="block text-sm font-bold text-foreground">{r.t}</span>
+                  <span className="block text-caption text-muted-foreground mt-0.5">{r.d}</span>
+                </div>
               </label>
+            ))}
+          </fieldset>
 
-              <fieldset className="space-y-1.5">
-                <legend className="text-caption font-medium text-muted-foreground">Permisos</legend>
-                {ROLES.map((r) => (
-                  <label
-                    key={r.v}
-                    className={`flex cursor-pointer items-start gap-2.5 rounded-[var(--radius-sm)] border p-3 transition-colors ${
-                      rol === r.v ? "border-accent bg-accent-suave" : "border-border"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="rol"
-                      value={r.v}
-                      checked={rol === r.v}
-                      onChange={() => setRol(r.v)}
-                      className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
-                    />
-                    <span>
-                      <span className="block text-sm font-medium text-foreground">{r.t}</span>
-                      <span className="block text-caption text-muted-foreground">{r.d}</span>
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
+          <p className="text-caption text-muted-foreground">
+            Se genera un enlace válido por 7 días que podés copiar y enviar directamente por WhatsApp.
+          </p>
 
-              <p className="text-caption text-muted-foreground">
-                Se crea un link que vence en 7 días. Copialo y mandáselo por WhatsApp.
-              </p>
+          {error && (
+            <p role="alert" className="text-caption font-bold text-destructive">
+              {error}
+            </p>
+          )}
 
-              {error && (
-                <p role="alert" className="text-caption text-destructive">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={pendiente}
-                className="min-h-11 w-full rounded-[var(--radius-sm)] bg-accent text-sm font-semibold text-accent-foreground transition-transform active:scale-[0.98] disabled:opacity-60"
-              >
-                {pendiente ? "Creando…" : "Crear invitación"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+          <button
+            type="submit"
+            disabled={pendiente}
+            className="min-h-12 w-full rounded-2xl bg-accent text-base font-bold text-white shadow-md transition-transform active:scale-[0.98] disabled:opacity-60"
+          >
+            {pendiente ? "Creando…" : "Crear invitación"}
+          </button>
+        </form>
+      </Sheet>
     </section>
   );
 }

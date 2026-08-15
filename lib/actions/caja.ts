@@ -70,8 +70,15 @@ export async function realizarCierreCaja(): Promise<{ ok?: boolean; error?: stri
   try {
     const supabase = await crearClienteServidor();
 
-    const inicioHoy = new Date();
-    inicioHoy.setHours(0, 0, 0, 0);
+    // Calcular fecha del día en huso horario de Argentina (UTC-3)
+    const fechaArg = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    const inicioHoy = new Date(`${fechaArg}T00:00:00-03:00`);
 
     const { data: pagos } = await supabase
       .from("pago")
@@ -93,21 +100,22 @@ export async function realizarCierreCaja(): Promise<{ ok?: boolean; error?: stri
       }
     }
 
-    const hoy = new Date().toISOString().split("T")[0];
-
-    const { error } = await supabase.from("cierre_caja").insert({
-      taller_id: tallerId,
-      fecha: hoy,
-      total,
-      totales: {
-        efectivo: ef,
-        transferencia: tf,
-        tarjeta: tj,
-        mercado_pago: mp,
-        otro: ot,
+    const { error } = await supabase.from("cierre_caja").upsert(
+      {
+        taller_id: tallerId,
+        fecha: fechaArg,
+        total,
+        totales: {
+          efectivo: ef,
+          transferencia: tf,
+          tarjeta: tj,
+          mercado_pago: mp,
+          otro: ot,
+        },
+        usuario_id: sesion.user.id,
       },
-      usuario_id: sesion.user.id,
-    });
+      { onConflict: "taller_id, fecha" },
+    );
 
     if (error) {
       console.error("[realizarCierreCaja]", error.code);

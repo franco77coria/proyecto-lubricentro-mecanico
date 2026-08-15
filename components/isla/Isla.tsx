@@ -180,40 +180,58 @@ export function Isla() {
             className="border-t border-border px-3 pt-3 pb-3"
           >
             <div className="grid grid-cols-2 gap-2">
-              <AccionRapida icono={Camera} etiqueta="Agregar foto" />
-              <AccionRapida icono={Plus} etiqueta="Agregar ítem" />
-              <AccionRapida icono={Check} etiqueta="Cambiar estado" />
-              <AccionRapida icono={Phone} etiqueta="Llamar al cliente" />
+              <Link
+                href={`/ot/${estado.otId}#fotos`}
+                onClick={() => setExpandida(false)}
+                className="flex min-h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-xs font-bold text-foreground transition-transform active:scale-[0.97] hover:bg-muted"
+              >
+                <Camera className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                <span className="truncate">Fotos & Daños</span>
+              </Link>
+
+              <Link
+                href={`/ot/${estado.otId}#items`}
+                onClick={() => setExpandida(false)}
+                className="flex min-h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-xs font-bold text-foreground transition-transform active:scale-[0.97] hover:bg-muted"
+              >
+                <Plus className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                <span className="truncate">Cargar ítem</span>
+              </Link>
+
+              <Link
+                href={`/ot/${estado.otId}`}
+                onClick={() => setExpandida(false)}
+                className="flex min-h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-xs font-bold text-foreground transition-transform active:scale-[0.97] hover:bg-muted"
+              >
+                <Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                <span className="truncate">Cambiar estado</span>
+              </Link>
+
+              {estado.telefonoCliente ? (
+                <a
+                  href={`tel:${estado.telefonoCliente.replace(/\D/g, "")}`}
+                  className="flex min-h-12 items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-xs font-bold text-foreground transition-transform active:scale-[0.97] hover:bg-muted"
+                >
+                  <Phone className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                  <span className="truncate">Llamar cliente</span>
+                </a>
+              ) : (
+                <div className="flex min-h-12 items-center gap-2 rounded-xl bg-muted/30 px-3 py-2 text-xs font-semibold text-muted-foreground opacity-50">
+                  <Phone className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="truncate">Sin teléfono</span>
+                </div>
+              )}
             </div>
             <Link
               href={`/ot/${estado.otId}`}
               onClick={() => setExpandida(false)}
-              className="mt-2 flex min-h-12 w-full items-center justify-center rounded-[var(--radius-sm)] px-3 text-caption text-muted-foreground"
+              className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-accent/10 px-3 text-xs font-bold text-accent hover:bg-accent/20 transition-colors"
             >
-              Ver la orden completa
+              Ver la orden completa #{estado.numero}
             </Link>
           </motion.div>
         )}
       </motion.div>
     </div>
-  );
-}
-
-function AccionRapida({
-  icono: Icono,
-  etiqueta,
-}: {
-  icono: typeof Camera;
-  etiqueta: string;
-}) {
-  return (
-    <button
-      type="button"
-      // 48px de alto mínimo: acá se toca con guantes puestos.
-      className="flex min-h-12 items-center gap-2 rounded-[var(--radius-sm)] bg-muted px-3 py-2 text-sm font-medium text-foreground transition-transform active:scale-[0.97]"
-    >
-      <Icono className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-      <span className="truncate">{etiqueta}</span>
-    </button>
   );
 }

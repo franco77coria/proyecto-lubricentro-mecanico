@@ -149,6 +149,8 @@ export async function cambiarEstadoOT(otId: string, nuevoEstado: EstadoOT): Prom
 
     revalidatePath(`/ot/${otId}`);
     revalidatePath("/tablero");
+    revalidatePath("/kanban");
+    revalidatePath("/seguimiento");
     return { ok: true };
   } catch (err) {
     unstable_rethrow(err);
@@ -278,7 +280,37 @@ export async function eliminarItemOT(otId: string, itemId: string): Promise<{ ok
 
     revalidatePath(`/ot/${otId}`);
     // Borrar un repuesto devuelve el stock (cascada de `ot_item_id` en 0014).
-    revalidatePath("/stock");
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function asignarMecanicoOT(
+  otId: string,
+  mecanicoId: string | null,
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("orden_trabajo")
+      .update({ asignado_a: mecanicoId || null })
+      .eq("id", otId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[asignarMecanicoOT]", error);
+      return { error: "No se pudo asignar el mecánico." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    revalidatePath("/tablero");
+    revalidatePath("/kanban");
     return { ok: true };
   } catch (err) {
     unstable_rethrow(err);

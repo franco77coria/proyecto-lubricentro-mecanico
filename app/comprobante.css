@@ -356,3 +356,49 @@
     print-color-adjust: exact;
   }
 }
+
+/* --- Modo Ticketera Térmica (80mm) --- */
+.comprobante-termico {
+  max-width: 80mm !important;
+  padding: 4mm !important;
+  font-size: 8.5pt !important;
+  line-height: 1.3 !important;
+}
+
+.comprobante-termico .cmp-cabecera {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2mm;
+  padding-bottom: 3mm;
+}
+
+.comprobante-termico .cmp-taller {
+  font-size: 13pt;
+}
+
+.comprobante-termico .cmp-numero-caja {
+  align-items: center;
+  text-align: center;
+}
+
+.comprobante-termico .cmp-grid-2 {
+  grid-template-columns: 1fr;
+  gap: 2.5mm;
+  margin-top: 3mm;
+}
+
+.comprobante-termico .cmp-pie {
+  flex-direction: column;
+  gap: 6mm;
+  margin-top: 6mm;
+}
+
+.comprobante-termico .cmp-qr-box {
+  border: 1px dashed var(--cmp-tinta);
+  border-radius: 2mm;
+  padding: 3mm;
+  text-align: center;
+  margin-top: 4mm;
+}
+

@@ -191,3 +191,52 @@ export async function actualizarVehiculo(id: string, datos: unknown): Promise<Re
     return { error: "No se pudo conectar" };
   }
 }
+
+export async function obtenerClienteDetalle(clienteId: string) {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return null;
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const [{ data: cliente }, { data: vehiculosCliente }, { data: ordenes }] = await Promise.all([
+      supabase
+        .from("cliente")
+        .select("*")
+        .eq("id", clienteId)
+        .single(),
+      supabase
+        .from("vehiculo_cliente")
+        .select(`
+          id, desde, hasta,
+          vehiculo:vehiculo_id (
+            id, patente, anio, color, combustible, km_actual,
+            marca:marca_id(nombre),
+            modelo:modelo_id(nombre)
+          )
+        `)
+        .eq("cliente_id", clienteId)
+        .order("desde", { ascending: false }),
+      supabase
+        .from("orden_trabajo")
+        .select(`
+          id, numero, estado, total, fecha_ingreso, fecha_entrega,
+          vehiculo:vehiculo_id ( patente, marca:marca_id(nombre), modelo:modelo_id(nombre) )
+        `)
+        .eq("cliente_id", clienteId)
+        .order("fecha_ingreso", { ascending: false }),
+    ]);
+
+    if (!cliente) return null;
+
+    return {
+      cliente,
+      vehiculos: vehiculosCliente || [],
+      ordenes: ordenes || [],
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+    return null;
+  }
+}
+

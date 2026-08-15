@@ -24,7 +24,7 @@ export interface ValorVehiculo {
 const OTRO = "__otro__";
 
 const CLASE_CAMPO =
-  "min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base font-medium text-foreground focus:border-accent focus:outline-none disabled:opacity-50";
+  "min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 pr-10 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23f97316%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:18px_18px] bg-[right_14px_center] bg-no-repeat transition-all";
 
 /**
  * Lo que se trajo para un padre determinado.

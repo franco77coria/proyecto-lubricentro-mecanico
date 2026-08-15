@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Car, User } from "lucide-react";
+import { ArrowLeft, CalendarDays, Car, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -14,6 +14,8 @@ import { crearTurno, type DatosNuevoTurno } from "@/lib/actions/turnos";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 
+const HORAS_RAPIDAS = ["08:30", "09:30", "11:00", "14:00", "15:30", "17:00"];
+
 export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const router = useRouter();
   const { notificar } = useIsla();
@@ -21,7 +23,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [fecha, setFecha] = useState(() => new Date().toISOString().split("T")[0]);
-  const [hora, setHora] = useState("");
+  const [hora, setHora] = useState("09:00");
   const [motivo, setMotivo] = useState("");
   const [notas, setNotas] = useState("");
 
@@ -37,18 +39,12 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
     if (!patente || patente.length < 6) return;
     setBuscandoPatente(true);
     try {
-      // Usamos el formData simulado para invocar crearVehiculo (que en realidad lo busca primero)
       const formDataVehiculo = new FormData();
       formDataVehiculo.append("patente", patente);
       if (formatoEspecial) formDataVehiculo.append("formatoEspecial", "on");
-      
+
       const res = await crearVehiculo({}, formDataVehiculo);
       if (res.duplicado) {
-        // Encontramos un vehículo existente, lo pre-cargamos
-        const [marca, modelo, motor] = res.duplicado.descripcion.split(" ");
-        // Lógica ideal sería tener los IDs para SelectorVehiculo.
-        // Como no tenemos los IDs en la respuesta simplificada, 
-        // notificamos al usuario.
         notificar({ tipo: "exito", mensaje: `Auto encontrado: ${res.duplicado.descripcion}` });
       }
     } catch (e) {
@@ -58,17 +54,33 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
     }
   };
 
+  // Botones de fechas rápidas
+  const getFechaOffset = (dias: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    return d.toISOString().split("T")[0];
+  };
+
+  const hoyStr = getFechaOffset(0);
+  const mananaStr = getFechaOffset(1);
+  const pasadoStr = getFechaOffset(2);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fecha || !hora || !motivo) {
-      setErrorMsg("Fecha, hora y motivo son obligatorios.");
+
+    if (!fecha || !hora) {
+      setErrorMsg("Debe seleccionar fecha y hora.");
       return;
     }
-    
+
+    if (!motivo.trim()) {
+      setErrorMsg("Debe ingresar un motivo.");
+      return;
+    }
+
     setErrorMsg(null);
 
     startTransition(async () => {
-      // 1. Crear/Buscar vehículo si hay patente
       let vehiculoId = null;
       let clienteId = null;
 
@@ -84,14 +96,14 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
 
         const resVehiculo = await crearVehiculo({}, formDataVehiculo);
         vehiculoId = resVehiculo.creado?.id || resVehiculo.duplicado?.id;
-        
+        clienteId = resVehiculo.clienteId || resVehiculo.creado?.clienteId || resVehiculo.duplicado?.clienteId || null;
+
         if (!vehiculoId) {
           setErrorMsg(resVehiculo.error || "Error al registrar el vehículo.");
           return;
         }
       }
 
-      // 2. Crear turno
       const fechaHora = new Date(`${fecha}T${hora}:00`).toISOString();
       const datosReq: DatosNuevoTurno = {
         vehiculoId,
@@ -108,96 +120,138 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         return;
       }
 
-      notificar({ tipo: "exito", mensaje: "Turno agendado" });
+      notificar({ tipo: "exito", mensaje: "Turno agendado con éxito" });
       router.push(`/turnos`);
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto pb-16">
       <div className="flex items-center gap-2">
         <Link
           href="/turnos"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Cancelar</span>
+          <span>Volver a Turnos</span>
         </Link>
       </div>
 
       <header className="space-y-1">
-        <p className="text-caption text-muted-foreground">Calendario</p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Nuevo Turno</h1>
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agenda de Fosa & Taller</p>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Nuevo Turno</h1>
       </header>
 
       {errorMsg && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-bold text-red-600">
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-bold text-destructive">
           {errorMsg}
         </div>
       )}
 
-      {/* Cuando y Qué */}
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center gap-2 border-b border-border pb-3">
+      {/* Cuándo y Qué */}
+      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center gap-2 border-b border-border/60 pb-3">
           <CalendarDays className="h-4 w-4 text-accent" />
-          <h2 className="text-sm font-bold text-foreground">Fecha y Motivo</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Fecha y Horario</h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-caption text-muted-foreground">Fecha</label>
-            <input
-              type="date"
-              required
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
+        {/* Accesos rápidos de fecha */}
+        <div className="space-y-2">
+          <label className="text-caption text-muted-foreground font-semibold">Día del Turno</label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Hoy", val: hoyStr },
+              { label: "Mañana", val: mananaStr },
+              { label: "Pasado", val: pasadoStr },
+            ].map((d) => (
+              <button
+                key={d.val}
+                type="button"
+                onClick={() => setFecha(d.val)}
+                className={`min-h-11 rounded-xl text-xs font-bold transition-all ${
+                  fecha === d.val
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
           </div>
-          <div>
-            <label className="text-caption text-muted-foreground">Hora</label>
-            <input
-              type="time"
-              required
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </div>
-        </div>
-        
-        <div>
-          <label className="text-caption text-muted-foreground">Motivo Corto</label>
+
           <input
-            type="text"
+            type="date"
             required
-            placeholder="Ej: Service 10k, Revisar frenos..."
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            className="min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+          />
+        </div>
+
+        {/* Accesos rápidos de hora */}
+        <div className="space-y-2">
+          <label className="text-caption text-muted-foreground font-semibold flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-accent" />
+            Horario
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {HORAS_RAPIDAS.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => setHora(h)}
+                className={`min-h-10 px-3 rounded-xl text-xs font-bold transition-all ${
+                  hora === h
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {h} hs
+              </button>
+            ))}
+          </div>
+
+          <input
+            type="time"
+            required
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            className="min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="text-caption text-muted-foreground">Notas adicionales (opcional)</label>
+          <label className="text-caption text-muted-foreground font-semibold">Motivo del Servicio</label>
+          <input
+            type="text"
+            required
+            placeholder="Ej: Cambio de aceite y filtros, Frenos, Service 50.000km..."
+            value={motivo}
+            onChange={(e) => setMotivo(e.target.value)}
+            className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="text-caption text-muted-foreground font-semibold">Notas adicionales (opcional)</label>
           <textarea
-            placeholder="Hace ruido al doblar..."
+            placeholder="Detalles sobre ruidos, repuestos que trae el cliente o aclaraciones..."
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
-            className="mt-1 flex w-full rounded-xl border border-input bg-transparent p-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="mt-1 min-h-20 w-full rounded-2xl border border-border/80 bg-card p-3.5 text-sm font-medium text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
           />
         </div>
       </section>
 
-      {/* Auto y Cliente (Opcional) */}
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between border-b border-border pb-3">
+      {/* Auto y Cliente */}
+      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-sm">
+        <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-bold text-foreground">Auto y Cliente (Opcional)</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Auto y Contacto</h2>
           </div>
-          {buscandoPatente && <span className="text-xs text-muted-foreground animate-pulse">Buscando...</span>}
+          {buscandoPatente && <span className="text-xs text-accent font-bold animate-pulse">Buscando historial...</span>}
         </div>
 
         <div onBlur={handlePatenteBlur}>
@@ -213,25 +267,25 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
           <>
             <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-caption text-muted-foreground">Nombre / Apodo</label>
+                <label className="text-caption text-muted-foreground font-semibold">Nombre del Cliente</label>
                 <input
                   type="text"
-                  placeholder="Ej: Juan Pérez"
+                  placeholder="Ej: Marcelo"
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
-                  className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-caption text-muted-foreground">WhatsApp</label>
+                <label className="text-caption text-muted-foreground font-semibold">Teléfono (WhatsApp)</label>
                 <input
                   type="tel"
-                  placeholder="Ej: 1123456789"
+                  placeholder="Ej: 11 2345-6789"
                   value={clienteTelefono}
                   onChange={(e) => setClienteTelefono(e.target.value)}
-                  className="mt-1 flex h-11 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
                 />
               </div>
             </div>
@@ -239,12 +293,13 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         )}
       </section>
 
+      {/* Botón de Confirmación */}
       <button
         type="submit"
         disabled={isPending}
-        className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-accent text-lg font-bold text-white shadow-lg transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+        className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-accent px-6 text-base font-bold text-accent-foreground shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
       >
-        Agendar Turno
+        {isPending ? "Guardando turno..." : "Confirmar y Agendar Turno"}
       </button>
     </form>
   );

@@ -1,0 +1,36 @@
+"use client";
+
+import { motion, useReducedMotion } from "motion/react";
+
+interface SpinnerEngranajeProps {
+  className?: string;
+  size?: number | string;
+}
+
+export function SpinnerEngranaje({ className = "h-5 w-5 text-accent", size }: SpinnerEngranajeProps) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={size ? { width: size, height: size } : undefined}
+      className={className}
+      animate={reduceMotion ? undefined : { rotate: 360 }}
+      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+      aria-label="Cargando..."
+      role="status"
+    >
+      {/* 6 dientes mecánicos de engranaje */}
+      <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77" />
+      {/* Corona circular */}
+      <circle cx="12" cy="12" r="5.8" strokeWidth="2.2" />
+      {/* Eje central */}
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+    </motion.svg>
+  );
+}

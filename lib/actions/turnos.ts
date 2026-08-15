@@ -10,29 +10,30 @@ export type EstadoTurno = "pendiente" | "confirmado" | "ingresado" | "cancelado"
 export interface Turno {
   id: string;
   taller_id: string;
-  cliente_id: string | null;
-  vehiculo_id: string | null;
+  cliente_id?: string | null;
+  vehiculo_id?: string | null;
   fecha_hora: string;
   motivo: string;
-  notas: string | null;
+  notas?: string | null;
   estado: EstadoTurno;
   creado_por: string;
   creado_en: string;
-  
-  // Joins
+  actualizado_en: string;
+  cliente?: {
+    nombre: string;
+    telefono?: string | null;
+  } | null;
   vehiculo?: {
     patente: string;
     motorizacion?: {
       nombre: string;
       modelo?: {
         nombre: string;
-        marca?: { nombre: string };
+        marca?: {
+          nombre: string;
+        };
       };
     };
-  } | null;
-  cliente?: {
-    nombre: string;
-    telefono: string | null;
   } | null;
 }
 
@@ -47,6 +48,7 @@ const turnoSchema = z.object({
 export type DatosNuevoTurno = z.infer<typeof turnoSchema>;
 
 export async function listarTurnos(desde: Date, hasta: Date): Promise<Turno[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await crearClienteServidor()) as any;
   const { data, error } = await supabase
     .from("turno")
@@ -72,7 +74,7 @@ export async function listarTurnos(desde: Date, hasta: Date): Promise<Turno[]> {
     console.error("[listarTurnos]", error);
     return [];
   }
-  return data as Turno[];
+  return (data || []) as unknown as Turno[];
 }
 
 export async function crearTurno(datos: DatosNuevoTurno): Promise<{ id?: string; error?: string }> {
@@ -83,6 +85,7 @@ export async function crearTurno(datos: DatosNuevoTurno): Promise<{ id?: string;
   if (!validado.success) return { error: "Datos inválidos" };
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = (await crearClienteServidor()) as any;
     const { data, error } = await supabase
       .from("turno")
@@ -112,6 +115,7 @@ export async function crearTurno(datos: DatosNuevoTurno): Promise<{ id?: string;
 
 export async function cambiarEstadoTurno(id: string, estado: EstadoTurno): Promise<{ success: boolean; error?: string }> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = (await crearClienteServidor()) as any;
     
     // 1. Obtener estado actual
@@ -141,7 +145,7 @@ export async function cambiarEstadoTurno(id: string, estado: EstadoTurno): Promi
     }
     
     // 3. Actualizar (dejando que el trigger actualice actualizado_en)
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("turno")
       .update({ estado })
       .eq("id", id)

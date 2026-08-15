@@ -10,6 +10,7 @@ const hostSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   images: {
     // Sin esto, next/image rechaza las fotos del bucket y la galería queda
     // vacía. Se habilita solo el path de Storage, no el host entero.

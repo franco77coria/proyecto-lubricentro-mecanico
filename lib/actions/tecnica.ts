@@ -31,7 +31,7 @@ export interface EquivalenciaFiltro {
 export async function obtenerFichaDeVehiculo(vehiculoId: string): Promise<FichaTecnica | null> {
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase.rpc("ficha_de_vehiculo", { p_vehiculo: vehiculoId });
-  if (error || !data || !(data as any).tiene_ficha) return null;
+  if (error || !data || !(data as { tiene_ficha?: boolean }).tiene_ficha) return null;
   return data as unknown as FichaTecnica;
 }
 
@@ -83,7 +83,8 @@ export async function agregarEquivalenciaFiltro(datos: DatosEquivalencia) {
     const supabase = await crearClienteServidor();
     
     // Sort so it doesn't violate constraint
-    let { codigoA, marcaA, codigoB, marcaB, tipo } = parsed.data;
+    const { tipo } = parsed.data;
+    let { codigoA, marcaA, codigoB, marcaB } = parsed.data;
     if (codigoA.toUpperCase() > codigoB.toUpperCase()) {
       [codigoA, codigoB] = [codigoB, codigoA];
       [marcaA, marcaB] = [marcaB, marcaA];

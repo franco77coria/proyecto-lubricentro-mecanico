@@ -17,6 +17,7 @@ export type DatosOTPDF = DatosComprobante & { id: string; tipo: string };
  */
 export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
   const [abierto, setAbierto] = useState(false);
+  const [modo, setModo] = useState<"a4" | "termico">("a4");
 
   const linkWa = armarLinkWhatsApp({
     numero: ot.numero,
@@ -45,28 +46,47 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-muted px-3.5 text-sm font-semibold text-foreground transition-transform active:scale-95"
+        className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-card border border-border/80 px-3.5 text-xs font-bold text-foreground transition-transform active:scale-95 hover:border-accent"
       >
         <FileText className="h-4 w-4 text-accent" aria-hidden />
-        Comprobante
+        <span>Comprobante</span>
       </button>
 
       {abierto && (
         <div
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 p-0 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 p-0 backdrop-blur-sm sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-label={`Comprobante de la orden ${ot.numero}`}
         >
           <div className="mx-auto max-w-4xl">
-            {/* Barra de acciones. `print:hidden` no alcanza por sí sola: el CSS
-                del comprobante oculta todo lo que no sea el documento. */}
-            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 sm:rounded-t-[var(--radius-md)] print:hidden">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4.5 w-4.5 text-accent" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">
-                  Comprobante {ot.numero}
+            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 sm:rounded-t-2xl print:hidden">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-accent" aria-hidden />
+                <span className="text-sm font-black text-foreground">
+                  Comprobante #{ot.numero}
                 </span>
+
+                <div className="flex rounded-xl bg-muted p-0.5 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setModo("a4")}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                      modo === "a4" ? "bg-card text-accent shadow-sm" : "text-muted-foreground"
+                    }`}
+                  >
+                    Hoja A4
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModo("termico")}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                      modo === "termico" ? "bg-card text-accent shadow-sm" : "text-muted-foreground"
+                    }`}
+                  >
+                    Ticket 80mm
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -75,39 +95,39 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
                     href={linkWa}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-sm)] bg-emerald-600 px-3 text-sm font-semibold text-white transition-transform active:scale-95"
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm"
                   >
                     <Send className="h-3.5 w-3.5" aria-hidden />
-                    WhatsApp
+                    <span>WhatsApp</span>
                   </a>
                 ) : (
                   <span className="text-caption text-muted-foreground">
-                    Cargá el teléfono del cliente para enviarlo
+                    Cargá el teléfono para enviarlo
                   </span>
                 )}
 
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-sm)] bg-accent px-3 text-sm font-semibold text-accent-foreground transition-transform active:scale-95"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm"
                 >
                   <Printer className="h-3.5 w-3.5" aria-hidden />
-                  Imprimir o guardar
+                  <span>Imprimir / PDF</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setAbierto(false)}
                   aria-label="Cerrar"
-                  className="grid h-10 w-10 place-items-center rounded-[var(--radius-sm)] text-muted-foreground hover:bg-muted"
+                  className="grid h-10 w-10 place-items-center rounded-xl text-muted-foreground hover:bg-muted"
                 >
-                  <X className="h-4.5 w-4.5" aria-hidden />
+                  <X className="h-5 w-5" aria-hidden />
                 </button>
               </div>
             </div>
 
-            <div className="bg-white pb-10 shadow-[var(--sombra-alta)] sm:rounded-b-[var(--radius-md)]">
-              <ComprobanteOT ot={ot} />
+            <div className="bg-white pb-10 shadow-2xl sm:rounded-b-2xl flex justify-center">
+              <ComprobanteOT ot={ot} modo={modo} />
             </div>
           </div>
         </div>

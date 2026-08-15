@@ -163,25 +163,35 @@ export async function obtenerPresupuesto(id: string) {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return null;
 
-  const supabase = await crearClienteServidor();
-  const { data, error } = await supabase
-    .from("orden_trabajo")
-    .select(`
-      *,
-      vehiculo:vehiculo_id (patente, motorizacion:motorizacion_id(modelo:modelo_id(nombre, marca:marca_id(nombre)))),
-      cliente:cliente_id (nombre, telefono),
-      items:ot_item(*),
-      checklists:ot_checklist(*),
-      anomalias:ot_anomalia(*)
-    `)
-    .eq("id", id)
-    .eq("taller_id", sesion.perfil.taller_id)
-    .single();
+  try {
+    const supabase = await crearClienteServidor();
+    const { data, error } = await supabase
+      .from("orden_trabajo")
+      .select(`
+        *,
+        vehiculo:vehiculo_id (
+          id, patente, anio, color, combustible, km_actual,
+          marca:marca_id(nombre),
+          modelo:modelo_id(nombre),
+          motorizacion:motorizacion_id(nombre)
+        ),
+        cliente:cliente_id (id, nombre, apellido, telefono),
+        items:ot_item(*),
+        checklists:ot_checklist(*),
+        notas:ot_nota(*)
+      `)
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .single();
 
-  if (error) {
-    console.error("[obtenerPresupuesto]", error);
+    if (error) {
+      console.error("[obtenerPresupuesto]", error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    unstable_rethrow(error);
     return null;
   }
-  
-  return data;
 }

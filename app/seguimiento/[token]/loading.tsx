@@ -1,5 +1,5 @@
-import { PantallaSkeleton } from "@/components/Skeleton";
+import { SeguimientoSkeleton } from "@/components/seguimiento/SeguimientoSkeleton";
 
 export default function LoadingSeguimiento() {
-  return <PantallaSkeleton seccion="Cliente" titulo="Seguimiento de Vehículo" variante="tarjetas" />;
+  return <SeguimientoSkeleton />;
 }

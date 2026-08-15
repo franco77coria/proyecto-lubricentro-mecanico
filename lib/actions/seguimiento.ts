@@ -2,7 +2,8 @@
 
 import { unstable_rethrow } from "next/navigation";
 
-import { crearClienteAnonimo, crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteAnonimo } from "@/lib/supabase/server";
+import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS } from "@/lib/storage";
 
 export interface NotaPublica {
   tipo: "anomalia" | "descargo" | "recomendado";
@@ -18,6 +19,20 @@ export interface ItemPublico {
   subtotal: number;
 }
 
+export interface FotoPublica {
+  id: string;
+  tipo: "estado_ingreso" | "dano" | "comprobante";
+  path: string;
+  nota: string | null;
+  creado_en: string;
+  url?: string;
+}
+
+export interface TelemetriaPublica {
+  km: number | null;
+  combustible: number | null;
+}
+
 export interface SeguimientoOT {
   numero: string;
   estado: string;
@@ -30,16 +45,18 @@ export interface SeguimientoOT {
   total_repuestos: number;
   aprobado_en: string | null;
   taller: { nombre: string; telefono: string | null; direccion: string | null };
+  telemetria?: TelemetriaPublica;
   notas: NotaPublica[];
   items: ItemPublico[];
+  fotos?: FotoPublica[];
   historial: { estado: string; fecha: string }[];
 }
 
 /**
  * Todo el seguimiento entra como `anon`, sin importar quién esté mirando.
  *
- * Las funciones de 0030 son la única puerta: `anon` no tiene privilegios sobre
- * ninguna tabla.
+ * Las funciones de 0030/0037 son la única puerta: `anon` no tiene privilegios sobre
+ * ninguna tabla y las observaciones internas no se exponen jamás.
  */
 export async function obtenerSeguimiento(token: string): Promise<SeguimientoOT | null> {
   try {
@@ -49,7 +66,32 @@ export async function obtenerSeguimiento(token: string): Promise<SeguimientoOT |
       console.error("[obtenerSeguimiento]", error.code);
       return null;
     }
-    return (data as unknown as SeguimientoOT | null) ?? null;
+
+    const ot = (data as unknown as SeguimientoOT | null) ?? null;
+    if (!ot) return null;
+
+    // Firmar URLs de fotos si existen
+    if (ot.fotos && ot.fotos.length > 0) {
+      try {
+        const paths = ot.fotos.map((f) => f.path);
+        const { data: firmadas } = await supabase.storage
+          .from(BUCKET_FOTOS)
+          .createSignedUrls(paths, VIGENCIA_URL_SEGUNDOS);
+
+        if (firmadas?.length) {
+          ot.fotos = ot.fotos
+            .map((f, idx) => ({
+              ...f,
+              url: firmadas[idx]?.signedUrl ?? "",
+            }))
+            .filter((f) => !!f.url);
+        }
+      } catch (err) {
+        console.error("[obtenerSeguimiento:fotos]", err);
+      }
+    }
+
+    return ot;
   } catch (error) {
     unstable_rethrow(error);
     return null;
@@ -68,11 +110,6 @@ export interface EstadoPorPatente {
 
 /**
  * Consulta por patente. Devuelve SOLO el estado.
- *
- * Sin nombre, sin teléfono, sin montos y sin bitácora: una patente es
- * adivinable, así que esta puerta tiene que servir para "¿está listo?" y no
- * para llevarse la cartera de clientes del taller. El rate limit vive en la
- * función de Postgres.
  */
 export async function consultarPorPatente(patente: string): Promise<EstadoPorPatente> {
   try {
@@ -113,13 +150,11 @@ export async function aprobarPresupuestoPublico(
 
 /**
  * Genera (o rota) el link que se le manda al cliente.
- *
- * Rotar invalida el anterior, que es lo que hace falta si el cliente reenvió el
- * link a quien no debía.
  */
 export async function generarLinkSeguimiento(
   otId: string,
 ): Promise<{ token?: string; error?: string }> {
+  const { crearClienteServidor, obtenerSesion } = await import("@/lib/supabase/server");
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 

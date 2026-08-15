@@ -121,6 +121,7 @@ export async function editarProducto(
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = (await crearClienteServidor()) as any;
 
     const updatePayload: Record<string, unknown> = {};

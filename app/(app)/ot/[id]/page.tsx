@@ -15,6 +15,9 @@ import { FirmaCliente } from "@/components/ot/FirmaCliente";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { PanelFicha } from "@/components/ot/PanelFicha";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
+import { SelectorMecanico } from "@/components/ot/SelectorMecanico";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { FijarOTActiva } from "@/components/ot/FijarOTActiva";
 import { fotosDeOT } from "@/lib/actions/fotos";
 import { obtenerFicha } from "@/lib/actions/ficha";
 import { asistenteHabilitado } from "@/lib/actions/ia";
@@ -158,9 +161,8 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     precio_estimado: n.precio_estimado,
   }));
 
-  // Fotos, firma y los dos catálogos que alimentan el editor de ítems. Todo en
-  // paralelo: son consultas independientes y encadenarlas solo suma latencia.
-  const [fotos, { data: recepcion }, servicios, ficha, hayIA, { data: productos }] = await Promise.all([
+  // Fotos, firma y los catálogos que alimentan el editor de ítems y miembros.
+  const [fotos, { data: recepcion }, servicios, ficha, hayIA, { data: productos }, { data: miembros }] = await Promise.all([
     fotosDeOT(ot.id),
     supabase.from("ot_recepcion").select("firma_recepcion_url").eq("ot_id", ot.id).maybeSingle(),
     listarServicios(),
@@ -173,6 +175,11 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
       .eq("activo", true)
       .order("nombre", { ascending: true })
       .limit(500),
+    supabase
+      .from("perfil")
+      .select("user_id, nombre, rol")
+      .eq("taller_id", sesion.perfil.taller_id)
+      .eq("activo", true),
   ]);
 
   const productosOpcion = (productos ?? []).map((p) => ({
@@ -183,8 +190,17 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     unidad: p.unidad,
   }));
 
+  const miembrosOpcion = (miembros ?? []) as { user_id: string; nombre: string | null; rol: string }[];
+
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+      <FijarOTActiva
+        otId={ot.id}
+        numero={ot.numero}
+        patente={ot.vehiculo.patente}
+        estado={ot.estado}
+        telefonoCliente={ot.cliente?.telefono}
+      />
       <div className="contenedor-angosto space-y-6">
         {/* Nav Back */}
         <div className="flex items-center justify-between">
@@ -202,35 +218,40 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         </div>
 
         {/* Encabezado OT */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
-          <div className="flex items-start justify-between">
+        <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-caption text-muted-foreground">Orden de Trabajo</p>
-              <h1 className="text-display text-3xl font-bold tracking-tight text-foreground">
+              <p className="text-caption font-bold text-muted-foreground uppercase tracking-wider">Orden de Trabajo</p>
+              <h1 className="text-display text-3xl font-black tracking-tight text-foreground">
                 #{ot.numero}
               </h1>
             </div>
-            <EstadoSwitcher otId={ot.id} estadoActual={ot.estado} />
+            <div className="flex flex-wrap items-center gap-3">
+              <SelectorMecanico otId={ot.id} asignadoA={ot.asignado_a} miembros={miembrosOpcion} />
+              <EstadoSwitcher otId={ot.id} estadoActual={ot.estado} />
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t border-border pt-4">
-            <div className="space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-caption font-semibold text-muted-foreground">
-                <Car className="h-3.5 w-3.5 text-accent" />
+                <Car className="h-4 w-4 text-accent" />
                 <span>Vehículo</span>
               </div>
-              <p className="text-sm font-bold text-foreground">
-                {[ot.vehiculo.marca?.nombre, ot.vehiculo.modelo?.nombre].filter(Boolean).join(" ") || "Sin modelo"}
-              </p>
-              <p className="text-caption font-semibold text-accent">{ot.vehiculo.patente}</p>
+              <div className="flex items-center gap-2.5">
+                <PlacaPatente patente={ot.vehiculo.patente} size="sm" />
+                <p className="text-sm font-bold text-foreground truncate">
+                  {[ot.vehiculo.marca?.nombre, ot.vehiculo.modelo?.nombre].filter(Boolean).join(" ") || "Sin modelo"}
+                </p>
+              </div>
               {ot.km_ingreso && (
-                <p className="text-caption text-muted-foreground">{ot.km_ingreso.toLocaleString()} km</p>
+                <p className="text-caption text-muted-foreground font-mono">{ot.km_ingreso.toLocaleString()} km de ingreso</p>
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-caption font-semibold text-muted-foreground">
-                <User className="h-3.5 w-3.5 text-accent" />
+                <User className="h-4 w-4 text-accent" />
                 <span>Cliente</span>
               </div>
               <p className="text-sm font-bold text-foreground">
