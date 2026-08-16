@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Plus, Wrench } from "lucide-react";
+import { LogOut, Plus, Wrench, Shield, Sparkles } from "lucide-react";
 
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
+import { SelectorTema } from "@/components/ui/SelectorTema";
 
 export interface SidebarProps {
   taller: string;
@@ -14,54 +15,64 @@ export interface SidebarProps {
 }
 
 const NOMBRE_ROL: Record<string, string> = {
-  dueno: "Dueño",
-  mostrador: "Mostrador",
-  mecanico: "Mecánico",
+  dueno: "Dueño / Admin",
+  mostrador: "Mostrador / Recepción",
+  mecanico: "Jefe de Fosa",
 };
 
-/**
- * Navegación de escritorio.
- *
- * Existe porque la app estaba hecha como una columna de celular estirada: en
- * un monitor quedaban dos tercios de pantalla en blanco y la navegación
- * flotaba abajo, lejos del cursor. Acá la navegación es permanente y el
- * contenido usa el ancho que hay.
- *
- * Se oculta por debajo de lg, donde manda la barra inferior.
- */
 export function Sidebar({ taller, usuario, rol }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border bg-card lg:flex">
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <span className="grid h-9 w-9 place-items-center rounded-[var(--radius-sm)] bg-accent text-accent-foreground">
-          <Wrench className="h-4.5 w-4.5" aria-hidden />
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold text-foreground">{taller}</span>
-          <span className="block text-[0.6875rem] text-muted-foreground">Gestión de taller</span>
-        </span>
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border/80 bg-card/95 backdrop-blur-xl lg:flex shadow-2xl overflow-hidden">
+      {/* Cabecera del Taller con identidad Fierros */}
+      <div className="flex items-center justify-between gap-3 px-4 pt-5 pb-4 border-b border-border/50">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-accent to-orange-600 text-white shadow-lg shadow-accent/25">
+            <Wrench className="h-5 w-5 drop-shadow-sm" aria-hidden />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-black tracking-tight text-foreground">
+              {taller || "Mi Taller"}
+            </span>
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+              <Shield className="h-3 w-3 text-accent" />
+              Sistema Fierros
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 px-3 pb-3">
+      {/* Acciones Rápidas (CTAs Fierros) */}
+      <div className="flex flex-col gap-2 p-3 border-b border-border/40">
         <Link
           href="/ot/nueva"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-accent text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
+          className="group relative flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-amber-500 text-sm font-black text-white shadow-lg shadow-accent/20 transition-all hover:brightness-110 hover:shadow-accent/40 active:scale-[0.98]"
         >
-          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          Nueva orden
+          <Plus className="h-4 w-4 stroke-[3] transition-transform group-hover:rotate-90" aria-hidden />
+          <span>Nueva Orden</span>
         </Link>
         <Link
           href="/presupuestos/nueva"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-accent bg-transparent text-sm font-semibold text-accent transition-transform hover:bg-accent/10 active:scale-[0.98]"
+          className="flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-accent/5 text-xs font-bold text-accent transition-all hover:bg-accent/15 hover:border-accent active:scale-[0.98]"
         >
-          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-          Nuevo presupuesto
+          <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          <span>Nuevo Presupuesto</span>
         </Link>
       </div>
 
-      <nav aria-label="Navegación principal" className="flex-1 space-y-0.5 px-3">
+      {/* Navegación Principal con SCROLL NATIVO Y FLUIDO */}
+      <nav
+        aria-label="Navegación principal"
+        className="flex-1 space-y-1 overflow-y-auto px-3 py-3 overscroll-contain scrollbar-thin scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40"
+      >
+        <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+          Operaciones
+        </p>
         {itemsVisibles(ITEMS_NAV, rol).map((item) => {
           const activo = esRutaActiva(pathname, item.href);
           const Icono = item.icono;
@@ -70,40 +81,58 @@ export function Sidebar({ taller, usuario, rol }: SidebarProps) {
               key={item.href}
               href={item.href}
               aria-current={activo ? "page" : undefined}
-              className={`flex min-h-10 items-center gap-3 rounded-[var(--radius-sm)] px-3 text-sm transition-colors ${
+              className={`group relative flex min-h-10 items-center gap-3 rounded-2xl px-3 text-xs font-bold transition-all ${
                 activo
-                  ? "bg-accent-suave font-semibold text-accent"
-                  : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-accent/15 text-accent shadow-sm border border-accent/30 font-black"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:translate-x-0.5"
               }`}
             >
-              <Icono className="h-4.5 w-4.5 shrink-0" strokeWidth={activo ? 2.4 : 2} aria-hidden />
-              {item.etiqueta}
+              {activo && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-accent" />
+              )}
+              <Icono
+                className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-110 ${
+                  activo ? "text-accent" : "text-muted-foreground"
+                }`}
+                strokeWidth={activo ? 2.5 : 2}
+                aria-hidden
+              />
+              <span className="truncate">{item.etiqueta}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-border p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-foreground">
+      {/* Pie del Sidebar: Tema, Perfil y Cerrar Sesión */}
+      <div className="border-t border-border/60 bg-muted/20 p-3 space-y-2">
+        {/* Selector de Modo Claro / Modo Oscuro */}
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-bold text-muted-foreground">Apariencia</span>
+          <SelectorTema />
+        </div>
+
+        {/* Tarjeta de Usuario */}
+        <div className="flex items-center gap-2.5 rounded-2xl border border-border/50 bg-card/60 p-2">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-900 text-xs font-black text-white shadow-sm border border-white/10">
             {(usuario || "?").slice(0, 2).toUpperCase()}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-foreground">
-              {usuario || "Sin nombre"}
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-xs font-bold text-foreground">
+              {usuario || "Taller Muñoz"}
             </span>
-            <span className="block text-[0.6875rem] text-muted-foreground">
+            <span className="block text-[10px] font-medium text-muted-foreground">
               {NOMBRE_ROL[rol] ?? rol}
             </span>
-          </span>
+          </div>
         </div>
+
         <form action={cerrarSesion}>
           <button
             type="submit"
-            className="mt-1 flex min-h-10 w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+            className="flex min-h-9 w-full items-center justify-center gap-2 rounded-xl text-xs font-bold text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive active:scale-95"
           >
-            <LogOut className="h-4.5 w-4.5" aria-hidden />
-            Cerrar sesión
+            <LogOut className="h-3.5 w-3.5" aria-hidden />
+            <span>Cerrar sesión</span>
           </button>
         </form>
       </div>

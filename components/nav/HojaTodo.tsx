@@ -4,20 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 
+import { SelectorTema } from "@/components/ui/SelectorTema";
 import { Sheet } from "@/components/sheet/Sheet";
 import { esRutaActiva, gruposVisibles, NOMBRE_GRUPO } from "@/lib/navegacion";
 
 /**
  * Todas las pantallas, desde el celular.
- *
- * Existe porque la barra inferior no puede tener diez accesos: con cuatro más
- * el botón central ya está al límite de lo que se toca sin errar con el pulgar.
- * Antes las seis que no entraban simplemente no tenían forma de abrirse en un
- * teléfono — el sidebar que las mostraba se oculta por debajo de `lg`.
- *
- * Cada fila lleva una línea de qué hay del otro lado. En una lista de diez
- * destinos, "Avisos" y "Reportes" no se distinguen solos, y entrar a averiguarlo
- * es justo lo que la hoja tiene que evitar.
  */
 export function HojaTodo({
   abierto,
@@ -33,7 +25,16 @@ export function HojaTodo({
 
   return (
     <Sheet abierto={abierto} onCerrar={onCerrar} titulo="Todo el taller">
-      <div className="space-y-5 pb-2">
+      <div className="space-y-5 pb-4">
+        {/* Selector de Apariencia */}
+        <div className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-3.5 shadow-sm">
+          <div className="space-y-0.5">
+            <span className="text-xs font-black text-foreground">Tema Visual</span>
+            <span className="block text-[11px] text-muted-foreground">Alternar modo oscuro / claro</span>
+          </div>
+          <SelectorTema />
+        </div>
+
         {grupos.map(({ grupo, items }) => (
           <section key={grupo} className="space-y-1.5">
             <h3 className="px-1 text-caption font-bold uppercase tracking-wider text-muted-foreground">
