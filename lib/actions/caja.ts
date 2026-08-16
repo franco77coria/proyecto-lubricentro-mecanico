@@ -64,6 +64,7 @@ export async function registrarPagoOT(datos: z.infer<typeof pagoSchema>): Promis
 export async function realizarCierreCaja(): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol !== "dueno") return { error: "Solo el dueño puede realizar el cierre de caja." };
 
   const tallerId = sesion.perfil.taller_id;
 

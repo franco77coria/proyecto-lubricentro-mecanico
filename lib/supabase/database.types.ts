@@ -1433,6 +1433,7 @@ export type Database = {
           rol: Database["public"]["Enums"]["rol_usuario"]
           taller_id: string
           user_id: string
+          vistas_permitidas: string[] | null
         }
         Insert: {
           activo?: boolean
@@ -1441,6 +1442,7 @@ export type Database = {
           rol?: Database["public"]["Enums"]["rol_usuario"]
           taller_id: string
           user_id: string
+          vistas_permitidas?: string[] | null
         }
         Update: {
           activo?: boolean
@@ -1449,10 +1451,59 @@ export type Database = {
           rol?: Database["public"]["Enums"]["rol_usuario"]
           taller_id?: string
           user_id?: string
+          vistas_permitidas?: string[] | null
         }
         Relationships: [
           {
             foreignKeyName: "perfil_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registro_actividad_usuario: {
+        Row: {
+          id: string
+          taller_id: string
+          user_id: string
+          fecha: string
+          segundos_activos: number
+          minutos_activos?: number
+          ultima_actividad: string
+          online_hasta: string
+          pantallas_visitadas: string[]
+          creado_en: string
+          actualizado_en: string
+        }
+        Insert: {
+          id?: string
+          taller_id: string
+          user_id: string
+          fecha?: string
+          segundos_activos?: number
+          ultima_actividad?: string
+          online_hasta?: string
+          pantallas_visitadas?: string[]
+          creado_en?: string
+          actualizado_en?: string
+        }
+        Update: {
+          id?: string
+          taller_id?: string
+          user_id?: string
+          fecha?: string
+          segundos_activos?: number
+          ultima_actividad?: string
+          online_hasta?: string
+          pantallas_visitadas?: string[]
+          creado_en?: string
+          actualizado_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registro_actividad_usuario_taller_id_fkey"
             columns: ["taller_id"]
             isOneToOne: false
             referencedRelation: "taller"

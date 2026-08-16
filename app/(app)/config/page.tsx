@@ -10,6 +10,7 @@ import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { listarPendientesCatalogo } from "@/lib/actions/catalogo-aprobacion";
 import { listarServicios } from "@/lib/actions/servicios";
+import { obtenerAuditoriaEquipo } from "@/lib/actions/equipo";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function Config() {
     { data: invitaciones },
     servicios,
     pendientesCatalogo,
+    auditoria,
   ] = await Promise.all([
     supabase
       .from("taller")
@@ -42,7 +44,7 @@ export default async function Config() {
       .maybeSingle(),
     supabase
       .from("perfil")
-      .select("user_id, nombre, rol, activo")
+      .select("user_id, nombre, rol, activo, vistas_permitidas")
       .eq("taller_id", sesion.perfil.taller_id)
       .order("rol"),
     supabase
@@ -54,6 +56,7 @@ export default async function Config() {
       .order("creado_en", { ascending: false }),
     listarServicios(),
     listarPendientesCatalogo(),
+    esDueno ? obtenerAuditoriaEquipo() : Promise.resolve([]),
   ]);
 
   const items = (plantilla?.checklist_plantilla_item ?? [])
@@ -100,31 +103,28 @@ export default async function Config() {
             <AprobarCatalogo pendientes={pendientesCatalogo} editable={esDueno} />
           </div>
 
-          <div className="entrar" style={{ "--i": 4 } as React.CSSProperties}>
+          <div className="entrar lg:col-span-2" style={{ "--i": 5 } as React.CSSProperties}>
             <GestionEquipo
-              miembros={equipo ?? []}
-              invitaciones={invitaciones ?? []}
+              miembros={(equipo || []) as unknown as { user_id: string; nombre: string | null; rol: string; activo: boolean; vistas_permitidas?: string[] | null }[]}
+              invitaciones={invitaciones || []}
+              auditoria={auditoria}
               yoSoy={sesion.user.id}
               esDueno={esDueno}
             />
           </div>
-
-          <section className="tarjeta entrar space-y-3 p-4" style={{ "--i": 5 } as React.CSSProperties}>
-            <h2 className="t-seccion">Sesión</h2>
-            <p className="text-caption text-muted-foreground">
-              Entraste como {sesion.user.email}.
-            </p>
-            <form action={cerrarSesion}>
-              <button
-                type="submit"
-                className="flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-muted px-4 text-sm font-medium text-foreground transition-colors hover:text-destructive"
-              >
-                <LogOut className="h-4 w-4" aria-hidden />
-                Cerrar sesión
-              </button>
-            </form>
-          </section>
         </div>
+
+        {/* Cerrar sesión al fondo: no es una acción frecuente pero tiene que
+            estar accesible desde la configuración. */}
+        <form action={cerrarSesion} className="pt-2">
+          <button
+            type="submit"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 text-caption font-bold text-destructive hover:bg-destructive/15 transition-colors"
+          >
+            <LogOut className="h-4 w-4" aria-hidden />
+            Cerrar sesión
+          </button>
+        </form>
       </div>
     </main>
   );

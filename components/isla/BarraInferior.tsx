@@ -25,7 +25,13 @@ import { esRutaActiva, ITEMS_BARRA, type ItemNav } from "@/lib/navegacion";
  * pantallas desde un teléfono. Antes esas seis no tenían ninguna: el sidebar
  * que las lista se oculta por debajo de `lg`, así que en celular no existían.
  */
-export function BarraInferior({ rol }: { rol?: string }) {
+export function BarraInferior({
+  rol,
+  vistasPermitidas,
+}: {
+  rol?: string;
+  vistasPermitidas?: string[] | null;
+}) {
   const pathname = usePathname();
   const [hojaAbierta, setHojaAbierta] = useState(false);
 
@@ -36,7 +42,12 @@ export function BarraInferior({ rol }: { rol?: string }) {
 
   return (
     <>
-      <HojaTodo abierto={hojaAbierta} onCerrar={() => setHojaAbierta(false)} rol={rol} />
+      <HojaTodo
+        abierto={hojaAbierta}
+        onCerrar={() => setHojaAbierta(false)}
+        rol={rol}
+        vistasPermitidas={vistasPermitidas}
+      />
 
       <nav
         aria-label="Navegación principal"

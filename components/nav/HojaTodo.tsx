@@ -15,13 +15,15 @@ export function HojaTodo({
   abierto,
   onCerrar,
   rol,
+  vistasPermitidas,
 }: {
   abierto: boolean;
   onCerrar: () => void;
   rol?: string;
+  vistasPermitidas?: string[] | null;
 }) {
   const pathname = usePathname();
-  const grupos = gruposVisibles(rol ?? "");
+  const grupos = gruposVisibles(rol ?? "", vistasPermitidas);
 
   return (
     <Sheet abierto={abierto} onCerrar={onCerrar} titulo="Todo el taller">

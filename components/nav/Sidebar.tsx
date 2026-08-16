@@ -12,15 +12,16 @@ export interface SidebarProps {
   taller: string;
   usuario: string;
   rol: string;
+  vistasPermitidas?: string[] | null;
 }
 
 const NOMBRE_ROL: Record<string, string> = {
   dueno: "Dueño / Admin",
   mostrador: "Mostrador / Recepción",
-  mecanico: "Jefe de Fosa",
+  mecanico: "Mecánico / Fosa",
 };
 
-export function Sidebar({ taller, usuario, rol }: SidebarProps) {
+export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -73,7 +74,7 @@ export function Sidebar({ taller, usuario, rol }: SidebarProps) {
         <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
           Operaciones
         </p>
-        {itemsVisibles(ITEMS_NAV, rol).map((item) => {
+        {itemsVisibles(ITEMS_NAV, rol, vistasPermitidas).map((item) => {
           const activo = esRutaActiva(pathname, item.href);
           const Icono = item.icono;
           return (
