@@ -37,20 +37,21 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" suppressHydrationWarning className={`${barlowCondensed.variable} h-full antialiased dark`}>
+    <html lang="es" suppressHydrationWarning className={`${barlowCondensed.variable} h-full antialiased`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
                 const t = localStorage.getItem('fierros-tema');
-                if (t === 'light') {
+                if (t === 'dark') {
+                  document.documentElement.classList.remove('light');
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
                   document.documentElement.classList.remove('dark');
                   document.documentElement.classList.add('light');
                   document.documentElement.setAttribute('data-theme', 'light');
-                } else {
-                  document.documentElement.classList.add('dark');
-                  document.documentElement.setAttribute('data-theme', 'dark');
                 }
               } catch(e) {}
             `,

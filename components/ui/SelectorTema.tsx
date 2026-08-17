@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
 export function SelectorTema({ className = "" }: { className?: string }) {
-  const [tema, setTema] = useState<"dark" | "light">("dark");
+  const [tema, setTema] = useState<"dark" | "light">("light");
   const [montado, setMontado] = useState(false);
 
   useEffect(() => {
@@ -14,9 +14,9 @@ export function SelectorTema({ className = "" }: { className?: string }) {
       setTema(guardado);
       aplicarTema(guardado);
     } else {
-      // Default a dark
-      setTema("dark");
-      aplicarTema("dark");
+      // Default a light (modo claro)
+      setTema("light");
+      aplicarTema("light");
     }
   }, []);
 
@@ -42,7 +42,7 @@ export function SelectorTema({ className = "" }: { className?: string }) {
 
   if (!montado) {
     return (
-      <div className={`h-9 w-9 rounded-xl bg-muted/50 animate-pulse ${className}`} />
+      <div className={`h-8 w-8 rounded-xl bg-muted/50 animate-pulse ${className}`} />
     );
   }
 
@@ -52,17 +52,17 @@ export function SelectorTema({ className = "" }: { className?: string }) {
       onClick={toggleTema}
       aria-label={`Cambiar a modo ${tema === "dark" ? "claro" : "oscuro"}`}
       title={`Cambiar a modo ${tema === "dark" ? "claro" : "oscuro"}`}
-      className={`flex items-center gap-2 rounded-xl border border-border/80 bg-card/80 px-3 py-2 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-95 shadow-sm backdrop-blur-sm ${className}`}
+      className={`inline-flex h-8 items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 text-[11px] font-bold text-foreground transition-all hover:bg-muted active:scale-95 shadow-xs ${className}`}
     >
       {tema === "dark" ? (
         <>
-          <Sun className="h-4 w-4 text-amber-400 shrink-0" />
-          <span className="hidden sm:inline">Modo Claro</span>
+          <Sun className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <span>Claro</span>
         </>
       ) : (
         <>
-          <Moon className="h-4 w-4 text-sky-400 shrink-0" />
-          <span className="hidden sm:inline">Modo Oscuro</span>
+          <Moon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+          <span>Oscuro</span>
         </>
       )}
     </button>

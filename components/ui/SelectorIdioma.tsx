@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Globe, Check } from "lucide-react";
+import { Globe, Check, ChevronDown } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import { IDIOMAS_DISPONIBLES, MONEDAS_DISPONIBLES, type Idioma, type Moneda } from "@/lib/i18n";
 
-export function SelectorIdioma() {
+export function SelectorIdioma({ className = "" }: { className?: string }) {
   const { idioma, moneda, cambiarIdioma, cambiarMoneda } = useI18n();
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -24,24 +24,24 @@ export function SelectorIdioma() {
   }, []);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative ${className}`} ref={ref}>
       <button
         type="button"
         onClick={() => setAbierto(!abierto)}
-        className="flex items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+        className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 text-[11px] font-bold text-foreground hover:bg-muted transition-all shadow-xs active:scale-95"
         title="Cambiar idioma y moneda"
       >
-        <Globe className="h-3.5 w-3.5 text-accent" />
-        <span>{idiomaActual.bandera}</span>
-        <span className="uppercase text-[11px] font-bold">{idiomaActual.codigo}</span>
-        <span className="text-muted-foreground text-[10px]">·</span>
-        <span className="text-[11px] font-bold text-accent">{monedaActual.codigo}</span>
+        <span className="text-xs">{idiomaActual.bandera}</span>
+        <span className="uppercase tracking-tight font-black">{idiomaActual.codigo}</span>
+        <span className="text-muted-foreground/60 text-[9px]">·</span>
+        <span className="font-black text-accent">{monedaActual.codigo}</span>
+        <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${abierto ? "rotate-180" : ""}`} />
       </button>
 
       {abierto && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-xl z-50 animate-in fade-in-0 zoom-in-95 duration-100">
-          <div className="mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block px-2 mb-1.5">
+        <div className="absolute left-0 top-full mt-2 w-60 rounded-2xl border border-border/80 bg-popover p-3 shadow-2xl backdrop-blur-2xl z-50 animate-in fade-in-0 zoom-in-95 duration-100 ring-1 ring-black/5">
+          <div className="mb-2.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block px-1.5 mb-1.5">
               Idioma / Language
             </span>
             <div className="space-y-1">
@@ -53,18 +53,19 @@ export function SelectorIdioma() {
                     type="button"
                     onClick={() => {
                       cambiarIdioma(item.codigo as Idioma);
+                      setAbierto(false);
                     }}
-                    className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-bold transition-colors ${
+                    className={`flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all ${
                       activo
-                        ? "bg-accent/15 text-accent"
+                        ? "bg-accent/15 text-accent font-black shadow-xs"
                         : "text-foreground hover:bg-muted"
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <span>{item.bandera}</span>
+                      <span className="text-sm">{item.bandera}</span>
                       <span>{item.nombre}</span>
                     </span>
-                    {activo && <Check className="h-3.5 w-3.5" />}
+                    {activo && <Check className="h-3.5 w-3.5 stroke-[2.5]" />}
                   </button>
                 );
               })}
@@ -72,7 +73,7 @@ export function SelectorIdioma() {
           </div>
 
           <div className="pt-2 border-t border-border/60">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block px-2 mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground block px-1.5 mb-1.5">
               Moneda / Currency
             </span>
             <div className="grid grid-cols-2 gap-1">
@@ -84,10 +85,11 @@ export function SelectorIdioma() {
                     type="button"
                     onClick={() => {
                       cambiarMoneda(m.codigo as Moneda);
+                      setAbierto(false);
                     }}
-                    className={`flex items-center justify-between rounded-xl px-2 py-1.5 text-xs font-bold transition-colors ${
+                    className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all ${
                       activo
-                        ? "bg-accent/15 text-accent"
+                        ? "bg-accent/15 text-accent font-black shadow-xs"
                         : "text-foreground hover:bg-muted"
                     }`}
                   >
