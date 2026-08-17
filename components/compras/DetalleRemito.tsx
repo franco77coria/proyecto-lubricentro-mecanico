@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
+import { GaleriaComprobantesCompra } from "@/components/compras/GaleriaComprobantesCompra";
 import {
   borrarLineaRemito,
   obtenerDetalleCompra,
@@ -29,10 +30,12 @@ export function DetalleRemito({
   compraId,
   comprobante,
   puedeCorregir,
+  tallerId,
 }: {
   compraId: string;
   comprobante: string | null;
   puedeCorregir: boolean;
+  tallerId?: string;
 }) {
   const router = useRouter();
   const { notificar } = useIsla();
@@ -101,7 +104,7 @@ export function DetalleRemito({
       </button>
 
       {abierto && lineas && (
-        <div className="mt-2 space-y-1.5">
+        <div className="mt-3 space-y-3">
           {lineas.length === 0 ? (
             <p className="text-caption text-muted-foreground">
               Este remito quedó sin renglones. Cargalo de nuevo o borralo.
@@ -137,8 +140,18 @@ export function DetalleRemito({
             </ul>
           )}
 
+          {/* Galería y comprobantes físicos asociados a esta compra */}
+          <div className="border-t border-border/70 pt-2.5">
+            <GaleriaComprobantesCompra
+              compraId={compraId}
+              tallerId={tallerId}
+              puedeEditar={puedeCorregir}
+              compacto
+            />
+          </div>
+
           {puedeCorregir && lineas.length > 0 && (
-            <p className="text-caption text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground/80">
               Un costo mal cargado se corrige borrando el renglón y volviéndolo a
               cargar: el costo registrado no se reescribe.
             </p>

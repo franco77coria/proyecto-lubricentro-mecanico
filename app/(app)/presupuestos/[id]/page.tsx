@@ -1,9 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, User, Phone, FileText, Wrench, WrenchIcon, Layers } from "lucide-react";
+import { ArrowLeft, User, Phone, FileText } from "lucide-react";
 import { obtenerPresupuesto } from "@/lib/actions/presupuestos";
-import { BotonImprimirPresupuesto } from "@/components/presupuestos/BotonImprimirPresupuesto";
+import { BotonCompartirPresupuesto } from "@/components/presupuestos/BotonCompartirPresupuesto";
+import { BotonConvertirOT } from "@/components/presupuestos/BotonConvertirOT";
+import { BotonPDFWhatsApp } from "@/components/ot/BotonPDFWhatsApp";
+import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { listarServicios } from "@/lib/actions/servicios";
+import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,27 +17,63 @@ export default async function PaginaDetallePresupuesto({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const sesion = await obtenerSesion();
   const { id } = await params;
-  const presupuesto = await obtenerPresupuesto(id);
+  const supabase = await crearClienteServidor();
+
+  const [presupuesto, servicios, { data: productosRaw }, { data: taller }] = await Promise.all([
+    obtenerPresupuesto(id),
+    listarServicios(),
+    supabase
+      .from("producto")
+      .select("id, nombre, precio_venta, stock, unidad")
+      .eq("taller_id", sesion?.perfil?.taller_id || "")
+      .eq("activo", true)
+      .order("nombre", { ascending: true })
+      .limit(500),
+    supabase
+      .from("taller")
+      .select("nombre, direccion, telefono, cuit")
+      .eq("id", sesion?.perfil?.taller_id || "")
+      .maybeSingle(),
+  ]);
 
   if (!presupuesto) return notFound();
+
+  const productos = (productosRaw || []).map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    precioVenta: Number(p.precio_venta),
+    stock: Number(p.stock),
+    unidad: p.unidad,
+  }));
 
   interface ItemPresupuesto {
     id: string;
     descripcion: string;
-    tipo: string;
+    tipo: "repuesto" | "mano_obra" | "servicio" | "insumo" | "tercero";
     cantidad: number;
     precio_unitario: number;
+    subtotal?: number;
   }
 
-  const items = (presupuesto.items || []) as ItemPresupuesto[];
+  const rawItems = (presupuesto.items || []) as ItemPresupuesto[];
+  const items = rawItems.map((it) => ({
+    ...it,
+    subtotal: it.subtotal ?? it.cantidad * it.precio_unitario,
+  }));
+
   const totalItems = items.reduce(
     (acc: number, item: ItemPresupuesto) => acc + item.precio_unitario * item.cantidad,
     0,
   );
   const total = totalItems > 0 ? totalItems : Number(presupuesto.total ?? 0);
-  const totalManoObra = Number(presupuesto.total_mano_obra ?? 0);
-  const totalRepuestos = Number(presupuesto.total_repuestos ?? 0);
+  const totalManoObra = items
+    .filter((it) => it.tipo === "mano_obra" || it.tipo === "servicio")
+    .reduce((acc, it) => acc + it.cantidad * it.precio_unitario, 0) || Number(presupuesto.total_mano_obra ?? 0);
+  const totalRepuestos = items
+    .filter((it) => it.tipo === "repuesto" || it.tipo === "insumo" || it.tipo === "tercero")
+    .reduce((acc, it) => acc + it.cantidad * it.precio_unitario, 0) || Number(presupuesto.total_repuestos ?? 0);
 
   const fecha = new Date(presupuesto.creado_en);
   const formatter = new Intl.DateTimeFormat("es-AR", {
@@ -45,23 +86,30 @@ export default async function PaginaDetallePresupuesto({
   });
 
   const vehiculo = presupuesto.vehiculo as {
-    patente?: string;
-    marca?: { nombre: string };
-    modelo?: { nombre: string };
-    motorizacion?: { nombre: string };
+    id?: string;
+    patente: string;
+    anio?: number | null;
+    color?: string | null;
+    km_actual?: number | null;
+    marca?: { nombre: string } | null;
+    modelo?: { nombre: string } | null;
+    motorizacion?: { nombre: string } | null;
   } | null;
 
   const cliente = presupuesto.cliente as {
+    id?: string;
     nombre?: string;
     apellido?: string;
     telefono?: string;
   } | null;
 
+  const esPresupuesto = presupuesto.estado === "presupuesto";
+
   return (
     <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8">
       <div className="contenedor-ancho space-y-6 max-w-3xl">
-        {/* Navegación */}
-        <div className="flex items-center justify-between">
+        {/* Navegación y Acciones Rápidas */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/presupuestos"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
@@ -69,8 +117,70 @@ export default async function PaginaDetallePresupuesto({
             <ArrowLeft className="h-4 w-4" />
             <span>Volver a Presupuestos</span>
           </Link>
-          <BotonImprimirPresupuesto />
+          <div className="flex items-center gap-2">
+            <BotonCompartirPresupuesto
+              numero={presupuesto.numero || id.slice(0, 8)}
+              total={total}
+              totalManoObra={totalManoObra}
+              totalRepuestos={totalRepuestos}
+              vehiculo={{
+                patente: vehiculo?.patente || "",
+                marca: vehiculo?.marca?.nombre,
+                modelo: vehiculo?.modelo?.nombre,
+              }}
+              cliente={cliente}
+              observaciones={presupuesto.observaciones}
+            />
+            <BotonPDFWhatsApp
+              ot={{
+                id: presupuesto.id,
+                numero: presupuesto.numero || id.slice(0, 8),
+                estado: "Presupuesto",
+                tipo: presupuesto.tipo || "mecanica",
+                fecha_ingreso: presupuesto.fecha_ingreso || presupuesto.creado_en,
+                total,
+                total_mano_obra: totalManoObra,
+                total_repuestos: totalRepuestos,
+                observaciones: presupuesto.observaciones,
+                km_ingreso: presupuesto.km_ingreso,
+                taller: {
+                  nombre: taller?.nombre || "Taller Mecánico",
+                  direccion: taller?.direccion,
+                  telefono: taller?.telefono,
+                  cuit: taller?.cuit,
+                },
+                vehiculo: {
+                  patente: vehiculo?.patente || "",
+                  marca: vehiculo?.marca?.nombre,
+                  modelo: vehiculo?.modelo?.nombre,
+                  anio: vehiculo?.anio,
+                  color: vehiculo?.color,
+                },
+                cliente: cliente ? {
+                  nombre: cliente.nombre || "Cliente",
+                  apellido: cliente.apellido || "",
+                  telefono: cliente.telefono || "",
+                } : null,
+                items: items.map((it) => ({
+                  descripcion: it.descripcion,
+                  tipo: it.tipo,
+                  cantidad: it.cantidad,
+                  precio_unitario: it.precio_unitario,
+                  subtotal: it.subtotal,
+                })),
+                checklist: [],
+                anomalias: [],
+                descargos: [],
+                recomendados: [],
+              }}
+            />
+          </div>
         </div>
+
+        {/* Botón de conversión rápida */}
+        {esPresupuesto && (
+          <BotonConvertirOT presupuestoId={presupuesto.id} />
+        )}
 
         {/* Encabezado */}
         <header className="space-y-4 rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
@@ -119,99 +229,33 @@ export default async function PaginaDetallePresupuesto({
           )}
         </header>
 
-        {/* Ítems */}
-        <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-            <Wrench className="h-4 w-4 text-accent" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-foreground">
-              Detalle de Ítems y Cotización
-            </h2>
-          </div>
-
-          {items.length === 0 ? (
-            <div className="space-y-4 py-2">
-              {/* Desglose de totales guardados */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {totalManoObra > 0 && (
-                  <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-4">
-                    <div className="flex items-center gap-2">
-                      <WrenchIcon className="h-4 w-4 text-accent" />
-                      <span className="text-xs font-bold text-foreground">Mano de Obra</span>
-                    </div>
-                    <span className="text-sm font-black text-foreground tabular-nums">
-                      ${totalManoObra.toLocaleString("es-AR")}
-                    </span>
-                  </div>
-                )}
-                {totalRepuestos > 0 && (
-                  <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-4">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-accent" />
-                      <span className="text-xs font-bold text-foreground">Repuestos e Insumos</span>
-                    </div>
-                    <span className="text-sm font-black text-foreground tabular-nums">
-                      ${totalRepuestos.toLocaleString("es-AR")}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center border-t border-border/60 pt-4 mt-2">
-                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                  Total Cotizado
-                </span>
-                <span className="text-2xl font-black text-accent tabular-nums">
-                  ${total.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {items.map((item, idx) => (
-                <div
-                  key={item.id || idx}
-                  className="flex items-center justify-between rounded-2xl bg-muted/30 p-3.5"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-accent">
-                        {item.tipo?.replace("_", " ")}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm font-bold text-foreground truncate">
-                      {item.descripcion}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0 ml-4">
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      {item.cantidad} × ${Number(item.precio_unitario).toLocaleString("es-AR")}
-                    </p>
-                    <p className="text-sm font-black text-foreground tabular-nums">
-                      ${(item.cantidad * item.precio_unitario).toLocaleString("es-AR", {
-                        minimumFractionDigits: 0,
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex justify-between items-center border-t border-border/60 pt-4 mt-2">
-                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                  Total Presupuestado
-                </span>
-                <span className="text-2xl font-black text-accent tabular-nums">
-                  ${total.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
-                </span>
-              </div>
-            </div>
-          )}
+        {/* Editor de ítems editable in-situ */}
+        <section className="space-y-4">
+          <ItemsEditor
+            otId={presupuesto.id}
+            items={items}
+            servicios={servicios}
+            productos={productos}
+          />
         </section>
+
+        {/* Resumen de totales */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex items-center justify-between rounded-2xl bg-card border border-border p-4 shadow-xs">
+            <span className="text-xs font-bold text-muted-foreground">Mano de Obra &amp; Servicios:</span>
+            <span className="text-sm font-black text-foreground tabular-nums">${totalManoObra.toLocaleString("es-AR")}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-2xl bg-card border border-border p-4 shadow-xs">
+            <span className="text-xs font-bold text-muted-foreground">Repuestos &amp; Insumos:</span>
+            <span className="text-sm font-black text-foreground tabular-nums">${totalRepuestos.toLocaleString("es-AR")}</span>
+          </div>
+        </div>
 
         {/* Observaciones */}
         {presupuesto.observaciones && (
           <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
             <h2 className="text-xs font-black uppercase tracking-wider text-foreground mb-2">
-              Observaciones &amp; Anomalías
+              Observaciones &amp; Validez
             </h2>
             <p className="text-sm text-muted-foreground font-medium whitespace-pre-wrap leading-relaxed">
               {presupuesto.observaciones}

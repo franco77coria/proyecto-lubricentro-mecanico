@@ -141,7 +141,7 @@ export const ITEMS_NAV: readonly ItemNav[] = [
   },
 ];
 
-export const ATAJOS_BARRA: readonly string[] = ["/tablero", "/vehiculos", "/stock", "/kanban"];
+export const ATAJOS_BARRA: readonly string[] = ["/tablero", "/kanban", "/stock"];
 
 export const ITEMS_BARRA: readonly ItemNav[] = ATAJOS_BARRA.map(
   (href) => ITEMS_NAV.find((i) => i.href === href)!,

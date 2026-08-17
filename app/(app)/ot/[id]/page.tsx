@@ -18,6 +18,7 @@ import { SeccionPagos } from "@/components/ot/SeccionPagos";
 import { SelectorMecanico } from "@/components/ot/SelectorMecanico";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { FijarOTActiva } from "@/components/ot/FijarOTActiva";
+import { PeritajeVehiculoIA } from "@/components/ot/PeritajeVehiculoIA";
 import { fotosDeOT } from "@/lib/actions/fotos";
 import { obtenerFicha } from "@/lib/actions/ficha";
 import { asistenteHabilitado } from "@/lib/actions/ia";
@@ -331,6 +332,23 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
             Van juntas porque son las dos caras de lo mismo: dejar constancia
             de cómo entró el vehículo. */}
         <CapturaFotos otId={ot.id} tallerId={sesion.perfil.taller_id} fotos={fotos} />
+
+        {/* Peritaje IA de Carrocería, Daños y Color */}
+        <PeritajeVehiculoIA
+          otId={ot.id}
+          tallerId={sesion.perfil.taller_id}
+          fotos={fotos}
+          peritajeIA={ot.peritaje_ia}
+          inspeccionRecepcion={ot.inspeccion_recepcion}
+          vehiculo={{
+            id: ot.vehiculo.id,
+            patente: ot.vehiculo.patente,
+            marca: ot.vehiculo.marca?.nombre,
+            modelo: ot.vehiculo.modelo?.nombre,
+            anio: ot.vehiculo.anio,
+            color: ot.vehiculo.color,
+          }}
+        />
 
         {ot.estado === "anulado" ? (
           <p className="tarjeta flex items-start gap-2.5 border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">

@@ -35,6 +35,11 @@ export function rutaFoto(tallerId: string, otId: string, extension = "webp"): st
   return `${tallerId}/${otId}/${crypto.randomUUID()}.${extension}`;
 }
 
+/** Nombre de archivo para compras/remitos dentro del bucket: {taller}/compras/{compraId}/{uuid}.webp */
+export function rutaFotoCompra(tallerId: string, compraId: string, extension = "webp"): string {
+  return `${tallerId}/compras/${compraId}/${crypto.randomUUID()}.${extension}`;
+}
+
 export interface FotoComprimida {
   blob: Blob;
   ancho: number;

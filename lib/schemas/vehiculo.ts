@@ -24,6 +24,7 @@ export const vehiculoSchema = z.object({
     .optional()
     .or(z.literal("")),
   color: z.string().trim().max(30).optional(),
+  vin: z.string().trim().max(30).optional().or(z.literal("")),
   combustible: z.enum(["nafta", "diesel", "gnc", "hibrido", "electrico"]).optional().or(z.literal("")),
   km: z.coerce.number().int().min(0).max(3_000_000).optional().or(z.literal("")),
 

@@ -62,7 +62,13 @@ export default async function PaginaCompras() {
         <EncabezadoPantalla
           seccion="Proveedores"
           titulo="Compras"
-          accion={<FormCompra proveedores={proveedores} productos={productosOpcion} />}
+          accion={
+            <FormCompra
+              proveedores={proveedores}
+              productos={productosOpcion}
+              tallerId={sesion.perfil.taller_id}
+            />
+          }
         />
 
         {totalMes > 0 && (
@@ -115,6 +121,7 @@ export default async function PaginaCompras() {
                   compraId={c.id}
                   comprobante={c.comprobante}
                   puedeCorregir={puedeCorregir}
+                  tallerId={sesion.perfil.taller_id}
                 />
               </li>
             ))}

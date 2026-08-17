@@ -37,6 +37,7 @@ export async function crearVehiculo(
     motorizacionId: formData.get("motorizacionId") ?? "",
     anio: formData.get("anio") ?? "",
     color: formData.get("color") ?? "",
+    vin: formData.get("vin") ?? "",
     combustible: formData.get("combustible") ?? "",
     km: formData.get("km") ?? "",
     clienteNombre: formData.get("clienteNombre") ?? "",
@@ -62,6 +63,7 @@ export async function crearVehiculo(
         motorizacion_id: d.motorizacionId || null,
         anio: d.anio === "" ? null : Number(d.anio),
         color: d.color || null,
+        vin: d.vin || null,
         combustible: d.combustible || null,
         km_actual: d.km === "" ? null : Number(d.km),
         km_actualizado_en: d.km === "" ? null : new Date().toISOString(),
@@ -83,14 +85,6 @@ export async function crearVehiculo(
           .maybeSingle();
 
         if (existente) {
-          // El auto ya estaba. Se COMPLETA lo que le falta y no se pisa nada de
-          // lo que ya tiene: la ficha vieja puede haber sido corregida a mano y
-          // una recepción apurada no tiene por qué ganarle.
-          //
-          // Sin esto, la motorización que el mostrador acaba de elegir se
-          // descartaba en silencio — y como la columna es nueva, TODOS los autos
-          // ya cargados la tienen vacía. Es decir: por este camino nunca se
-          // llenaba, que es justo el dato que necesita la ficha técnica.
           const parche: ParcheVehiculo = {};
           if (d.marcaId && !existente.marca_id) parche.marca_id = d.marcaId;
           if (d.modeloId && !existente.modelo_id) parche.modelo_id = d.modeloId;
@@ -99,32 +93,43 @@ export async function crearVehiculo(
           }
           if (d.anio !== "" && existente.anio == null) parche.anio = Number(d.anio);
           if (d.color && !existente.color) parche.color = d.color;
+          if (d.vin && !existente.vin) parche.vin = d.vin;
           if (d.combustible && !existente.combustible) parche.combustible = d.combustible;
 
-          // El kilometraje es la excepción: no se "completa", se actualiza. Pero
-          // solo hacia arriba. Un odómetro no baja, así que un número menor al
-          // guardado es un error de tipeo y pisarlo perdería el dato bueno.
           if (d.km !== "" && Number(d.km) > (existente.km_actual ?? -1)) {
             parche.km_actual = Number(d.km);
             parche.km_actualizado_en = new Date().toISOString();
           }
 
           if (Object.keys(parche).length > 0) {
-            const { error: errorParche } = await supabase
+            await supabase
               .from("vehiculo")
               .update(parche)
               .eq("id", existente.id)
               .eq("taller_id", tallerId);
-            if (errorParche) console.error("[crearVehiculo/completar]", errorParche.code);
           }
 
-          // Buscar si el auto ya tiene cliente activo
-          const { data: vc } = await supabase
-            .from("vehiculo_cliente")
-            .select("cliente_id")
-            .eq("vehiculo_id", existente.id)
-            .is("hasta", null)
-            .maybeSingle();
+          // Resolver cliente (deduplicar si se pasó un nombre o teléfono)
+          let resolvedClienteId: string | undefined = undefined;
+          if (d.clienteNombre?.trim() || d.clienteTelefono?.trim()) {
+            resolvedClienteId = await resolverOCrearCliente(supabase, tallerId, {
+              nombre: d.clienteNombre || "",
+              apellido: d.clienteApellido || "",
+              telefono: d.clienteTelefono || "",
+            });
+
+            if (resolvedClienteId) {
+              await cambiarDuenoVehiculo(existente.id, resolvedClienteId);
+            }
+          } else {
+            const { data: vc } = await supabase
+              .from("vehiculo_cliente")
+              .select("cliente_id")
+              .eq("vehiculo_id", existente.id)
+              .is("hasta", null)
+              .maybeSingle();
+            resolvedClienteId = vc?.cliente_id;
+          }
 
           const partes = [
             existente.marca?.nombre,
@@ -138,9 +143,9 @@ export async function crearVehiculo(
               id: existente.id,
               patente: existente.patente,
               descripcion: partes.length ? partes.join(" ") : "sin datos de modelo",
-              clienteId: vc?.cliente_id,
+              clienteId: resolvedClienteId,
             },
-            clienteId: vc?.cliente_id,
+            clienteId: resolvedClienteId,
           };
         }
       }
@@ -148,45 +153,194 @@ export async function crearVehiculo(
       return { error: "No se pudo guardar el vehículo." };
     }
 
-    // Cliente opcional. Si falla, el auto ya quedó cargado: se avisa pero no
-    // se pierde el trabajo hecho.
+    // Si es un auto nuevo y se pasaron datos de cliente, resolver o crear sin duplicar
     let nuevoClienteId: string | undefined = undefined;
-    if (d.clienteNombre?.trim()) {
-      const { data: cliente, error: errorCliente } = await supabase
-        .from("cliente")
-        .insert({
-          taller_id: tallerId,
-          nombre: d.clienteNombre.trim(),
-          apellido: d.clienteApellido?.trim() ?? "",
-          telefono: d.clienteTelefono ? normalizarTelefono(d.clienteTelefono) : null,
-        })
-        .select("id")
-        .single();
-
-      if (errorCliente) {
-        console.error("[crearVehiculo/cliente]", errorCliente.code);
-        return { creado: vehiculo, error: "El auto se guardó, pero el cliente no. Cargalo desde la ficha." };
-      }
-
-      nuevoClienteId = cliente.id;
-      await supabase.from("vehiculo_cliente").insert({
-        taller_id: tallerId,
-        vehiculo_id: vehiculo.id,
-        cliente_id: cliente.id,
+    if (d.clienteNombre?.trim() || d.clienteTelefono?.trim()) {
+      nuevoClienteId = await resolverOCrearCliente(supabase, tallerId, {
+        nombre: d.clienteNombre || "",
+        apellido: d.clienteApellido || "",
+        telefono: d.clienteTelefono || "",
       });
+
+      if (nuevoClienteId) {
+        await supabase.from("vehiculo_cliente").insert({
+          taller_id: tallerId,
+          vehiculo_id: vehiculo.id,
+          cliente_id: nuevoClienteId,
+        });
+      }
     }
 
     revalidatePath("/vehiculos");
     return {
-      creado: { id: vehiculo.id, patente: vehiculo.patente, clienteId: nuevoClienteId },
+      creado: {
+        id: vehiculo.id,
+        patente: vehiculo.patente,
+        clienteId: nuevoClienteId,
+      },
       clienteId: nuevoClienteId,
     };
   } catch (error) {
     unstable_rethrow(error);
-    return { error: "No se pudo conectar. Probá de nuevo." };
+    return { error: "No se pudo conectar con el servidor." };
   }
 }
 
-// El alta de marca / modelo / motorización que no están en el catálogo vive en
-// `lib/actions/catalogo.ts`: la resolución de duplicados tiene que usar el
-// mismo `normalizar()` que el índice único, así que corre en Postgres.
+/**
+ * Busca un cliente existente por teléfono o nombre en el taller. Si no existe, lo crea.
+ */
+async function resolverOCrearCliente(
+  supabase: any,
+  tallerId: string,
+  datos: { nombre: string; apellido: string; telefono: string },
+): Promise<string | undefined> {
+  const telNorm = datos.telefono ? normalizarTelefono(datos.telefono) : null;
+  const nom = datos.nombre.trim();
+  const ape = datos.apellido.trim();
+
+  // 1. Buscar por teléfono si está presente
+  if (telNorm) {
+    const { data: porTel } = await supabase
+      .from("cliente")
+      .select("id")
+      .eq("taller_id", tallerId)
+      .eq("telefono", telNorm)
+      .maybeSingle();
+
+    if (porTel) return porTel.id;
+  }
+
+  // 2. Buscar por nombre y apellido
+  if (nom) {
+    const { data: porNombre } = await supabase
+      .from("cliente")
+      .select("id")
+      .eq("taller_id", tallerId)
+      .ilike("nombre", nom)
+      .ilike("apellido", ape || "%")
+      .maybeSingle();
+
+    if (porNombre) return porNombre.id;
+  }
+
+  // 3. Si no existe y tiene al menos nombre, crearlo
+  if (nom) {
+    const { data: nuevoCliente } = await supabase
+      .from("cliente")
+      .insert({
+        taller_id: tallerId,
+        nombre: nom,
+        apellido: ape,
+        telefono: telNorm,
+      })
+      .select("id")
+      .single();
+
+    return nuevoCliente?.id;
+  }
+
+  return undefined;
+}
+
+export async function vincularVehiculoACliente(
+  clienteId: string,
+  vehiculoId: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida" };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    // Cerrar dueño anterior si existía
+    await supabase
+      .from("vehiculo_cliente")
+      .update({ hasta: new Date().toISOString() })
+      .eq("vehiculo_id", vehiculoId)
+      .is("hasta", null);
+
+    // Insertar nuevo vínculo
+    const { error } = await supabase.from("vehiculo_cliente").insert({
+      taller_id: tallerId,
+      vehiculo_id: vehiculoId,
+      cliente_id: clienteId,
+      desde: new Date().toISOString(),
+    });
+
+    if (error) return { error: "No se pudo vincular el vehículo" };
+
+    revalidatePath(`/clientes/${clienteId}`);
+    revalidatePath("/clientes");
+    revalidatePath("/vehiculos");
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "Error de servidor al vincular" };
+  }
+}
+
+export async function cambiarDuenoVehiculo(
+  vehiculoId: string,
+  nuevoClienteId: string,
+): Promise<{ error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida. Volvé a entrar." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    const { error: errorCerrar } = await supabase
+      .from("vehiculo_cliente")
+      .update({ hasta: new Date().toISOString() })
+      .eq("vehiculo_id", vehiculoId)
+      .is("hasta", null);
+
+    if (errorCerrar) {
+      console.error("[cambiarDuenoVehiculo/cerrar]", errorCerrar.code);
+      return { error: "No se pudo actualizar el dueño anterior." };
+    }
+
+    const { error: errorAbrir } = await supabase.from("vehiculo_cliente").insert({
+      taller_id: tallerId,
+      vehiculo_id: vehiculoId,
+      cliente_id: nuevoClienteId,
+    });
+
+    if (errorAbrir) {
+      console.error("[cambiarDuenoVehiculo/abrir]", errorAbrir.code);
+      return { error: "No se pudo asignar el nuevo dueño." };
+    }
+
+    revalidatePath("/vehiculos");
+    revalidatePath(`/vehiculos/${vehiculoId}`);
+    return {};
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar con el servidor." };
+  }
+}
+
+export async function obtenerVehiculosParaAsignar(): Promise<
+  Array<{ id: string; patente: string; marca: string | null; modelo: string | null }>
+> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return [];
+
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase
+    .from("vehiculo")
+    .select(`id, patente, marca:marca_id(nombre), modelo:modelo_id(nombre)`)
+    .eq("taller_id", sesion.perfil.taller_id)
+    .order("creado_en", { ascending: false })
+    .limit(100);
+
+  return (data || []).map((v: any) => ({
+    id: v.id,
+    patente: v.patente,
+    marca: v.marca?.nombre || null,
+    modelo: v.modelo?.nombre || null,
+  }));
+}
+

@@ -263,8 +263,46 @@ export type Database = {
             referencedRelation: "proveedor"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      compra_foto: {
+        Row: {
+          compra_id: string
+          creado_en: string
+          id: string
+          nota: string | null
+          path: string
+          subido_por: string | null
+          taller_id: string
+        }
+        Insert: {
+          compra_id: string
+          creado_en?: string
+          id?: string
+          nota?: string | null
+          path: string
+          subido_por?: string | null
+          taller_id: string
+        }
+        Update: {
+          compra_id?: string
+          creado_en?: string
+          id?: string
+          nota?: string | null
+          path?: string
+          subido_por?: string | null
+          taller_id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "compra_taller_id_fkey"
+            foreignKeyName: "compra_foto_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_foto_taller_id_fkey"
             columns: ["taller_id"]
             isOneToOne: false
             referencedRelation: "taller"
@@ -811,10 +849,12 @@ export type Database = {
           fecha_entrega: string | null
           fecha_ingreso: string
           id: string
+          inspeccion_recepcion: any | null
           km_ingreso: number | null
           motivo_anulacion: string | null
           numero: string
           observaciones: string | null
+          peritaje_ia: any | null
           taller_id: string
           tipo: Database["public"]["Enums"]["tipo_ot"]
           token_expira_en: string | null
@@ -835,10 +875,12 @@ export type Database = {
           fecha_entrega?: string | null
           fecha_ingreso?: string
           id?: string
+          inspeccion_recepcion?: any | null
           km_ingreso?: number | null
           motivo_anulacion?: string | null
           numero: string
           observaciones?: string | null
+          peritaje_ia?: any | null
           taller_id: string
           tipo?: Database["public"]["Enums"]["tipo_ot"]
           token_expira_en?: string | null
@@ -859,10 +901,12 @@ export type Database = {
           fecha_entrega?: string | null
           fecha_ingreso?: string
           id?: string
+          inspeccion_recepcion?: any | null
           km_ingreso?: number | null
           motivo_anulacion?: string | null
           numero?: string
           observaciones?: string | null
+          peritaje_ia?: any | null
           taller_id?: string
           tipo?: Database["public"]["Enums"]["tipo_ot"]
           token_expira_en?: string | null

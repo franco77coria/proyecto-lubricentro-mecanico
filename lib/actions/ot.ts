@@ -260,6 +260,61 @@ export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ 
   }
 }
 
+export async function actualizarItemOT(
+  otId: string,
+  itemId: string,
+  item: {
+    tipo: "mano_obra" | "repuesto" | "servicio" | "insumo" | "tercero";
+    descripcion: string;
+    cantidad: number;
+    precioUnitario: number;
+    productoId?: string | null;
+  },
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    let costoUnitario = 0;
+    if (item.productoId) {
+      const { data: costo } = await supabase.rpc("costo_actual_producto", {
+        p_producto: item.productoId,
+      });
+      costoUnitario = Number(costo ?? 0);
+    }
+
+    const { error } = await supabase
+      .from("ot_item")
+      .update({
+        tipo: item.tipo,
+        descripcion: item.descripcion.trim(),
+        cantidad: item.cantidad,
+        precio_unitario: item.precioUnitario,
+        costo_unitario: costoUnitario,
+        producto_id: item.productoId || null,
+      })
+      .eq("id", itemId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      if (error.message?.includes("stock") || error.code === "P0001") {
+        return { error: "Stock insuficiente para ajustar la cantidad solicitada." };
+      }
+      return { error: "No se pudo actualizar el ítem." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    revalidatePath(`/presupuestos/${otId}`);
+    if (item.productoId) revalidatePath("/stock");
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "Error de servidor al actualizar el ítem." };
+  }
+}
+
 export async function eliminarItemOT(otId: string, itemId: string): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };

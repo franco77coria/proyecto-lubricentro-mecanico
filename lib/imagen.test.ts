@@ -47,3 +47,17 @@ describe("formatearPeso", () => {
     assert.equal(formatearPeso(5 * 1024 * 1024), "5.0 MB");
   });
 });
+
+describe("rutas de almacenamiento", () => {
+  test("rutaFoto genera ruta con tenant y ot", async () => {
+    const { rutaFoto } = await import("./imagen.ts");
+    const ruta = rutaFoto("taller-123", "ot-456", "webp");
+    assert.match(ruta, /^taller-123\/ot-456\/[a-f0-9-]+\.webp$/);
+  });
+
+  test("rutaFotoCompra genera ruta con tenant, compras y compraId", async () => {
+    const { rutaFotoCompra } = await import("./imagen.ts");
+    const ruta = rutaFotoCompra("taller-123", "compra-789", "webp");
+    assert.match(ruta, /^taller-123\/compras\/compra-789\/[a-f0-9-]+\.webp$/);
+  });
+});

@@ -195,3 +195,66 @@ export async function obtenerPresupuesto(id: string) {
     return null;
   }
 }
+
+export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    const { error } = await supabase
+      .from("orden_trabajo")
+      .update({
+        estado: "aprobado",
+        aprobado_cliente_en: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[convertirPresupuestoAOT]", error);
+      return { error: "No se pudo convertir el presupuesto a orden de trabajo." };
+    }
+
+    revalidatePath("/presupuestos");
+    revalidatePath(`/presupuestos/${id}`);
+    revalidatePath("/tablero");
+    revalidatePath("/kanban");
+    revalidatePath(`/ot/${id}`);
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "Error de servidor al convertir presupuesto." };
+  }
+}
+
+export async function actualizarPresupuesto(
+  id: string,
+  datos: { observaciones?: string; tipo?: "lubricentro" | "mecanica" | "mixto" },
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("orden_trabajo")
+      .update({
+        observaciones: datos.observaciones || null,
+        tipo: datos.tipo || undefined,
+      })
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) return { error: "No se pudo actualizar el presupuesto." };
+
+    revalidatePath(`/presupuestos/${id}`);
+    revalidatePath(`/ot/${id}`);
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "Error al actualizar." };
+  }
+}
+

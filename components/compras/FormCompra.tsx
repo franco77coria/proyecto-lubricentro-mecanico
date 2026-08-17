@@ -6,7 +6,18 @@ import { useState, useTransition } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { Sheet } from "@/components/sheet/Sheet";
+import {
+  GaleriaComprobantesCompra,
+  type FotoBorrador,
+} from "@/components/compras/GaleriaComprobantesCompra";
 import { crearCompra, crearProveedor, type ProveedorListado } from "@/lib/actions/compras";
+import {
+  obtenerTallerIdActual,
+  registrarFotoCompra,
+} from "@/lib/actions/fotos-compras";
+import { comprimirImagen, rutaFotoCompra } from "@/lib/imagen";
+import { BUCKET_FOTOS } from "@/lib/storage";
+import { crearClienteNavegador } from "@/lib/supabase/client";
 
 export interface OpcionProductoCompra {
   id: string;
@@ -36,9 +47,11 @@ function hoyLocal() {
 export function FormCompra({
   proveedores: proveedoresIniciales,
   productos,
+  tallerId: tallerIdProp,
 }: {
   proveedores: ProveedorListado[];
   productos: OpcionProductoCompra[];
+  tallerId?: string;
 }) {
   const router = useRouter();
   const { notificar } = useIsla();
@@ -51,6 +64,7 @@ export function FormCompra({
   const [comprobante, setComprobante] = useState("");
   const [fecha, setFecha] = useState(hoyLocal);
   const [lineas, setLineas] = useState<Linea[]>([{ ...LINEA_VACIA }]);
+  const [fotosBorrador, setFotosBorrador] = useState<FotoBorrador[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const total = lineas.reduce(
@@ -104,11 +118,51 @@ export function FormCompra({
         fecha,
         items,
       });
-      if (res.error) {
-        setError(res.error);
+      if (res.error || !res.id) {
+        setError(res.error ?? "No se pudo crear la compra.");
         return;
       }
-      notificar({ tipo: "exito", mensaje: `Remito cargado — ${items.length} producto(s) al stock` });
+
+      // Si se sacaron fotos del comprobante / remito físico, las optimizamos y subimos
+      if (fotosBorrador.length > 0) {
+        try {
+          const supabase = crearClienteNavegador();
+          let tallerId = tallerIdProp;
+          if (!tallerId) tallerId = (await obtenerTallerIdActual()) ?? undefined;
+
+          if (tallerId) {
+            for (const foto of fotosBorrador) {
+              const { blob } = await comprimirImagen(foto.file);
+              const path = rutaFotoCompra(
+                tallerId,
+                res.id,
+                blob.type === "image/webp" ? "webp" : "jpg",
+              );
+              const { error: errorSubida } = await supabase.storage
+                .from(BUCKET_FOTOS)
+                .upload(path, blob, { contentType: blob.type, upsert: false });
+
+              if (!errorSubida) {
+                await registrarFotoCompra(res.id, path, foto.nota);
+              }
+            }
+          }
+        } catch (errFotos) {
+          console.error("[FormCompra/subirFotos]", errFotos);
+        }
+      }
+
+      // Limpiar URLs de objeto borrador
+      fotosBorrador.forEach((f) => URL.revokeObjectURL(f.previewUrl));
+      setFotosBorrador([]);
+
+      notificar({
+        tipo: "exito",
+        mensaje:
+          fotosBorrador.length > 0
+            ? `Remito cargado — ${items.length} producto(s) al stock y ${fotosBorrador.length} comprobante(s) adjunto(s)`
+            : `Remito cargado — ${items.length} producto(s) al stock`,
+      });
       setAbierto(false);
       setLineas([{ ...LINEA_VACIA }]);
       setComprobante("");
@@ -203,6 +257,16 @@ export function FormCompra({
             >
               Agregar
             </button>
+          </div>
+
+          {/* Foto del comprobante físico / remito (con captura de cámara y zoom) */}
+          <div className="rounded-2xl border border-border/80 bg-muted/20 p-3.5 space-y-2">
+            <GaleriaComprobantesCompra
+              borrador
+              fotosBorrador={fotosBorrador}
+              onFotosBorradorChange={setFotosBorrador}
+              compacto
+            />
           </div>
 
           <div className="space-y-2.5">

@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Car, Phone, FileText, User } from "lucide-react";
 import { obtenerClienteDetalle } from "@/lib/actions/clientes";
+import { obtenerVehiculosParaAsignar } from "@/lib/actions/vehiculos";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { SiluetaVehiculo } from "@/components/ui/SiluetaVehiculo";
+import { ModalAsociarVehiculo } from "@/components/clientes/ModalAsociarVehiculo";
 import { ESTADO_TONO, etiquetaEstado } from "@/lib/estados-ot";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +60,10 @@ export default async function PaginaDetalleCliente({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const detalle = await obtenerClienteDetalle(id);
+  const [detalle, vehiculosTaller] = await Promise.all([
+    obtenerClienteDetalle(id),
+    obtenerVehiculosParaAsignar(),
+  ]);
 
   if (!detalle) return notFound();
 
@@ -147,6 +152,7 @@ export default async function PaginaDetalleCliente({
               <Car className="h-4 w-4 text-accent" />
               Vehículos Asociados ({listaVehiculos.length})
             </h2>
+            <ModalAsociarVehiculo clienteId={id} vehiculosTaller={vehiculosTaller} />
           </div>
 
           {listaVehiculos.length === 0 ? (
