@@ -134,10 +134,10 @@ export const ITEMS_NAV: readonly ItemNav[] = [
   },
   {
     href: "/config",
-    etiqueta: "Ajustes",
+    etiqueta: "Configuración",
     icono: Settings,
     grupo: "config",
-    ayuda: "Taller, equipo, roles y auditoría",
+    ayuda: "Taller, equipo, roles, idioma y auditoría",
   },
 ];
 

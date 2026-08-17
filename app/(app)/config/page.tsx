@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { AprobarCatalogo } from "@/components/config/AprobarCatalogo";
+import { AjustesIdiomaMoneda } from "@/components/config/AjustesIdiomaMoneda";
 import { CatalogoServicios } from "@/components/config/CatalogoServicios";
 import { DatosTaller } from "@/components/config/DatosTaller";
 import { EditorChecklist } from "@/components/config/EditorChecklist";
@@ -77,6 +78,10 @@ export default async function Config() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="entrar" style={{ "--i": 1 } as React.CSSProperties}>
+            <AjustesIdiomaMoneda editable={true} />
+          </div>
+
+          <div className="entrar" style={{ "--i": 2 } as React.CSSProperties}>
             {taller && <DatosTaller taller={taller} editable={esDueno} />}
           </div>
 

@@ -8,7 +8,6 @@ import { LogOut, Plus, Wrench, Shield, Sparkles, Check, X } from "lucide-react";
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { SelectorTema } from "@/components/ui/SelectorTema";
-import { SelectorIdioma } from "@/components/ui/SelectorIdioma";
 
 export interface SidebarProps {
   taller: string;
@@ -46,14 +45,13 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
               </span>
               <span className="flex items-center gap-0.5 text-[9px] font-semibold text-muted-foreground">
                 <Shield className="h-2 w-2 text-accent" />
-                Fierros
+                Fierros Pro
               </span>
             </div>
           </div>
 
-          {/* Micro-Píldoras Superiores (Idioma & Modo Claro/Oscuro) */}
-          <div className="flex items-center gap-1 shrink-0">
-            <SelectorIdioma />
+          {/* Modo Claro/Oscuro en Header */}
+          <div className="shrink-0">
             <SelectorTema />
           </div>
         </div>
