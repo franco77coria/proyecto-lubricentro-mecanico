@@ -38,7 +38,7 @@ export function sanitizarCedulaVerde(crudo: any): CedulaVerdeOCRData {
 
   let anio: number | undefined;
   const anioNum = Number(crudo.anio || crudo.ano || crudo.modelo_anio);
-  if (!isNaN(anioNum) && anioNum >= 1950 && anioNum <= new Date().getFullYear() + 1) {
+  if (!isNaN(anioNum) && anioNum >= 1900 && anioNum <= new Date().getFullYear() + 2) {
     anio = anioNum;
   }
 

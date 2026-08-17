@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileText, User } from "lucide-react";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { formatearVehiculoBadge } from "@/lib/vehiculo";
 
 interface ItemPresupuesto {
   cantidad: number;
@@ -14,12 +15,16 @@ export interface PresupuestoTarjetaProps {
     items?: ItemPresupuesto[];
     vehiculo?: {
       patente: string;
+      anio?: number | string | null;
+      marca?: { nombre?: string } | string | null;
+      modelo?: { nombre?: string } | string | null;
       motorizacion?: {
+        nombre?: string;
         modelo?: {
           nombre?: string;
           marca?: { nombre?: string };
         };
-      };
+      } | string | null;
     } | null;
     cliente?: {
       nombre: string;
@@ -60,19 +65,23 @@ export function TarjetaPresupuesto({ presupuesto }: PresupuestoTarjetaProps) {
       </div>
 
       <div className="mt-2 space-y-2">
-        {presupuesto.vehiculo?.patente && (
-          <div className="flex items-center gap-2 text-sm">
-            <PlacaPatente patente={presupuesto.vehiculo.patente} size="sm" />
-            <span className="text-xs font-semibold text-muted-foreground truncate hidden sm:inline">
-              {[
-                presupuesto.vehiculo.motorizacion?.modelo?.marca?.nombre,
-                presupuesto.vehiculo.motorizacion?.modelo?.nombre,
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            </span>
-          </div>
-        )}
+        {presupuesto.vehiculo?.patente && (() => {
+          const v = presupuesto.vehiculo!;
+          const mot = typeof v.motorizacion === "object" && v.motorizacion ? v.motorizacion : null;
+          return (
+            <div className="flex items-center gap-2 text-sm">
+              <PlacaPatente patente={v.patente} size="sm" />
+              <span className="text-xs font-semibold text-muted-foreground truncate hidden sm:inline">
+                {formatearVehiculoBadge({
+                  marca: typeof v.marca === "string" ? v.marca : (v.marca?.nombre ?? mot?.modelo?.marca?.nombre),
+                  modelo: typeof v.modelo === "string" ? v.modelo : (v.modelo?.nombre ?? mot?.modelo?.nombre),
+                  anio: v.anio,
+                  motorizacion: typeof v.motorizacion === "string" ? v.motorizacion : mot?.nombre,
+                })}
+              </span>
+            </div>
+          );
+        })()}
 
         {presupuesto.cliente && (
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">

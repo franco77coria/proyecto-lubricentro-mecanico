@@ -30,6 +30,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [patente, setPatente] = useState("");
   const [formatoEspecial, setFormatoEspecial] = useState(false);
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
+  const [anio, setAnio] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
   const [buscandoPatente, setBuscandoPatente] = useState(false);
@@ -91,6 +92,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (vehiculo.marcaId) formDataVehiculo.append("marcaId", vehiculo.marcaId);
         if (vehiculo.modeloId) formDataVehiculo.append("modeloId", vehiculo.modeloId);
         if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
+        if (anio) formDataVehiculo.append("anio", anio);
         if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
         if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
 
@@ -130,94 +132,91 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
       <div className="flex items-center gap-2">
         <Link
           href="/turnos"
-          className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground"
+          className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Volver a Turnos</span>
+          <ArrowLeft className="h-5 w-5" />
         </Link>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Nuevo Turno</h1>
+          <p className="text-caption text-muted-foreground">Agendar cita de servicio o mantenimiento</p>
+        </div>
       </div>
 
-      <header className="space-y-1">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agenda de Fosa & Taller</p>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Nuevo Turno</h1>
-      </header>
-
       {errorMsg && (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs font-bold text-destructive">
+        <div className="rounded-2xl border border-destructive/50 bg-destructive/10 p-4 text-xs font-semibold text-destructive">
           {errorMsg}
         </div>
       )}
 
-      {/* Cuándo y Qué */}
-      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center gap-2 border-b border-border/60 pb-3">
+      {/* 1. Fecha y Hora */}
+      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-2 border-b border-border pb-3">
           <CalendarDays className="h-4 w-4 text-accent" />
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Fecha y Horario</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Día y Horario</h2>
         </div>
 
-        {/* Accesos rápidos de fecha */}
-        <div className="space-y-2">
-          <label className="text-caption text-muted-foreground font-semibold">Día del Turno</label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Hoy", val: hoyStr },
-              { label: "Mañana", val: mananaStr },
-              { label: "Pasado", val: pasadoStr },
-            ].map((d) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-caption text-muted-foreground font-semibold">Fecha</label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+            />
+            {/* Accesos rápidos */}
+            <div className="flex gap-1.5 mt-2">
               <button
-                key={d.val}
                 type="button"
-                onClick={() => setFecha(d.val)}
-                className={`min-h-11 rounded-xl text-xs font-bold transition-all ${
-                  fecha === d.val
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                }`}
+                onClick={() => setFecha(getFechaOffset(0))}
+                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
               >
-                {d.label}
+                Hoy
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setFecha(getFechaOffset(1))}
+                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
+              >
+                Mañana
+              </button>
+              <button
+                type="button"
+                onClick={() => setFecha(getFechaOffset(2))}
+                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
+              >
+                Pasado
+              </button>
+            </div>
           </div>
 
-          <input
-            type="date"
-            required
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-            className="min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-          />
-        </div>
-
-        {/* Accesos rápidos de hora */}
-        <div className="space-y-2">
-          <label className="text-caption text-muted-foreground font-semibold flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-accent" />
-            Horario
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {HORAS_RAPIDAS.map((h) => (
-              <button
-                key={h}
-                type="button"
-                onClick={() => setHora(h)}
-                className={`min-h-10 px-3 rounded-xl text-xs font-bold transition-all ${
-                  hora === h
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {h} hs
-              </button>
-            ))}
+          <div>
+            <label className="text-caption text-muted-foreground font-semibold">Hora de Entrada</label>
+            <div className="relative">
+              <input
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+              />
+              <Clock className="absolute right-3.5 top-4 h-5 w-5 text-muted-foreground pointer-events-none" />
+            </div>
+            {/* Horas rápidas */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {HORAS_RAPIDAS.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setHora(h)}
+                  className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                    hora === h ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                  }`}
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
           </div>
-
-          <input
-            type="time"
-            required
-            value={hora}
-            onChange={(e) => setHora(e.target.value)}
-            className="min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-          />
         </div>
 
         <div>
@@ -244,9 +243,9 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         </div>
       </section>
 
-      {/* Auto y Cliente */}
-      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-sm">
-        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+      {/* 2. Vehículo y Cliente */}
+      <section className="space-y-4 rounded-3xl border border-border/80 bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-accent" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Auto y Contacto</h2>
@@ -262,6 +261,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
             onFormatoEspecialChange={setFormatoEspecial}
             onCedulaDetectada={(d) => {
               if (d.patente) setPatente(d.patente);
+              if (d.anio) setAnio(String(d.anio));
               if (d.titularNombre && !clienteNombre) {
                 setClienteNombre(d.titularNombre);
               }
@@ -289,7 +289,20 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
           <>
             <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-caption text-muted-foreground font-semibold">Año (Opcional)</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1900"
+                  max={new Date().getFullYear() + 1}
+                  placeholder="Ej: 2018"
+                  value={anio}
+                  onChange={(e) => setAnio(e.target.value)}
+                  className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+                />
+              </div>
               <div>
                 <label className="text-caption text-muted-foreground font-semibold">Nombre del Cliente</label>
                 <input
@@ -301,7 +314,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
                 />
               </div>
               <div>
-                <label className="text-caption text-muted-foreground font-semibold">Teléfono (WhatsApp)</label>
+                <label className="text-caption text-muted-foreground font-semibold">Teléfono</label>
                 <input
                   type="tel"
                   placeholder="Ej: 11 2345-6789"

@@ -362,13 +362,14 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             </div>
             <div>
               <label htmlFor="anio-ingreso" className="text-caption text-muted-foreground">
-                Año
+                Año (Opcional)
               </label>
               <input
                 id="anio-ingreso"
                 type="number"
                 inputMode="numeric"
-                min="1950"
+                min="1900"
+                max={new Date().getFullYear() + 1}
                 placeholder="Ej: 2018"
                 value={anio}
                 onChange={(e) => setAnio(e.target.value)}

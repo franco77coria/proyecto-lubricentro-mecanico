@@ -34,6 +34,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [patente, setPatente] = useState("");
   const [formatoEspecial, setFormatoEspecial] = useState(false);
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
+  const [anio, setAnio] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
 
@@ -55,6 +56,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         const d = JSON.parse(draft);
         if (d.patente) setPatente(d.patente);
         if (d.vehiculo) setVehiculo(d.vehiculo);
+        if (d.anio) setAnio(d.anio);
         if (d.clienteNombre) setClienteNombre(d.clienteNombre);
         if (d.clienteTelefono) setClienteTelefono(d.clienteTelefono);
         if (d.descargo) setDescargo(d.descargo);
@@ -68,10 +70,11 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
 
   // Guardar borrador automáticamente
   useEffect(() => {
-    if (patente.trim() || clienteNombre.trim() || items.some((it) => it.descripcion.trim()) || descargo.trim()) {
+    if (patente.trim() || clienteNombre.trim() || anio.trim() || items.some((i) => i.descripcion.trim()) || descargo.trim()) {
       const dataToSave = {
         patente,
         vehiculo,
+        anio,
         clienteNombre,
         clienteTelefono,
         descargo,
@@ -80,18 +83,19 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
       setTieneBorrador(true);
     }
-  }, [patente, vehiculo, clienteNombre, clienteTelefono, descargo, items]);
+  }, [patente, vehiculo, anio, clienteNombre, clienteTelefono, descargo, items]);
 
   const limpiarBorrador = () => {
     localStorage.removeItem(DRAFT_KEY);
     setPatente("");
     setVehiculo(VEHICULO_VACIO);
+    setAnio("");
     setClienteNombre("");
     setClienteTelefono("");
     setDescargo("");
     setItems([{ id: "init-1", tipo: "mano_obra", descripcion: "", cantidad: 1, precioUnitario: 0 }]);
     setTieneBorrador(false);
-    notificar({ tipo: "alerta", mensaje: "Borrador de cotización limpiado." });
+    notificar({ tipo: "alerta", mensaje: "Borrador limpiado." });
   };
 
   useEffect(() => {
@@ -152,6 +156,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (vehiculo.marcaId) formDataVehiculo.append("marcaId", vehiculo.marcaId);
       if (vehiculo.modeloId) formDataVehiculo.append("modeloId", vehiculo.modeloId);
       if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
+      if (anio) formDataVehiculo.append("anio", anio);
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
 
@@ -179,15 +184,19 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
 
       const resOT = await crearPresupuestoCompleto(datosReq);
 
-      if (resOT.error || !resOT.otId) {
-        setErrorMsg(resOT.error || "No se pudo generar el Presupuesto.");
+      if (resOT.error) {
+        setErrorMsg(resOT.error);
         return;
       }
 
-      // Limpiar borrador al guardar
+      // Limpiar borrador tras éxito
       localStorage.removeItem(DRAFT_KEY);
 
-      notificar({ tipo: "exito", mensaje: "Presupuesto creado con éxito." });
+      notificar({
+        tipo: "exito",
+        mensaje: "Presupuesto guardado con éxito.",
+      });
+
       router.push(`/presupuestos/${resOT.otId}`);
     });
   };
@@ -203,37 +212,36 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const subtotal = totalManoObra + totalRepuestos;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header Back */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/presupuestos"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Cancelar</span>
-        </Link>
+    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 pb-20">
+      {/* Encabezado */}
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/presupuestos"
+            className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-foreground">Nuevo Presupuesto</h1>
+            <p className="text-caption text-muted-foreground">Cotización para el cliente con o sin orden de trabajo.</p>
+          </div>
+        </div>
+
         {tieneBorrador && (
           <button
             type="button"
             onClick={limpiarBorrador}
-            className="inline-flex items-center gap-1 text-caption font-semibold text-amber-500 hover:text-amber-400"
+            className="flex min-h-9 items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-xs font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-all"
           >
-            <RotateCcw className="h-3 w-3" />
-            <span>Limpiar borrador</span>
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Limpiar</span>
           </button>
         )}
       </div>
 
-      <header className="space-y-1">
-        <p className="text-caption text-muted-foreground">Cotización</p>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Nuevo Presupuesto
-        </h1>
-      </header>
-
       {errorMsg && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-bold text-red-600">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-xs font-bold text-destructive">
           {errorMsg}
         </div>
       )}
@@ -252,6 +260,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
           onFormatoEspecialChange={setFormatoEspecial}
           onCedulaDetectada={(d) => {
             if (d.patente) setPatente(d.patente);
+            if (d.anio) setAnio(String(d.anio));
             if (d.titularNombre && !clienteNombre) {
               setClienteNombre(d.titularNombre);
             }
@@ -276,7 +285,21 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
 
         <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          <div>
+            <label className="text-caption text-muted-foreground">Año (Opcional)</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1900"
+              max={new Date().getFullYear() + 1}
+              placeholder="Ej: 2018"
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+            />
+          </div>
+
           <div>
             <label className="text-caption text-muted-foreground">Cliente (Nombre)</label>
             <input

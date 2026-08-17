@@ -323,7 +323,7 @@ export async function cambiarDuenoVehiculo(
 }
 
 export async function obtenerVehiculosParaAsignar(): Promise<
-  Array<{ id: string; patente: string; marca: string | null; modelo: string | null }>
+  Array<{ id: string; patente: string; marca: string | null; modelo: string | null; anio: number | null; motorizacion: string | null }>
 > {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return [];
@@ -331,7 +331,7 @@ export async function obtenerVehiculosParaAsignar(): Promise<
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("vehiculo")
-    .select(`id, patente, marca:marca_id(nombre), modelo:modelo_id(nombre)`)
+    .select(`id, patente, anio, marca:marca_id(nombre), modelo:modelo_id(nombre), motorizacion:motorizacion_id(nombre)`)
     .eq("taller_id", sesion.perfil.taller_id)
     .order("creado_en", { ascending: false })
     .limit(100);
@@ -339,8 +339,10 @@ export async function obtenerVehiculosParaAsignar(): Promise<
   return (data || []).map((v: any) => ({
     id: v.id,
     patente: v.patente,
+    anio: v.anio || null,
     marca: v.marca?.nombre || null,
     modelo: v.modelo?.nombre || null,
+    motorizacion: v.motorizacion?.nombre || null,
   }));
 }
 

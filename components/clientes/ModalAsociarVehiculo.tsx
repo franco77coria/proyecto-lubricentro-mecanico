@@ -9,12 +9,15 @@ import { FORMATOS_CEDULA } from "@/lib/codigo";
 import { interpretarCedula } from "@/lib/cedula";
 import { vincularVehiculoACliente, crearVehiculo } from "@/lib/actions/vehiculos";
 import { useIsla } from "@/components/isla/IslaContext";
+import { formatearVehiculoBadge } from "@/lib/vehiculo";
 
 interface VehiculoOpcion {
   id: string;
   patente: string;
   marca?: string | null;
   modelo?: string | null;
+  anio?: number | string | null;
+  motorizacion?: string | null;
 }
 
 export function ModalAsociarVehiculo({
@@ -158,7 +161,7 @@ export function ModalAsociarVehiculo({
                       <div className="flex items-center gap-2.5">
                         <PlacaPatente patente={v.patente} size="sm" />
                         <span className="text-xs font-bold text-foreground truncate">
-                          {[v.marca, v.modelo].filter(Boolean).join(" ") || "Sin modelo"}
+                          {formatearVehiculoBadge(v)}
                         </span>
                       </div>
                       <button

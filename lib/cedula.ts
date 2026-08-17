@@ -25,7 +25,7 @@ export interface DatosCedula {
 const RE_PATENTE = /\b([A-Z]{2}\d{3}[A-Z]{2}|[A-Z]{3}\d{3}|[A-Z]\d{3}[A-Z]{3}|\d{3}[A-Z]{3})\b/;
 /** El chasis es alfanumérico de 17 sin I, O ni Q. */
 const RE_VIN = /\b([A-HJ-NPR-Z0-9]{17})\b/;
-const RE_ANIO = /\b(19[5-9]\d|20[0-4]\d)\b/;
+const RE_ANIO = /\b(19\d{2}|20\d{2})\b/;
 const RE_DNI = /\b(\d{7,8})\b/;
 
 export function interpretarCedula(texto: string): DatosCedula {
@@ -65,7 +65,9 @@ export function interpretarCedula(texto: string): DatosCedula {
 
   const anioTexto = buscar("AÑO", "ANIO", "MODELO AÑO") ?? arriba.match(RE_ANIO)?.[1];
   const anio = anioTexto ? Number(anioTexto.match(/\d{4}/)?.[0]) : NaN;
-  if (Number.isFinite(anio)) datos.anio = anio;
+  if (Number.isFinite(anio) && anio >= 1900 && anio <= new Date().getFullYear() + 2) {
+    datos.anio = anio;
+  }
 
   // 2. Forma separada por comas (PDF417 / Cédula física Mercosur DNRPA)
   if (crudo.includes(",")) {
@@ -87,7 +89,7 @@ export function interpretarCedula(texto: string): DatosCedula {
 
       if (!datos.anio && RE_ANIO.test(campo)) {
         const numAnio = Number(campo);
-        if (numAnio >= 1960 && numAnio <= new Date().getFullYear() + 2) {
+        if (numAnio >= 1900 && numAnio <= new Date().getFullYear() + 2) {
           datos.anio = numAnio;
           continue;
         }
