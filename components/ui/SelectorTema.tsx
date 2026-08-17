@@ -42,7 +42,7 @@ export function SelectorTema({ className = "" }: { className?: string }) {
 
   if (!montado) {
     return (
-      <div className={`h-8 w-8 rounded-xl bg-muted/50 animate-pulse ${className}`} />
+      <div className={`h-6 w-6 rounded-full bg-muted/40 animate-pulse ${className}`} />
     );
   }
 
@@ -52,16 +52,16 @@ export function SelectorTema({ className = "" }: { className?: string }) {
       onClick={toggleTema}
       aria-label={`Cambiar a modo ${tema === "dark" ? "claro" : "oscuro"}`}
       title={`Cambiar a modo ${tema === "dark" ? "claro" : "oscuro"}`}
-      className={`inline-flex h-8 items-center gap-1.5 rounded-xl border border-border/70 bg-card/80 px-2.5 text-[11px] font-bold text-foreground transition-all hover:bg-muted active:scale-95 shadow-xs ${className}`}
+      className={`inline-flex h-6 items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 text-[10px] font-bold text-foreground transition-all hover:bg-muted/80 active:scale-95 ${className}`}
     >
       {tema === "dark" ? (
         <>
-          <Sun className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          <Sun className="h-3 w-3 text-amber-400 shrink-0" />
           <span>Claro</span>
         </>
       ) : (
         <>
-          <Moon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+          <Moon className="h-3 w-3 text-indigo-500 shrink-0" />
           <span>Oscuro</span>
         </>
       )}
