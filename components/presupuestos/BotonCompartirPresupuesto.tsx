@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "lucide-react";
 import { armarLinkPresupuestoWhatsApp } from "@/lib/whatsapp";
+import { useI18n } from "@/lib/i18n/I18nContext";
 
 interface Props {
   numero?: string;
@@ -23,7 +24,12 @@ interface Props {
 }
 
 export function BotonCompartirPresupuesto(props: Props) {
-  const link = armarLinkPresupuestoWhatsApp(props);
+  const { idioma, moneda } = useI18n();
+  const link = armarLinkPresupuestoWhatsApp({
+    ...props,
+    idioma,
+    moneda,
+  });
 
   return (
     <a

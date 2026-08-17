@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ComprobanteOT, type DatosComprobante } from "@/components/ot/ComprobanteOT";
 import { armarLinkWhatsApp } from "@/lib/whatsapp";
+import { useI18n } from "@/lib/i18n/I18nContext";
 
 export type DatosOTPDF = DatosComprobante & { id: string; tipo: string };
 
@@ -16,6 +17,7 @@ export type DatosOTPDF = DatosComprobante & { id: string; tipo: string };
  * milímetros. Nada de "en pantalla se veía distinto".
  */
 export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
+  const { idioma, moneda } = useI18n();
   const [abierto, setAbierto] = useState(false);
   const [modo, setModo] = useState<"a4" | "termico">("a4");
 
@@ -23,9 +25,13 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
     numero: ot.numero,
     estado: ot.estado,
     total: ot.total,
+    totalManoObra: ot.total_mano_obra,
+    totalRepuestos: ot.total_repuestos,
     vehiculo: ot.vehiculo,
     cliente: ot.cliente,
     tallerNombre: ot.taller.nombre,
+    idioma,
+    moneda,
   });
 
   // Escape cierra, y el fondo no scrollea mientras la vista previa está abierta.

@@ -8,7 +8,7 @@ import { useState, useTransition, useEffect } from "react";
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
 import { useIsla } from "@/components/isla/IslaContext";
-import { type OpcionCatalogo } from "@/lib/actions/catalogo";
+import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/presupuestos";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { obtenerFichaPorMotorizacion, type FichaTecnica } from "@/lib/actions/tecnica";
@@ -250,6 +250,28 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
           onChange={setPatente}
           formatoEspecial={formatoEspecial}
           onFormatoEspecialChange={setFormatoEspecial}
+          onCedulaDetectada={(d) => {
+            if (d.patente) setPatente(d.patente);
+            if (d.titularNombre && !clienteNombre) {
+              setClienteNombre(d.titularNombre);
+            }
+            if (d.marca || d.modelo) {
+              startTransition(async () => {
+                const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "");
+                if (resuelto.marcaId) {
+                  setVehiculo({
+                    marcaId: resuelto.marcaId,
+                    modeloId: resuelto.modeloId,
+                    motorizacionId: "",
+                  });
+                }
+              });
+            }
+            notificar({
+              tipo: "exito",
+              mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""})`,
+            });
+          }}
         />
 
         <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />

@@ -150,7 +150,6 @@ export function VideoBackdrop() {
           <video
             ref={videoRef}
             className="h-full w-full object-cover object-[58%_center] transition-opacity duration-500"
-            src="/video/hero-scrub.mp4"
             poster="/img/gtr-noche.jpg"
             muted
             playsInline
@@ -165,7 +164,13 @@ export function VideoBackdrop() {
               transform: "translate3d(0, 0, 0)",
               willChange: "transform, opacity",
             }}
-          />
+          >
+            <source
+              src={esMobile ? "/video/hero-scrub-mobile.mp4" : "/video/hero-scrub.mp4"}
+              type="video/mp4"
+            />
+            <source src="/video/hero-scrub.mp4" type="video/mp4" />
+          </video>
         )}
 
         {/* Gradiente radial para enmascarar marca de agua y acentuar el vehículo */}
