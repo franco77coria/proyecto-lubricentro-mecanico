@@ -309,6 +309,37 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             onChange={setPatente}
             formatoEspecial={formatoEspecial}
             onFormatoEspecialChange={setFormatoEspecial}
+            onCedulaDetectada={(d) => {
+              if (d.patente) setPatente(d.patente);
+              if (d.anio) setAnio(String(d.anio));
+              if (d.vin) setVin(d.vin);
+              if (d.titularNombre && !clienteNombre) {
+                const partes = d.titularNombre.split(/\s+/);
+                if (partes.length >= 2) {
+                  setClienteApellido(partes[0]);
+                  setClienteNombre(partes.slice(1).join(" "));
+                } else {
+                  setClienteNombre(d.titularNombre);
+                }
+              }
+              if (d.marca || d.modelo) {
+                setCedulaResumen(`${d.marca || ""} ${d.modelo || ""}`.trim());
+                startTransition(async () => {
+                  const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "");
+                  if (resuelto.marcaId) {
+                    setVehiculo({
+                      marcaId: resuelto.marcaId,
+                      modeloId: resuelto.modeloId,
+                      motorizacionId: "",
+                    });
+                  }
+                });
+              }
+              notificar({
+                tipo: "exito",
+                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""})`,
+              });
+            }}
           />
 
           <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />

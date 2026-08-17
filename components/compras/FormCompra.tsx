@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, FileScan } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { Sheet } from "@/components/sheet/Sheet";
@@ -11,6 +11,8 @@ import {
   type FotoBorrador,
 } from "@/components/compras/GaleriaComprobantesCompra";
 import { crearCompra, crearProveedor, type ProveedorListado } from "@/lib/actions/compras";
+import { analizarComprobanteCompraAction } from "@/lib/actions/ocr-compras";
+import type { ComprobanteCompraOCRData } from "@/lib/ia/ocr-compras";
 import {
   obtenerTallerIdActual,
   registrarFotoCompra,
@@ -65,7 +67,9 @@ export function FormCompra({
   const [fecha, setFecha] = useState(hoyLocal);
   const [lineas, setLineas] = useState<Linea[]>([{ ...LINEA_VACIA }]);
   const [fotosBorrador, setFotosBorrador] = useState<FotoBorrador[]>([]);
+  const [escaneandoOCR, setEscaneandoOCR] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputOcrRef = useRef<HTMLInputElement>(null);
 
   const total = lineas.reduce(
     (acc, l) => acc + (Number(l.cantidad) || 0) * (Number(l.costoUnitario) || 0),
@@ -74,6 +78,99 @@ export function FormCompra({
 
   const setLinea = (i: number, campo: keyof Linea, valor: string) =>
     setLineas((prev) => prev.map((l, j) => (j === i ? { ...l, [campo]: valor } : l)));
+
+  async function procesarArchivoParaOCR(file: File) {
+    setEscaneandoOCR(true);
+    setError(null);
+    try {
+      // 1. Agregar a fotos borrador
+      const previewUrl = URL.createObjectURL(file);
+      const nuevaFoto: FotoBorrador = {
+        id: `ocr-${Date.now()}`,
+        file,
+        previewUrl,
+        nota: "Comprobante procesado con IA",
+      };
+      setFotosBorrador((prev) => [nuevaFoto, ...prev]);
+
+      // 2. Convertir a base64 para el server action
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const dataUri = await base64Promise;
+
+      // 3. Ejecutar OCR con IA
+      const res = await analizarComprobanteCompraAction(dataUri);
+      if (res.error || !res.datos) {
+        notificar({
+          tipo: "alerta",
+          mensaje: res.error || "No se pudieron extraer datos legibles del comprobante.",
+        });
+        return;
+      }
+
+      const d = res.datos;
+
+      // 4. Autocompletar datos del comprobante
+      if (d.numeroComprobante && d.numeroComprobante !== "S/N") {
+        setComprobante(d.numeroComprobante);
+      }
+      if (d.fecha) {
+        setFecha(d.fecha);
+      }
+
+      // 5. Match o seteo de Proveedor
+      if (d.proveedor) {
+        const provExistente = proveedores.find((p) =>
+          p.nombre.toLowerCase().includes(d.proveedor.toLowerCase()) ||
+          d.proveedor.toLowerCase().includes(p.nombre.toLowerCase()),
+        );
+        if (provExistente) {
+          setProveedorId(provExistente.id);
+        } else {
+          setNuevoProveedor(d.proveedor);
+        }
+      }
+
+      // 6. Match y carga de renglones de productos
+      if (d.items && d.items.length > 0) {
+        const nuevasLineas: Linea[] = d.items.map((item) => {
+          // Buscar producto en catálogo existente por coincidencia de nombre o código
+          const prodMatch = productos.find((p) => {
+            const nomLower = p.nombre.toLowerCase();
+            const descLower = item.descripcion.toLowerCase();
+            const codLower = item.codigo ? item.codigo.toLowerCase() : "";
+            return (
+              (codLower && nomLower.includes(codLower)) ||
+              nomLower.includes(descLower) ||
+              descLower.includes(nomLower)
+            );
+          });
+
+          return {
+            productoId: prodMatch?.id || "",
+            cantidad: String(item.cantidad),
+            costoUnitario: item.precioUnitario > 0 ? String(item.precioUnitario) : "",
+          };
+        });
+
+        setLineas(nuevasLineas);
+
+        notificar({
+          tipo: "exito",
+          mensaje: `✨ Factura procesada con IA: ${d.items.length} ítems extraídos de "${d.proveedor}".`,
+        });
+      }
+    } catch (err: any) {
+      console.error("[FormCompra/OCR]", err);
+      notificar({ tipo: "error", mensaje: "Error al procesar el archivo del comprobante." });
+    } finally {
+      setEscaneandoOCR(false);
+    }
+  }
 
   function agregarProveedor() {
     const nombre = nuevoProveedor.trim();
@@ -187,6 +284,59 @@ export function FormCompra({
         titulo="Cargar Remito de Proveedor"
       >
         <form onSubmit={guardar} className="space-y-4 p-5">
+          {/* Botón Escaneo Inteligente con IA */}
+          <div className="rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/10 via-amber-500/5 to-transparent p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-md shadow-accent/25">
+                {escaneandoOCR ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-5 w-5" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  Escanear Factura / Remito con IA
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Subí o sacá una foto del papel y autocompletá ítems, cantidades y precios.
+                </p>
+              </div>
+            </div>
+
+            <input
+              ref={inputOcrRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) procesarArchivoParaOCR(f);
+                e.target.value = "";
+              }}
+            />
+
+            <button
+              type="button"
+              disabled={escaneandoOCR}
+              onClick={() => inputOcrRef.current?.click()}
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-accent px-4 text-xs font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+            >
+              {escaneandoOCR ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Leyendo factura...</span>
+                </>
+              ) : (
+                <>
+                  <FileScan className="h-4 w-4" />
+                  <span>Escanear con IA</span>
+                </>
+              )}
+            </button>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label htmlFor="prov" className="text-caption font-semibold text-muted-foreground block mb-1">

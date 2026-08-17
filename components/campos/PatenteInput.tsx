@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Check, TriangleAlert } from "lucide-react";
+import { useState, useRef } from "react";
+import { Check, TriangleAlert, Camera, Loader2, Sparkles } from "lucide-react";
 
 import { ayudaPatente, detectarFormato, nombreFormato, normalizarPatente } from "@/lib/patente";
+import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
+import type { CedulaVerdeOCRData } from "@/lib/ia/cedula-verde";
 
 export function PatenteInput({
   defaultValue = "",
@@ -12,6 +14,7 @@ export function PatenteInput({
   onCambio,
   formatoEspecial: especialProp,
   onFormatoEspecialChange,
+  onCedulaDetectada,
 }: {
   defaultValue?: string;
   value?: string;
@@ -19,9 +22,12 @@ export function PatenteInput({
   onCambio?: (patente: string) => void;
   formatoEspecial?: boolean;
   onFormatoEspecialChange?: (especial: boolean) => void;
+  onCedulaDetectada?: (datos: CedulaVerdeOCRData) => void;
 }) {
   const [internalValor, setInternalValor] = useState(normalizarPatente(defaultValue));
   const [internalEspecial, setInternalEspecial] = useState(false);
+  const [escaneando, setEscaneando] = useState(false);
+  const inputFotoRef = useRef<HTMLInputElement>(null);
 
   const valor = valueProp !== undefined ? valueProp : internalValor;
   const especial = especialProp !== undefined ? especialProp : internalEspecial;
@@ -45,10 +51,69 @@ export function PatenteInput({
     onFormatoEspecialChange?.(esp);
   };
 
+  async function procesarFotoCedula(file: File) {
+    setEscaneando(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const dataUri = await base64Promise;
+
+      const res = await escanearCedulaVerdeAction(dataUri);
+      if (res.datos) {
+        if (res.datos.patente) {
+          handleTextChange(res.datos.patente);
+        }
+        onCedulaDetectada?.(res.datos);
+      }
+    } catch (err) {
+      console.warn("[PatenteInput/OCR]", err);
+    } finally {
+      setEscaneando(false);
+    }
+  }
+
   return (
     <div className="space-y-2">
-      <label className="block space-y-1.5">
+      <div className="flex items-center justify-between">
         <span className="text-caption font-medium text-muted-foreground">Patente</span>
+        <button
+          type="button"
+          onClick={() => inputFotoRef.current?.click()}
+          disabled={escaneando}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50"
+        >
+          {escaneando ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>Leyendo cédula...</span>
+            </>
+          ) : (
+            <>
+              <Camera className="h-3.5 w-3.5" />
+              <span>Escanear Cédula Verde</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <input
+        ref={inputFotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) procesarFotoCedula(f);
+          e.target.value = "";
+        }}
+      />
+
+      <label className="block space-y-1.5">
         <input
           name="patente"
           required

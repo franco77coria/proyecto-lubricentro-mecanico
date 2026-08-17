@@ -4,6 +4,7 @@ import { AlertOctagon, AlertTriangle, Check, Minus } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { actualizarItemChecklist } from "@/lib/actions/ot";
+import { BotonDictadoVoz } from "@/components/ui/BotonDictadoVoz";
 
 interface ItemChecklist {
   id: string;
@@ -172,14 +173,26 @@ export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[
                 </div>
               )}
 
-              <input
-                type="text"
-                placeholder="Detalle o recomendación para el cliente..."
-                value={item.nota || ""}
-                onChange={(e) => handleNotaChange(item.id, e.target.value)}
-                onBlur={() => handleNotaBlur(item.id)}
-                className="min-h-11 w-full rounded-xl border border-border bg-muted/50 px-3.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Detalle o recomendación para el cliente..."
+                  value={item.nota || ""}
+                  onChange={(e) => handleNotaChange(item.id, e.target.value)}
+                  onBlur={() => handleNotaBlur(item.id)}
+                  className="min-h-11 flex-1 rounded-xl border border-border bg-muted/50 px-3.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+                <BotonDictadoVoz
+                  tamano="sm"
+                  onTextoTranscrito={(texto) => {
+                    const actual = item.nota ? `${item.nota} ${texto}` : texto;
+                    handleNotaChange(item.id, actual);
+                    startTransition(async () => {
+                      await actualizarItemChecklist(item.id, item.estado, actual);
+                    });
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
