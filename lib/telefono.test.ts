@@ -5,7 +5,6 @@ import { normalizarTelefono, paraWhatsApp, formatearTelefono } from "./telefono.
 
 describe("normalizarTelefono", () => {
   test("las formas en que la gente escribe el mismo celular dan lo mismo", () => {
-    // Todas estas son el mismo número de Buenos Aires.
     for (const entrada of [
       "11 5555-4444",
       "011 15 5555 4444",
@@ -26,6 +25,22 @@ describe("normalizarTelefono", () => {
     assert.equal(normalizarTelefono("11 4555-4444", false), "+541145554444");
   });
 
+  test("normaliza números de Brasil (+55)", () => {
+    assert.equal(normalizarTelefono("+55 11 91234-5678"), "+5511912345678");
+  });
+
+  test("normaliza números de México (+52)", () => {
+    assert.equal(normalizarTelefono("+52 55 1234 5678"), "+525512345678");
+  });
+
+  test("normaliza números de España (+34)", () => {
+    assert.equal(normalizarTelefono("+34 612 34 56 78"), "+34612345678");
+  });
+
+  test("normaliza números de USA (+1)", () => {
+    assert.equal(normalizarTelefono("+1 (555) 123-4567"), "+15551234567");
+  });
+
   test("rechaza lo que no puede ser un teléfono", () => {
     assert.equal(normalizarTelefono(""), null);
     assert.equal(normalizarTelefono("123"), null);
@@ -34,7 +49,14 @@ describe("normalizarTelefono", () => {
 
   test("el resultado siempre cumple lo que exige la base", () => {
     const patronDeLaBase = /^\+[1-9][0-9]{7,14}$/;
-    for (const e of ["11 5555-4444", "0351 15 234 5678", "+54 9 11 2222 3333"]) {
+    for (const e of [
+      "11 5555-4444",
+      "0351 15 234 5678",
+      "+54 9 11 2222 3333",
+      "+55 11 91234-5678",
+      "+34 612 345 678",
+      "+1 555 123 4567",
+    ]) {
       const n = normalizarTelefono(e);
       assert.ok(n && patronDeLaBase.test(n), `"${e}" dio "${n}"`);
     }
@@ -45,6 +67,7 @@ describe("paraWhatsApp", () => {
   test("saca el + porque en una URL se decodifica como espacio", () => {
     assert.equal(paraWhatsApp("+5491155554444"), "5491155554444");
     assert.ok(!paraWhatsApp("+5491155554444").includes("+"));
+    assert.equal(paraWhatsApp("+5511912345678"), "5511912345678");
   });
 });
 
@@ -57,7 +80,14 @@ describe("formatearTelefono", () => {
     assert.equal(formatearTelefono("+5493512345678"), "+54 9 351 234-5678");
   });
 
+  test("formatea números internacionales", () => {
+    assert.equal(formatearTelefono("+525512345678"), "+52 55 1234 5678");
+    assert.equal(formatearTelefono("+34612345678"), "+34 612 34 56 78");
+    assert.equal(formatearTelefono("+15551234567"), "+1 (555) 123-4567");
+  });
+
   test("sin teléfono devuelve vacío, no 'null'", () => {
     assert.equal(formatearTelefono(null), "");
+    assert.equal(formatearTelefono(""), "");
   });
 });

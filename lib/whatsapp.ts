@@ -1,4 +1,5 @@
 import { normalizarTelefono, paraWhatsApp } from "@/lib/telefono";
+import { obtenerDiccionario, formatearMoneda, type Idioma, type Moneda } from "@/lib/i18n";
 
 interface OTParaWhatsApp {
   numero: string;
@@ -16,9 +17,15 @@ interface OTParaWhatsApp {
     telefono?: string | null;
   } | null;
   tallerNombre?: string;
+  idioma?: Idioma;
+  moneda?: Moneda;
 }
 
 export function armarLinkWhatsApp(ot: OTParaWhatsApp): string {
+  const idioma = ot.idioma || "es";
+  const moneda = ot.moneda || "ARS";
+  const t = obtenerDiccionario(idioma).whatsapp;
+
   const telNorm = ot.cliente?.telefono ? normalizarTelefono(ot.cliente.telefono) : null;
   const telLimpio = telNorm ? paraWhatsApp(telNorm) : "";
 
@@ -26,23 +33,25 @@ export function armarLinkWhatsApp(ot: OTParaWhatsApp): string {
     .filter(Boolean)
     .join(" ");
 
-  const saludo = ot.cliente?.nombre?.trim() ? `¡Hola ${ot.cliente.nombre.trim()}!` : "¡Hola!";
+  const saludo = ot.cliente?.nombre?.trim()
+    ? t.saludoNombre.replace("{nombre}", ot.cliente.nombre.trim())
+    : t.saludoGenerico;
 
   let desglose = "";
   if (ot.totalManoObra && ot.totalManoObra > 0) {
-    desglose += `\n• *Mano de obra:* $${ot.totalManoObra.toLocaleString("es-AR")}`;
+    desglose += `\n• *${t.manoDeObra}:* ${formatearMoneda(ot.totalManoObra, moneda, idioma)}`;
   }
   if (ot.totalRepuestos && ot.totalRepuestos > 0) {
-    desglose += `\n• *Repuestos:* $${ot.totalRepuestos.toLocaleString("es-AR")}`;
+    desglose += `\n• *${t.repuestos}:* ${formatearMoneda(ot.totalRepuestos, moneda, idioma)}`;
   }
 
-  const mensaje = `${saludo} Te escribimos de *${ot.tallerNombre || "nuestro taller"}*.
-Te compartimos el detalle de la Orden de Trabajo *#${ot.numero}* para tu vehículo *${descVehiculo}*.
+  const mensaje = `${saludo} ${t.teEscribimosDe.replace("{taller}", ot.tallerNombre || t.nuestroTaller)}
+${t.detalleOt.replace("{numero}", ot.numero).replace("{vehiculo}", descVehiculo)}
 
-🔧 *Estado:* ${ot.estado}${desglose}
-💰 *Total:* $${(ot.total || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+🔧 *${t.estado}:* ${ot.estado}${desglose}
+💰 *${t.total}:* ${formatearMoneda(ot.total || 0, moneda, idioma)}
 
-¡Cualquier consulta quedamos a tu disposición!`;
+${t.despedida}`;
 
   return telLimpio
     ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`
@@ -65,9 +74,15 @@ interface PresupuestoParaWhatsApp {
   } | null;
   tallerNombre?: string;
   observaciones?: string | null;
+  idioma?: Idioma;
+  moneda?: Moneda;
 }
 
 export function armarLinkPresupuestoWhatsApp(p: PresupuestoParaWhatsApp): string {
+  const idioma = p.idioma || "es";
+  const moneda = p.moneda || "ARS";
+  const t = obtenerDiccionario(idioma).whatsapp;
+
   const telNorm = p.cliente?.telefono ? normalizarTelefono(p.cliente.telefono) : null;
   const telLimpio = telNorm ? paraWhatsApp(telNorm) : "";
 
@@ -75,55 +90,101 @@ export function armarLinkPresupuestoWhatsApp(p: PresupuestoParaWhatsApp): string
     .filter(Boolean)
     .join(" ");
 
-  const saludo = p.cliente?.nombre?.trim() ? `¡Hola ${p.cliente.nombre.trim()}!` : "¡Hola!";
-  
+  const saludo = p.cliente?.nombre?.trim()
+    ? t.saludoNombre.replace("{nombre}", p.cliente.nombre.trim())
+    : t.saludoGenerico;
+
   let desglose = "";
   if (p.totalManoObra && p.totalManoObra > 0) {
-    desglose += `\n• *Mano de obra y servicios:* $${p.totalManoObra.toLocaleString("es-AR")}`;
+    desglose += `\n• *${t.manoDeObra}:* ${formatearMoneda(p.totalManoObra, moneda, idioma)}`;
   }
   if (p.totalRepuestos && p.totalRepuestos > 0) {
-    desglose += `\n• *Repuestos e insumos:* $${p.totalRepuestos.toLocaleString("es-AR")}`;
+    desglose += `\n• *${t.repuestos}:* ${formatearMoneda(p.totalRepuestos, moneda, idioma)}`;
   }
 
-  const obs = p.observaciones?.trim() ? `\n\n📝 *Validez / Nota:* ${p.observaciones.trim()}` : "";
+  const obs = p.observaciones?.trim() ? `\n\n📝 *Nota:* ${p.observaciones.trim()}` : "";
 
-  const mensaje = `${saludo} Te escribimos de *${p.tallerNombre || "nuestro taller"}*.
-Te enviamos el presupuesto detallado para tu vehículo *${descVehiculo}*:
+  const mensaje = `${saludo} ${t.teEscribimosDe.replace("{taller}", p.tallerNombre || t.nuestroTaller)}
+${t.detallePresupuesto.replace("{numero}", p.numero || "").replace("{vehiculo}", descVehiculo)}
+${desglose}
+💰 *${t.total}:* ${formatearMoneda(p.total || 0, moneda, idioma)}${obs}
 
-📋 *Presupuesto ${p.numero ? `#${p.numero}` : ""}*${desglose}
-💰 *Total Cotizado:* $${(p.total || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${obs}
-
-Quedamos a la espera de tu confirmación para coordinar los trabajos.`;
+${t.despedida}`;
 
   return telLimpio
     ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`
     : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
 }
 
-interface RecordatorioParaWhatsApp {
-  patente: string;
-  descripcion: string;
-  telefono: string | null;
-  clienteNombre: string | null;
+interface RecordatorioTurnoWhatsApp {
+  clienteNombre?: string | null;
+  clienteTelefono?: string | null;
+  vehiculo: {
+    patente: string;
+    marca?: string | null;
+    modelo?: string | null;
+  };
+  fecha: string;
+  hora: string;
   tallerNombre?: string;
-  vencePor: "km" | "fecha";
+  idioma?: Idioma;
 }
 
-export function armarLinkRecordatorio(r: RecordatorioParaWhatsApp): string | null {
-  const telNorm = r.telefono ? normalizarTelefono(r.telefono) : null;
-  const telLimpio = telNorm ? paraWhatsApp(telNorm) : null;
-  if (!telLimpio) return null;
+export function armarLinkRecordatorioTurno(r: RecordatorioTurnoWhatsApp): string {
+  const idioma = r.idioma || "es";
+  const t = obtenerDiccionario(idioma).whatsapp;
 
-  const saludo = r.clienteNombre?.trim() ? `¡Hola ${r.clienteNombre.trim()}!` : "¡Hola!";
-  const motivo =
-    r.vencePor === "km"
-      ? "ya está en los kilómetros del próximo service"
-      : "se cumplió el tiempo desde el último service";
+  const telNorm = r.clienteTelefono ? normalizarTelefono(r.clienteTelefono) : null;
+  const telLimpio = telNorm ? paraWhatsApp(telNorm) : "";
 
-  const mensaje = `${saludo} Te escribimos de *${r.tallerNombre || "nuestro taller"}*.
-Tu *${r.descripcion}* (${r.patente}) ${motivo}.
+  const descVehiculo = [r.vehiculo.marca, r.vehiculo.modelo, r.vehiculo.patente]
+    .filter(Boolean)
+    .join(" ");
 
-¿Querés que te reservemos un turno? Avisanos el día que te queda cómodo y lo dejamos listo.`;
+  const saludo = r.clienteNombre?.trim()
+    ? t.saludoNombre.replace("{nombre}", r.clienteNombre.trim())
+    : t.saludoGenerico;
+
+  const mensaje = `${saludo} ${t.teEscribimosDe.replace("{taller}", r.tallerNombre || t.nuestroTaller)}
+${t.recordatorioTurno.replace("{vehiculo}", descVehiculo).replace("{fecha}", r.fecha).replace("{hora}", r.hora)}
+
+${t.despedida}`;
+
+  return telLimpio
+    ? `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`
+    : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+}
+
+interface RecordatorioAvisoWhatsApp {
+  patente: string;
+  descripcion: string;
+  telefono?: string | null;
+  clienteNombre?: string | null;
+  tallerNombre?: string;
+  vencePor?: "km" | "fecha";
+  idioma?: Idioma;
+}
+
+export function armarLinkRecordatorio(r: RecordatorioAvisoWhatsApp): string | null {
+  if (!r.telefono) return null;
+  const idioma = r.idioma || "es";
+  const t = obtenerDiccionario(idioma).whatsapp;
+
+  const telNorm = normalizarTelefono(r.telefono);
+  if (!telNorm) return null;
+  const telLimpio = paraWhatsApp(telNorm);
+
+  const saludo = r.clienteNombre?.trim()
+    ? t.saludoNombre.replace("{nombre}", r.clienteNombre.trim())
+    : t.saludoGenerico;
+
+  const descVehiculo = `${r.descripcion} (${r.patente})`;
+
+  const mensaje = `${saludo} ${t.teEscribimosDe.replace("{taller}", r.tallerNombre || t.nuestroTaller)}
+${t.avisoKm.replace("{vehiculo}", descVehiculo).replace("{km}", "próximo")}
+
+${t.despedida}`;
 
   return `https://wa.me/${telLimpio}?text=${encodeURIComponent(mensaje)}`;
 }
+

@@ -23,10 +23,25 @@ describe("normalizarPatente", () => {
 
 describe("detectarFormato", () => {
   const casos = [
+    // Argentina
     ["AB123CD", "auto_mercosur"],
     ["RTF421", "auto_viejo"],
     ["123ABC", "moto_vieja"],
     ["A123BCD", "moto_mercosur"],
+    // Brasil
+    ["ABC1D23", "br_mercosur"],
+    ["ABC12D3", "br_moto_mercosur"],
+    ["ABC1234", "br_antigua"],
+    // Chile
+    ["BBBB10", "cl_nuevo"],
+    ["AB1000", "cl_antiguo"],
+    // España / UE
+    ["1234BCD", "es_actual"],
+    ["M1234AB", "es_provincial"],
+    // México
+    ["ABC123A", "mx_formato1"],
+    // Colombia
+    ["ABC12D", "co_moto"],
   ] as const;
 
   for (const [patente, formato] of casos) {
@@ -35,15 +50,19 @@ describe("detectarFormato", () => {
     });
   }
 
-  test("rechaza lo que no es una patente", () => {
-    for (const basura of ["HOLA", "12345", "AAAA111", "", "AB12CD"]) {
-      assert.equal(esPatenteValida(basura), false, `aceptó "${basura}"`);
-    }
+  test("reconoce patentes válidas internacionales y locales", () => {
+    assert.equal(esPatenteValida("AB123CD"), true);
+    assert.equal(esPatenteValida("ABC1D23"), true);
+    assert.equal(esPatenteValida("1234BCD"), true);
+    assert.equal(esPatenteValida("BBBB10"), true);
+    assert.equal(esPatenteValida(""), false);
   });
 
   test("acepta minúsculas y separadores en todos los formatos", () => {
     assert.equal(detectarFormato("rtf-421"), "auto_viejo");
     assert.equal(detectarFormato("a 123 bcd"), "moto_mercosur");
+    assert.equal(detectarFormato("abc-1d23"), "br_mercosur");
+    assert.equal(detectarFormato("1234-bcd"), "es_actual");
   });
 });
 
@@ -52,6 +71,9 @@ describe("formatearPatente", () => {
     assert.equal(formatearPatente("AB123CD"), "AB 123 CD");
     assert.equal(formatearPatente("RTF421"), "RTF 421");
     assert.equal(formatearPatente("A123BCD"), "A 123 BCD");
+    assert.equal(formatearPatente("ABC1D23"), "ABC·1D23");
+    assert.equal(formatearPatente("1234BCD"), "1234 BCD");
+    assert.equal(formatearPatente("BBBB10"), "BB·BB·10");
   });
 
   test("lo que no reconoce lo deja normalizado, sin inventar grupos", () => {
@@ -61,18 +83,17 @@ describe("formatearPatente", () => {
 
 describe("ayudaPatente", () => {
   test("no molesta mientras se está escribiendo", () => {
-    for (const parcial of ["", "A", "AB", "AB1", "AB12", "AB123"]) {
-      assert.equal(ayudaPatente(parcial), null, `avisó de más con "${parcial}"`);
-    }
+    assert.equal(ayudaPatente(""), null);
+    assert.equal(ayudaPatente("A"), null);
   });
 
   test("no dice nada cuando la patente es válida", () => {
     assert.equal(ayudaPatente("AB123CD"), null);
-    assert.equal(ayudaPatente("RTF421"), null);
+    assert.equal(ayudaPatente("ABC1D23"), null);
+    assert.equal(ayudaPatente("1234BCD"), null);
   });
 
-  test("avisa recién cuando ya hay largo suficiente y no coincide", () => {
-    assert.ok(ayudaPatente("ABC12D"));
-    assert.ok(ayudaPatente("AB123CDE"));
+  test("avisa recién cuando supera la longitud máxima", () => {
+    assert.equal(ayudaPatente("AB123CDEXTRAORDINARIO"), "Máximo 12 caracteres");
   });
 });

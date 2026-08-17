@@ -11,7 +11,7 @@ export const vehiculoSchema = z.object({
     .min(1, { message: "La patente es obligatoria" })
     .transform(normalizarPatente)
     .refine(esPatenteValida, {
-      message: "No coincide con ningún formato argentino. Si es un importado o un clásico, marcá formato especial.",
+      message: "Formato de patente no válido (debe tener entre 2 y 12 caracteres).",
     }),
   marcaId: z.string().uuid().optional().or(z.literal("")),
   modeloId: z.string().uuid().optional().or(z.literal("")),

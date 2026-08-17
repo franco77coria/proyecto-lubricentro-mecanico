@@ -30,7 +30,7 @@ export function PatenteInput({
   const ayuda = especial ? null : ayudaPatente(valor);
 
   const handleTextChange = (val: string) => {
-    const limpio = normalizarPatente(val).slice(0, 8);
+    const limpio = normalizarPatente(val).slice(0, 10);
     if (valueProp === undefined) {
       setInternalValor(limpio);
     }

@@ -1805,8 +1805,11 @@ export type Database = {
           direccion: string | null
           estado_suscripcion: string
           id: string
+          idioma: string
           logo_url: string | null
+          moneda: string
           nombre: string
+          pais: string
           plan: string
           telefono: string | null
         }
@@ -1817,8 +1820,11 @@ export type Database = {
           direccion?: string | null
           estado_suscripcion?: string
           id?: string
+          idioma?: string
           logo_url?: string | null
+          moneda?: string
           nombre: string
+          pais?: string
           plan?: string
           telefono?: string | null
         }
@@ -1829,8 +1835,11 @@ export type Database = {
           direccion?: string | null
           estado_suscripcion?: string
           id?: string
+          idioma?: string
           logo_url?: string | null
+          moneda?: string
           nombre?: string
+          pais?: string
           plan?: string
           telefono?: string | null
         }

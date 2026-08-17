@@ -1,0 +1,94 @@
+export type Idioma = "es" | "en" | "pt";
+export type Moneda = "ARS" | "USD" | "EUR" | "BRL" | "MXN" | "CLP" | "COP";
+
+export interface DiccionarioTraduccion {
+  comun: {
+    taller: string;
+    guardar: string;
+    cancelar: string;
+    buscar: string;
+    editar: string;
+    eliminar: string;
+    confirmar: string;
+    cargando: string;
+    exito: string;
+    error: string;
+    volver: string;
+    nuevo: string;
+    filtrar: string;
+    todos: string;
+    acciones: string;
+    detalles: string;
+    total: string;
+    subtotal: string;
+    fecha: string;
+    estado: string;
+    cliente: string;
+    vehiculo: string;
+    telefono: string;
+    observaciones: string;
+  };
+  automotor: {
+    patente: string;
+    marca: string;
+    modelo: string;
+    motor: string;
+    anio: string;
+    vin: string;
+    combustible: string;
+    kilometraje: string;
+    color: string;
+    ordenTrabajo: string;
+    presupuesto: string;
+    manoDeObra: string;
+    repuestos: string;
+    servicios: string;
+    insumos: string;
+    mecanico: string;
+    checklist: string;
+    peritaje: string;
+    diagnostico: string;
+    recepcion: string;
+    entrega: string;
+  };
+  navegacion: {
+    tablero: string;
+    kanban: string;
+    nuevaOT: string;
+    presupuestos: string;
+    turnos: string;
+    clientes: string;
+    vehiculos: string;
+    stock: string;
+    compras: string;
+    caja: string;
+    reportes: string;
+    avisos: string;
+    config: string;
+  };
+  estados: {
+    presupuesto: string;
+    recepcion: string;
+    en_espera: string;
+    en_fosa: string;
+    esperando_repuesto: string;
+    listo: string;
+    entregado: string;
+    cancelado: string;
+  };
+  whatsapp: {
+    saludoNombre: string;
+    saludoGenerico: string;
+    teEscribimosDe: string;
+    nuestroTaller: string;
+    detalleOt: string;
+    detallePresupuesto: string;
+    estado: string;
+    total: string;
+    manoDeObra: string;
+    repuestos: string;
+    despedida: string;
+    recordatorioTurno: string;
+    avisoKm: string;
+  };
+}

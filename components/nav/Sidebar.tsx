@@ -7,6 +7,7 @@ import { LogOut, Plus, Wrench, Shield, Sparkles } from "lucide-react";
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { SelectorTema } from "@/components/ui/SelectorTema";
+import { SelectorIdioma } from "@/components/ui/SelectorIdioma";
 
 export interface SidebarProps {
   taller: string;
@@ -108,7 +109,7 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
       <div className="border-t border-border/60 bg-muted/20 p-3 space-y-2">
         {/* Selector de Modo Claro / Modo Oscuro */}
         <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-bold text-muted-foreground">Apariencia</span>
+          <SelectorIdioma />
           <SelectorTema />
         </div>
 
