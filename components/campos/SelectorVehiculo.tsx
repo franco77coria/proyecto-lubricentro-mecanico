@@ -1,7 +1,15 @@
 "use client";
 
-import { Check, Loader2, X } from "lucide-react";
-import { useEffect, useId, useState, useTransition } from "react";
+import { Check, ChevronDown, Loader2, Plus, Search, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import {
@@ -20,11 +28,8 @@ export interface ValorVehiculo {
   motorizacionId: string;
 }
 
-/** Valor centinela del `<option>` que abre el campo de texto libre. */
+/** Valor centinela del ítem que abre el campo de texto libre. */
 const OTRO = "__otro__";
-
-const CLASE_CAMPO =
-  "min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 pr-10 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23f97316%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:18px_18px] bg-[right_14px_center] bg-no-repeat transition-all";
 
 /**
  * Lo que se trajo para un padre determinado.
@@ -47,9 +52,10 @@ const CACHE_VACIO: Cache = { padreId: "", items: [] };
  *
  * Tres decisiones que vale la pena explicar:
  *
- * 1. `<select>` nativo y no un combobox propio. En el celular abre la rueda del
- *    sistema, que es enorme y se maneja con el pulgar sucio; cualquier lista
- *    custom con `<div>`s es más linda en el escritorio y peor en la fosa.
+ * 1. Combobox custom con campo de búsqueda. Reemplaza el `<select>` nativo que
+ *    se veía genérico. El listbox custom muestra detalles como cc/cv/combustible,
+ *    soporta filtrado por teclado y tiene animaciones premium. En mobile abre
+ *    como un panel con scroll y botones grandes para la fosa.
  *
  * 2. La cascada pide los datos por nivel. Los 951 modelos del catálogo no viajan
  *    al navegador para filtrar 20.
@@ -110,7 +116,7 @@ export function SelectorVehiculo({
     <div className="space-y-3">
       <Nivel
         etiqueta="Marca"
-        placeholder="Elegir marca…"
+        placeholder="Buscar marca…"
         etiquetaOtro="Escribí la marca"
         opciones={marcas}
         valor={valor.marcaId}
@@ -129,7 +135,7 @@ export function SelectorVehiculo({
       <Nivel
         key={`modelo-${valor.marcaId}`}
         etiqueta="Modelo"
-        placeholder={valor.marcaId ? "Elegir modelo…" : "Elegí la marca primero"}
+        placeholder={valor.marcaId ? "Buscar modelo…" : "Elegí la marca primero"}
         etiquetaOtro="Escribí el modelo"
         opciones={modelos}
         valor={valor.modeloId}
@@ -151,7 +157,7 @@ export function SelectorVehiculo({
       <Nivel
         key={`motor-${valor.modeloId}`}
         etiqueta="Motorización"
-        placeholder={valor.modeloId ? "Elegir motor…" : "Elegí el modelo primero"}
+        placeholder={valor.modeloId ? "Buscar motor…" : "Elegí el modelo primero"}
         etiquetaOtro="Escribí el motor (ej. 1.6 16v MSI)"
         opciones={motores}
         valor={valor.motorizacionId}
@@ -180,7 +186,11 @@ export function SelectorVehiculo({
   );
 }
 
-/** Un nivel de la cascada: el select y, si hace falta, el campo de texto. */
+
+/* ═══════════════════════════════════════════════════════════════════
+   Nivel — Un nivel de la cascada: combobox custom + modo texto libre
+   ═══════════════════════════════════════════════════════════════════ */
+
 function Nivel({
   etiqueta,
   placeholder,
@@ -208,6 +218,111 @@ function Nivel({
   const [texto, setTexto] = useState("");
   const [guardando, iniciar] = useTransition();
 
+  // Combobox state
+  const [abierto, setAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [indiceActivo, setIndiceActivo] = useState(-1);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const inputBusquedaRef = useRef<HTMLInputElement>(null);
+  const listaRef = useRef<HTMLDivElement>(null);
+
+  // Filtrar opciones por búsqueda
+  const opcionesFiltradas = useMemo(() => {
+    if (!busqueda.trim()) return opciones;
+    const q = busqueda.toLowerCase().trim();
+    return opciones.filter(
+      (o) =>
+        o.nombre.toLowerCase().includes(q) ||
+        (o.detalle && o.detalle.toLowerCase().includes(q)),
+    );
+  }, [opciones, busqueda]);
+
+  // La opción seleccionada actual
+  const seleccionActual = useMemo(
+    () => opciones.find((o) => o.id === valor),
+    [opciones, valor],
+  );
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    if (!abierto) return;
+    function handleClickFuera(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setAbierto(false);
+        setBusqueda("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [abierto]);
+
+  // Focus en el input de búsqueda al abrir
+  useEffect(() => {
+    if (abierto && inputBusquedaRef.current) {
+      inputBusquedaRef.current.focus();
+    }
+  }, [abierto]);
+
+  // Scroll al item activo
+  useEffect(() => {
+    if (indiceActivo < 0 || !listaRef.current) return;
+    const items = listaRef.current.querySelectorAll("[data-item]");
+    items[indiceActivo]?.scrollIntoView({ block: "nearest" });
+  }, [indiceActivo]);
+
+  const abrir = useCallback(() => {
+    if (deshabilitado || cargando) return;
+    setAbierto(true);
+    setBusqueda("");
+    setIndiceActivo(-1);
+  }, [deshabilitado, cargando]);
+
+  const seleccionar = useCallback(
+    (id: string) => {
+      if (id === OTRO) {
+        setModoOtro(true);
+        setAbierto(false);
+        setBusqueda("");
+        return;
+      }
+      onSeleccion(id);
+      setAbierto(false);
+      setBusqueda("");
+    },
+    [onSeleccion],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const totalItems = opcionesFiltradas.length + 1; // +1 por "Otra…"
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setIndiceActivo((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setIndiceActivo((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (indiceActivo >= 0 && indiceActivo < opcionesFiltradas.length) {
+            seleccionar(opcionesFiltradas[indiceActivo].id);
+          } else if (indiceActivo === opcionesFiltradas.length) {
+            seleccionar(OTRO);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          setAbierto(false);
+          setBusqueda("");
+          break;
+      }
+    },
+    [opcionesFiltradas, indiceActivo, seleccionar],
+  );
+
   function confirmar() {
     const limpio = texto.trim();
     if (!limpio) return;
@@ -227,6 +342,7 @@ function Nivel({
     });
   }
 
+  // ── Modo Texto Libre ──
   if (modoOtro) {
     return (
       <div>
@@ -247,7 +363,7 @@ function Nivel({
               if (e.key === "Escape") setModoOtro(false);
             }}
             maxLength={60}
-            className={CLASE_CAMPO}
+            className="min-h-11 w-full rounded-xl border border-border/80 bg-card px-3.5 text-base font-medium text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none transition-all"
           />
           <button
             type="button"
@@ -275,31 +391,191 @@ function Nivel({
     );
   }
 
+  // ── Combobox Custom ──
   return (
-    <div>
-      <label htmlFor={idCampo} className="text-caption text-muted-foreground">
+    <div ref={contenedorRef} className="relative">
+      <label
+        htmlFor={`${idCampo}-trigger`}
+        className="text-caption font-medium text-muted-foreground mb-1 block"
+      >
         {etiqueta}
       </label>
-      <select
-        id={idCampo}
-        value={valor}
+
+      {/* Trigger Button */}
+      <button
+        id={`${idCampo}-trigger`}
+        type="button"
+        onClick={() => (abierto ? setAbierto(false) : abrir())}
         disabled={deshabilitado || cargando}
-        onChange={(e) => {
-          if (e.target.value === OTRO) setModoOtro(true);
-          else onSeleccion(e.target.value);
-        }}
-        className={`mt-1 ${CLASE_CAMPO}`}
+        aria-expanded={abierto}
+        aria-haspopup="listbox"
+        className={`
+          group relative flex w-full items-center min-h-11 rounded-xl border bg-card px-3.5 text-left
+          transition-all duration-200 ease-out
+          ${abierto
+            ? "border-accent ring-2 ring-accent/20 shadow-md"
+            : "border-border/60 shadow-sm hover:border-border hover:shadow-md"
+          }
+          ${deshabilitado ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        `}
       >
-        <option value="">{cargando ? "Cargando…" : placeholder}</option>
-        {opciones.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.nombre}
-            {o.detalle ? ` — ${o.detalle}` : ""}
-            {o.pendiente ? " (sin aprobar)" : ""}
-          </option>
-        ))}
-        {!deshabilitado && <option value={OTRO}>Otra… (no está en la lista)</option>}
-      </select>
+        {cargando ? (
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Cargando…
+          </span>
+        ) : seleccionActual ? (
+          <span className="flex-1 truncate">
+            <span className="text-sm font-semibold text-foreground">
+              {seleccionActual.nombre}
+            </span>
+            {seleccionActual.detalle && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                {seleccionActual.detalle}
+              </span>
+            )}
+            {seleccionActual.pendiente && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                pendiente
+              </span>
+            )}
+          </span>
+        ) : (
+          <span className="flex-1 text-sm text-muted-foreground">{placeholder}</span>
+        )}
+
+        <ChevronDown
+          className={`
+            ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200
+            ${abierto ? "rotate-180" : ""}
+          `}
+        />
+      </button>
+
+      {/* Dropdown Panel */}
+      {abierto && (
+        <div
+          className="
+            absolute z-50 mt-1.5 w-full rounded-xl border border-border/60 bg-card
+            shadow-lg shadow-black/8 overflow-hidden
+            animate-[comboboxIn_150ms_ease-out]
+          "
+          role="listbox"
+          aria-label={etiqueta}
+        >
+          {/* Search Input */}
+          <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              ref={inputBusquedaRef}
+              type="text"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setIndiceActivo(-1);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+              autoComplete="off"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBusqueda("");
+                  inputBusquedaRef.current?.focus();
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Options List */}
+          <div
+            ref={listaRef}
+            className="max-h-56 overflow-y-auto overscroll-contain py-1 scroll-smooth"
+          >
+            {opcionesFiltradas.length === 0 && (
+              <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                No se encontraron resultados
+              </div>
+            )}
+
+            {opcionesFiltradas.map((opcion, i) => (
+              <button
+                key={opcion.id}
+                type="button"
+                data-item
+                role="option"
+                aria-selected={opcion.id === valor}
+                onClick={() => seleccionar(opcion.id)}
+                onMouseEnter={() => setIndiceActivo(i)}
+                className={`
+                  group/item flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100
+                  ${i === indiceActivo ? "bg-accent/8" : ""}
+                  ${opcion.id === valor ? "bg-accent/10" : "hover:bg-muted/50"}
+                `}
+              >
+                {/* Check icon for selected */}
+                <span className="w-4 shrink-0 flex items-center justify-center">
+                  {opcion.id === valor && (
+                    <Check className="h-3.5 w-3.5 text-accent" strokeWidth={3} />
+                  )}
+                </span>
+
+                <span className="flex-1 min-w-0">
+                  <span
+                    className={`block text-sm truncate ${
+                      opcion.id === valor ? "font-bold text-accent" : "font-medium text-foreground"
+                    }`}
+                  >
+                    {opcion.nombre}
+                  </span>
+                  {opcion.detalle && (
+                    <span className="block text-xs text-muted-foreground mt-0.5 truncate">
+                      {opcion.detalle}
+                    </span>
+                  )}
+                </span>
+
+                {opcion.pendiente && (
+                  <span className="inline-flex items-center rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 shrink-0">
+                    pendiente
+                  </span>
+                )}
+              </button>
+            ))}
+
+            {/* Separator + "Otra…" */}
+            {!deshabilitado && (
+              <>
+                <div className="mx-3 my-1 border-t border-border/30" />
+                <button
+                  type="button"
+                  data-item
+                  role="option"
+                  onClick={() => seleccionar(OTRO)}
+                  onMouseEnter={() => setIndiceActivo(opcionesFiltradas.length)}
+                  className={`
+                    flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100
+                    ${indiceActivo === opcionesFiltradas.length ? "bg-accent/8" : "hover:bg-muted/50"}
+                  `}
+                >
+                  <span className="w-4 shrink-0 flex items-center justify-center">
+                    <Plus className="h-3.5 w-3.5 text-accent" />
+                  </span>
+                  <span className="text-sm font-medium text-accent">
+                    Agregar otra…
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
