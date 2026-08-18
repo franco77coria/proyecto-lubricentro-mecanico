@@ -11,8 +11,8 @@
 -- ──────────────────────────────────────────────────
 -- 1. Modelos nuevos que faltan en el catálogo
 -- ──────────────────────────────────────────────────
-insert into public.modelo (marca_id, nombre, nombre_norm, estado)
-select ma.id, v.modelo, public.normalizar(v.modelo), 'aprobado'
+insert into public.modelo (marca_id, nombre, estado)
+select ma.id, v.modelo, 'aprobado'
 from (values
   ('Volkswagen','Sharan'),
   ('Volkswagen','Touareg'),
@@ -36,11 +36,10 @@ on conflict (marca_id, nombre_norm) do nothing;
 -- 2. Motorizaciones faltantes
 -- ──────────────────────────────────────────────────
 insert into public.motorizacion
-  (modelo_id, nombre, nombre_norm, cilindrada_cc, combustible, potencia_cv, origen, estado)
+  (modelo_id, nombre, cilindrada_cc, combustible, potencia_cv, origen, estado)
 select
   mo.id,
   v.motor,
-  public.normalizar(v.motor),
   v.cc,
   v.comb::public.tipo_combustible,
   v.cv::smallint,
