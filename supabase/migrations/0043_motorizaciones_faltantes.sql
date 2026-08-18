@@ -5,7 +5,8 @@
 -- que no estaban: Fluence turbo bajo el modelo "Fluence" (no solo "Fluence GT"),
 -- VW Sharan, Touareg, Passat, Scirocco, Renault Laguna, Mégane II/III, etc.
 --
--- Idempotente por `on conflict do nothing` tanto en modelo como motorizacion.
+-- nombre_norm es columna generada, por lo que ON CONFLICT no funciona.
+-- Usamos WHERE NOT EXISTS para idempotencia.
 -- ============================================================================
 
 -- ──────────────────────────────────────────────────
@@ -30,7 +31,11 @@ from (values
   ('Chevrolet','Zafira')
 ) as v(marca, modelo)
 join public.marca ma on ma.nombre_norm = public.normalizar(v.marca)
-on conflict (marca_id, nombre_norm) do nothing;
+where not exists (
+  select 1 from public.modelo ex
+  where ex.marca_id = ma.id
+    and ex.nombre_norm = public.normalizar(v.modelo)
+);
 
 -- ──────────────────────────────────────────────────
 -- 2. Motorizaciones faltantes
@@ -47,7 +52,6 @@ select
   'aprobado'
 from (values
   -- ======================= RENAULT FLUENCE =======================
-  -- Las turbo: la clave es que estén bajo el modelo "Fluence" normal
   ('Renault','Fluence','2.0 Turbo GT 180cv',1998,'nafta',180),
   ('Renault','Fluence','2.0 Turbo GT2 190cv',1998,'nafta',190),
   ('Renault','Fluence','1.5 dCi K9K 110cv',1461,'diesel',110),
@@ -124,4 +128,8 @@ join public.marca ma on ma.nombre_norm = public.normalizar(v.marca)
 join public.modelo mo
   on mo.marca_id = ma.id
  and mo.nombre_norm = public.normalizar(v.modelo)
-on conflict (modelo_id, nombre_norm) do nothing;
+where not exists (
+  select 1 from public.motorizacion ex
+  where ex.modelo_id = mo.id
+    and ex.nombre_norm = public.normalizar(v.motor)
+);
