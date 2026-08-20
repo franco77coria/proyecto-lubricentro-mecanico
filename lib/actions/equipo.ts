@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
+import { fechaDesplazada, hoyEnZona } from "@/lib/fechas";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 
@@ -209,10 +211,40 @@ export async function cambiarRolMiembro(
       }
     }
 
-    const { error } = await supabase.from("perfil").update({ rol, activo }).eq("user_id", userId);
+    // El filtro por taller va explícito además de la política de RLS. RLS ya
+    // lo impide, pero el signOut de abajo corre con el cliente admin, que la
+    // saltea: si el id no se validó acá, un dueño podría desloguear a alguien
+    // de otro taller.
+    const { error } = await supabase
+      .from("perfil")
+      .update({ rol, activo })
+      .eq("user_id", userId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
     if (error) {
       console.error("[cambiarRolMiembro]", error.code);
       return { error: "No se pudo actualizar" };
+    }
+
+    // Suspender tiene que sacar a la persona AHORA.
+    //
+    // Poner activo = false no cierra nada por sí solo: el access token que ya
+    // tiene sigue siendo válido hasta que venza, y `taller_actual()` lee el
+    // claim taller_id del token antes de mirar la tabla. Sin esto, un empleado
+    // suspendido seguía trabajando hasta el próximo refresh.
+    //
+    // El signOut global invalida también el refresh token, así que no puede
+    // renovarlo. Si falla, se avisa: dar por suspendido a alguien que sigue
+    // adentro es peor que un error en pantalla.
+    if (!activo) {
+      const { error: errorSalida } = await crearClienteAdmin().auth.admin.signOut(userId, "global");
+      if (errorSalida) {
+        console.error("[cambiarRolMiembro/signOut]", errorSalida.message);
+        return {
+          error:
+            "Se marcó como suspendido, pero no se pudo cerrar su sesión activa. Volvé a intentar.",
+        };
+      }
     }
 
     revalidatePath("/config");
@@ -255,11 +287,12 @@ export async function obtenerAuditoriaEquipo(): Promise<RegistroAuditoria[]> {
 
     if (!perfiles?.length) return [];
 
-    // 2. Obtener actividad de los últimos 7 días
-    const sieteDiasAtras = new Date();
-    sieteDiasAtras.setDate(sieteDiasAtras.getDate() - 7);
-    const fechaInicio = sieteDiasAtras.toISOString().slice(0, 10);
-    const hoyStr = new Date().toISOString().slice(0, 10);
+    // 2. Obtener actividad de los últimos 7 días, contados en la zona del
+    //    taller. Si la ventana se calcula en UTC no coincide con las fechas
+    //    que escribe registrarPulsoActividad y el corte queda desfasado.
+    const { zonaHoraria } = await obtenerAjustesTaller();
+    const fechaInicio = fechaDesplazada(-7, zonaHoraria);
+    const hoyStr = hoyEnZona(zonaHoraria);
 
     const { data: actividad } = await supabase
       .from("registro_actividad_usuario")

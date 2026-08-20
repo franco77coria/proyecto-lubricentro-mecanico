@@ -277,24 +277,58 @@ export async function actualizarItemOT(
   try {
     const supabase = await crearClienteServidor();
 
-    let costoUnitario = 0;
-    if (item.productoId) {
-      const { data: costo } = await supabase.rpc("costo_actual_producto", {
-        p_producto: item.productoId,
-      });
-      costoUnitario = Number(costo ?? 0);
+    // El costo es un snapshot: se congela cuando el ítem se registra y el
+    // trigger `ot_item_costo_bu` lo protege. Recalcularlo en cada edición
+    // hacía que guardar un ítem cuyo producto cambió de precio fallara con
+    // "No se pudo actualizar el ítem" y sin explicación.
+    //
+    // El único caso en que el costo SÍ tiene que moverse es cuando cambió el
+    // repuesto: el renglón pasó a ser otra cosa. Para saberlo hay que mirar
+    // qué producto tenía antes.
+    const { data: previo } = await supabase
+      .from("ot_item")
+      .select("producto_id")
+      .eq("id", itemId)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .maybeSingle();
+
+    if (!previo) return { error: "No se encontró el ítem." };
+
+    const nuevoProductoId = item.productoId || null;
+    const cambioElProducto = previo.producto_id !== nuevoProductoId;
+
+    // El tipo se declara entero con el costo opcional en vez de armarlo con un
+    // spread condicional: con un spread, TypeScript infiere un union y deja de
+    // validar la fila contra la tabla.
+    const campos: {
+      tipo: typeof item.tipo;
+      descripcion: string;
+      cantidad: number;
+      precio_unitario: number;
+      producto_id: string | null;
+      costo_unitario?: number;
+    } = {
+      tipo: item.tipo,
+      descripcion: item.descripcion.trim(),
+      cantidad: item.cantidad,
+      precio_unitario: item.precioUnitario,
+      producto_id: nuevoProductoId,
+    };
+
+    if (cambioElProducto) {
+      let costoUnitario = 0;
+      if (nuevoProductoId) {
+        const { data: costo } = await supabase.rpc("costo_actual_producto", {
+          p_producto: nuevoProductoId,
+        });
+        costoUnitario = Number(costo ?? 0);
+      }
+      campos.costo_unitario = costoUnitario;
     }
 
     const { error } = await supabase
       .from("ot_item")
-      .update({
-        tipo: item.tipo,
-        descripcion: item.descripcion.trim(),
-        cantidad: item.cantidad,
-        precio_unitario: item.precioUnitario,
-        costo_unitario: costoUnitario,
-        producto_id: item.productoId || null,
-      })
+      .update(campos)
       .eq("id", itemId)
       .eq("taller_id", sesion.perfil.taller_id);
 

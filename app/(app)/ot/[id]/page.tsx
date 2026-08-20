@@ -1,6 +1,6 @@
 import { ArrowLeft, Ban, Car, User, Wrench } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { AnularOrden } from "@/components/ot/AnularOrden";
 import { AsistenteIA } from "@/components/ot/AsistenteIA";
@@ -23,13 +23,13 @@ import { fotosDeOT } from "@/lib/actions/fotos";
 import { obtenerFicha } from "@/lib/actions/ficha";
 import { asistenteHabilitado } from "@/lib/actions/ia";
 import { listarServicios } from "@/lib/actions/servicios";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaDetalleOT({ params }: { params: Promise<{ id: string }> }) {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/kanban");
 
   const { id } = await params;
   const supabase = await crearClienteServidor();

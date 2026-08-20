@@ -3,6 +3,7 @@
 import { unstable_rethrow } from "next/navigation";
 
 import { MODELO_IA, iaDisponible, motivoDeFalla, obtenerCliente } from "@/lib/ia/cliente";
+import { limitarIA, mensajeLimiteIA } from "@/lib/rate-limit";
 import type { Json } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -70,6 +71,9 @@ export async function sugerirDiagnostico(otId: string): Promise<ResultadoDiagnos
 
   const cliente = obtenerCliente();
   if (!cliente) return { error: "El asistente no está configurado en este taller." };
+
+  const limite = await limitarIA(sesion.perfil.taller_id, "diagnostico");
+  if (!limite.permitido) return { error: mensajeLimiteIA(limite.esperaSegundos) };
 
   try {
     const supabase = await crearClienteServidor();
@@ -208,6 +212,9 @@ export async function traducirDescargo(otId: string): Promise<ResultadoTraduccio
 
   const cliente = obtenerCliente();
   if (!cliente) return { error: "El asistente no está configurado en este taller." };
+
+  const limite = await limitarIA(sesion.perfil.taller_id, "traduccion");
+  if (!limite.permitido) return { error: mensajeLimiteIA(limite.esperaSegundos) };
 
   try {
     const supabase = await crearClienteServidor();

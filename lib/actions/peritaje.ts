@@ -20,6 +20,7 @@ import {
   type TipoDano,
   ZONAS_NOMBRES,
 } from "@/lib/peritaje/tipos";
+import { limitarIA, mensajeLimiteIA } from "@/lib/rate-limit";
 import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS } from "@/lib/storage";
 import type { Json } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
@@ -279,6 +280,11 @@ export async function analizarPeritajeVehiculo(
         "El asistente de visión IA no está configurado. Verificá las credenciales del servidor (ANTHROPIC_API_KEY o GEMINI_API_KEY).",
     };
   }
+
+  // El peritaje manda todas las fotos de la orden en un solo request: es la
+  // llamada más cara de las cinco y la que más conviene tener con freno.
+  const limite = await limitarIA(sesion.perfil.taller_id, "peritaje");
+  if (!limite.permitido) return { error: mensajeLimiteIA(limite.esperaSegundos) };
 
   try {
     const supabase = await crearClienteServidor();

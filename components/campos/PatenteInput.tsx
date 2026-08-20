@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Check, TriangleAlert, Camera, Loader2, Sparkles } from "lucide-react";
+import { Check, TriangleAlert, Camera, Loader2 } from "lucide-react";
 
 import { ayudaPatente, detectarFormato, nombreFormato, normalizarPatente } from "@/lib/patente";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";

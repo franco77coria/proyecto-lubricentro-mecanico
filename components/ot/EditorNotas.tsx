@@ -6,6 +6,7 @@ import { MessageSquare, Plus, Stethoscope, Trash2, TrendingUp } from "lucide-rea
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { agregarNota, quitarNota, type TipoNota } from "@/lib/actions/notas";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 export interface Nota {
   id: string;
@@ -14,8 +15,8 @@ export interface Nota {
   precio_estimado: number | null;
 }
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller (idioma + moneda), no de
+   "es-AR"/"ARS" escritos a mano. */
 
 const CONFIG: Record<
   TipoNota,
@@ -60,6 +61,7 @@ export function EditorNotas({
   tipo: TipoNota;
   notas: Nota[];
 }) {
+  const { money } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [texto, setTexto] = useState("");

@@ -8,7 +8,10 @@ import { BotonPDFWhatsApp } from "@/components/ot/BotonPDFWhatsApp";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { listarServicios } from "@/lib/actions/servicios";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda, localeDe } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +20,9 @@ export default async function PaginaDetallePresupuesto({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const sesion = await obtenerSesion();
+  const sesion = await exigirVista("/presupuestos");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
   const { id } = await params;
   const supabase = await crearClienteServidor();
 
@@ -76,7 +81,7 @@ export default async function PaginaDetallePresupuesto({
     .reduce((acc, it) => acc + it.cantidad * it.precio_unitario, 0) || Number(presupuesto.total_repuestos ?? 0);
 
   const fecha = new Date(presupuesto.creado_en);
-  const formatter = new Intl.DateTimeFormat("es-AR", {
+  const formatter = new Intl.DateTimeFormat(localeDe(idioma), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -243,11 +248,11 @@ export default async function PaginaDetallePresupuesto({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex items-center justify-between rounded-2xl bg-card border border-border p-4 shadow-xs">
             <span className="text-xs font-bold text-muted-foreground">Mano de Obra &amp; Servicios:</span>
-            <span className="text-sm font-black text-foreground tabular-nums">${totalManoObra.toLocaleString("es-AR")}</span>
+            <span className="text-sm font-black text-foreground tabular-nums">{money(totalManoObra)}</span>
           </div>
           <div className="flex items-center justify-between rounded-2xl bg-card border border-border p-4 shadow-xs">
             <span className="text-xs font-bold text-muted-foreground">Repuestos &amp; Insumos:</span>
-            <span className="text-sm font-black text-foreground tabular-nums">${totalRepuestos.toLocaleString("es-AR")}</span>
+            <span className="text-sm font-black text-foreground tabular-nums">{money(totalRepuestos)}</span>
           </div>
         </div>
 

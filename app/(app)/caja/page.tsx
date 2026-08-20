@@ -1,14 +1,18 @@
 import { CreditCard, DollarSign, Smartphone, Wallet } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { BotonCierreCaja } from "./BotonCierreCaja";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda, localeDe } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaCaja() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/caja");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const localeCaja = localeDe(idioma);
 
   const supabase = await crearClienteServidor();
   const tallerId = sesion.perfil.taller_id;
@@ -69,10 +73,10 @@ export default async function PaginaCaja() {
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-caption font-bold uppercase tracking-wider text-muted-foreground">Ingresos de Hoy</span>
-            <span className="text-caption text-muted-foreground">{new Date().toLocaleDateString("es-AR")}</span>
+            <span className="text-caption text-muted-foreground">{new Date().toLocaleDateString(localeCaja)}</span>
           </div>
           <p className="text-display text-4xl font-black text-accent tabular">
-            $ {totalGeneral.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            {money(totalGeneral)}
           </p>
 
           <div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs font-semibold">
@@ -80,7 +84,7 @@ export default async function PaginaCaja() {
               <DollarSign className="h-4 w-4 text-emerald-600" />
               <div>
                 <p className="text-muted-foreground text-caption">Efectivo</p>
-                <p className="text-foreground font-bold">$ {totalEfectivo.toLocaleString("es-AR")}</p>
+                <p className="text-foreground font-bold">{money(totalEfectivo)}</p>
               </div>
             </div>
 
@@ -88,7 +92,7 @@ export default async function PaginaCaja() {
               <Wallet className="h-4 w-4 text-blue-600" />
               <div>
                 <p className="text-muted-foreground text-caption">Transferencia</p>
-                <p className="text-foreground font-bold">$ {totalTransferencia.toLocaleString("es-AR")}</p>
+                <p className="text-foreground font-bold">{money(totalTransferencia)}</p>
               </div>
             </div>
 
@@ -96,7 +100,7 @@ export default async function PaginaCaja() {
               <CreditCard className="h-4 w-4 text-purple-600" />
               <div>
                 <p className="text-muted-foreground text-caption">Tarjetas</p>
-                <p className="text-foreground font-bold">$ {totalTarjeta.toLocaleString("es-AR")}</p>
+                <p className="text-foreground font-bold">{money(totalTarjeta)}</p>
               </div>
             </div>
 
@@ -104,7 +108,7 @@ export default async function PaginaCaja() {
               <Smartphone className="h-4 w-4 text-cyan-600" />
               <div>
                 <p className="text-muted-foreground text-caption">Mercado Pago</p>
-                <p className="text-foreground font-bold">$ {totalMP.toLocaleString("es-AR")}</p>
+                <p className="text-foreground font-bold">{money(totalMP)}</p>
               </div>
             </div>
           </div>
@@ -137,7 +141,7 @@ export default async function PaginaCaja() {
                     </p>
                   </div>
                   <span className="text-sm font-bold text-emerald-600 tabular">
-                    +$ {Number(p.monto || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                    +{money(Number(p.monto || 0))}
                   </span>
                 </div>
               ))
@@ -159,7 +163,7 @@ export default async function PaginaCaja() {
                 <li key={c.id} className="flex items-center justify-between gap-3 px-3.5 py-3">
                   <span className="min-w-0">
                     <span className="block text-sm font-medium text-foreground">
-                      {new Intl.DateTimeFormat("es-AR", {
+                      {new Intl.DateTimeFormat(localeCaja, {
                         weekday: "short",
                         day: "2-digit",
                         month: "short",
@@ -170,7 +174,7 @@ export default async function PaginaCaja() {
                     )}
                   </span>
                   <span className="tabular shrink-0 text-sm font-bold text-foreground">
-                    $ {Number(c.total || 0).toLocaleString("es-AR")}
+                    {money(Number(c.total || 0))}
                   </span>
                 </li>
               ))}

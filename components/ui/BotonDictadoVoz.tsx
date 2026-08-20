@@ -1,8 +1,56 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Mic, MicOff, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { Mic } from "lucide-react";
+import { localeDe } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/I18nContext";
+
+/**
+ * La Web Speech API no está en los tipos del DOM (sigue siendo un borrador y
+ * en Chrome va con prefijo). Se declara acá el pedazo que se usa: son cinco
+ * campos, y tenerlos tipados es lo que hace que un error de nombre lo agarre
+ * el compilador en vez del taller.
+ */
+interface ResultadoVoz {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+
+interface ErrorVoz {
+  error: string;
+}
+
+interface ReconocimientoVoz {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: (() => void) | null;
+  onresult: ((evento: ResultadoVoz) => void) | null;
+  onerror: ((evento: ErrorVoz) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+type ConstructorVoz = new () => ReconocimientoVoz;
+
+function constructorDeVoz(): ConstructorVoz | undefined {
+  if (typeof window === "undefined") return undefined;
+  const w = window as unknown as {
+    SpeechRecognition?: ConstructorVoz;
+    webkitSpeechRecognition?: ConstructorVoz;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
+}
+
+/** El soporte del navegador no cambia mientras la pestaña vive, así que no
+ *  hay a qué suscribirse. Va por useSyncExternalStore y no por un efecto para
+ *  no arrancar mostrando el botón y esconderlo un render después. */
+const sinSuscripcion = () => () => {};
+const haySoporte = () => constructorDeVoz() !== undefined;
+/** En el servidor se asume que sí: es el caso mayoritario y evita que el botón
+ *  aparezca de golpe al hidratar. */
+const haySoporteEnServidor = () => true;
 
 interface BotonDictadoVozProps {
   onTextoTranscrito: (texto: string) => void;
@@ -18,37 +66,31 @@ export function BotonDictadoVoz({
 }: BotonDictadoVozProps) {
   const { idioma } = useI18n();
   const [escuchando, setEscuchando] = useState(false);
-  const [soportado, setSoportado] = useState(true);
-  const reconocimientoRef = useRef<any>(null);
+  const soportado = useSyncExternalStore(sinSuscripcion, haySoporte, haySoporteEnServidor);
+  const reconocimientoRef = useRef<ReconocimientoVoz | null>(null);
 
   useEffect(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setSoportado(false);
-      return;
-    }
+    const SpeechRecognition = constructorDeVoz();
+    if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang =
-      idioma === "en" ? "en-US" : idioma === "pt" ? "pt-BR" : "es-AR";
+      localeDe(idioma);
 
     recognition.onstart = () => {
       setEscuchando(true);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: ResultadoVoz) => {
       const transcripcion = event.results[0][0].transcript;
       if (transcripcion) {
         onTextoTranscrito(transcripcion);
       }
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: ErrorVoz) => {
       console.warn("[DictadoVoz] error:", event.error);
       setEscuchando(false);
     };

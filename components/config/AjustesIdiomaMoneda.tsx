@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Globe, DollarSign } from "lucide-react";
+import { Check, Globe } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import { IDIOMAS_DISPONIBLES, MONEDAS_DISPONIBLES, type Idioma, type Moneda } from "@/lib/i18n";
 

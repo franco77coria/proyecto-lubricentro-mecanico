@@ -16,10 +16,14 @@ const MAX_INACTIVIDAD_MS = 60_000; // Si no hay evento en 60 segundos, se consid
  */
 export function TrackerActividad() {
   const pathname = usePathname();
-  const ultimaInteraccion = useRef<number>(Date.now());
+  // Arranca en 0 y lo estampa el efecto: leer el reloj durante el render hace
+  // que dos renders del mismo estado den resultados distintos.
+  const ultimaInteraccion = useRef<number>(0);
   const segundosAcumulados = useRef<number>(0);
 
   useEffect(() => {
+    ultimaInteraccion.current = Date.now();
+
     function marcarActividad() {
       ultimaInteraccion.current = Date.now();
     }

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
+import { hoyEnZona, inicioDelDiaEnZona } from "@/lib/fechas";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export const METODOS_PAGO = [
@@ -71,15 +73,12 @@ export async function realizarCierreCaja(): Promise<{ ok?: boolean; error?: stri
   try {
     const supabase = await crearClienteServidor();
 
-    // Calcular fecha del día en huso horario de Argentina (UTC-3)
-    const fechaArg = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Argentina/Buenos_Aires",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-
-    const inicioHoy = new Date(`${fechaArg}T00:00:00-03:00`);
+    // El día se cierra en la zona del taller, no siempre en la de Buenos
+    // Aires. El offset se resuelve para esa fecha concreta en vez de escribir
+    // -03:00 a mano, que se rompe donde hay horario de verano.
+    const { zonaHoraria } = await obtenerAjustesTaller();
+    const fechaHoy = hoyEnZona(zonaHoraria);
+    const inicioHoy = inicioDelDiaEnZona(zonaHoraria, fechaHoy);
 
     const { data: pagos } = await supabase
       .from("pago")
@@ -104,7 +103,7 @@ export async function realizarCierreCaja(): Promise<{ ok?: boolean; error?: stri
     const { error } = await supabase.from("cierre_caja").upsert(
       {
         taller_id: tallerId,
-        fecha: fechaArg,
+        fecha: fechaHoy,
         total,
         totales: {
           efectivo: ef,

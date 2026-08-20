@@ -1,10 +1,12 @@
 import { Car, Gauge, Plus } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
 import { formatearPatente } from "@/lib/patente";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearNumero } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +15,8 @@ export default async function PaginaVehiculos({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/vehiculos");
+  const { idioma } = await obtenerAjustesTaller();
 
   const { q } = await searchParams;
   const supabase = await crearClienteServidor();
@@ -103,7 +105,7 @@ export default async function PaginaVehiculos({
                         {v.km_actual != null && (
                           <span className="flex items-center gap-1">
                             <Gauge className="h-3.5 w-3.5" aria-hidden />
-                            <span className="tabular">{v.km_actual.toLocaleString("es-AR")} km</span>
+                            <span className="tabular">{formatearNumero(v.km_actual, idioma)} km</span>
                           </span>
                         )}
                         {v.color && <span className="truncate">{v.color}</span>}

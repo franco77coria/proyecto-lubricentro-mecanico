@@ -13,22 +13,25 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { listarTurnos } from "@/lib/actions/turnos";
 import { MotionCard } from "@/components/ui/motion-card";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda, formatearNumero, localeDe } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller. */
 
 export default async function PaginaTablero() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/onboarding");
+  const sesion = await exigirVista("/tablero");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const localeTablero = localeDe(idioma);
 
   const supabase = await crearClienteServidor();
   const tallerId = sesion.perfil.taller_id;
@@ -268,7 +271,7 @@ export default async function PaginaTablero() {
                                 )}
                                 {Number(ot.km_ingreso) > 0 && (
                                   <span className="hidden sm:inline tabular-nums">
-                                    · {Number(ot.km_ingreso).toLocaleString("es-AR")} km
+                                    · {formatearNumero(Number(ot.km_ingreso), idioma)} km
                                   </span>
                                 )}
                               </div>
@@ -348,7 +351,7 @@ export default async function PaginaTablero() {
                 <MotionCard delay={0.3} className="overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md">
                   <ul className="divide-y divide-border/50">
                     {turnosHoy!.map((t) => {
-                      const horaStr = new Date(t.fecha_hora).toLocaleTimeString("es-AR", {
+                      const horaStr = new Date(t.fecha_hora).toLocaleTimeString(localeTablero, {
                         hour: "2-digit",
                         minute: "2-digit",
                       });

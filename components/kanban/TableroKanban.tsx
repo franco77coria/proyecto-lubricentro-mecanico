@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Car, Filter, UserCheck, Users, Wrench } from "lucide-react";
+import { Car, Users, Wrench } from "lucide-react";
 
 import { MoverOT } from "@/components/kanban/MoverOT";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";

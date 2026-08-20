@@ -190,7 +190,7 @@ export async function crearVehiculo(
  * Busca un cliente existente por teléfono o nombre en el taller. Si no existe, lo crea.
  */
 async function resolverOCrearCliente(
-  supabase: any,
+  supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
   tallerId: string,
   datos: { nombre: string; apellido: string; telefono: string },
 ): Promise<string | undefined> {
@@ -336,7 +336,18 @@ export async function obtenerVehiculosParaAsignar(): Promise<
     .order("creado_en", { ascending: false })
     .limit(100);
 
-  return (data || []).map((v: any) => ({
+  // La forma de la fila la impone el select de arriba: las relaciones vienen
+  // como objeto anidado y los tipos generados no las infieren en este caso.
+  type FilaVehiculo = {
+    id: string;
+    patente: string;
+    anio: number | null;
+    marca: { nombre: string } | null;
+    modelo: { nombre: string } | null;
+    motorizacion: { nombre: string } | null;
+  };
+
+  return ((data || []) as unknown as FilaVehiculo[]).map((v) => ({
     id: v.id,
     patente: v.patente,
     anio: v.anio || null,

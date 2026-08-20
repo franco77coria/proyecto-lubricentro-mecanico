@@ -2,6 +2,7 @@
 
 import { unstable_rethrow } from "next/navigation";
 
+import type { Idioma, Moneda } from "@/lib/i18n";
 import { crearClienteAnonimo } from "@/lib/supabase/server";
 import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS } from "@/lib/storage";
 
@@ -44,7 +45,15 @@ export interface SeguimientoOT {
   total_mano_obra: number;
   total_repuestos: number;
   aprobado_en: string | null;
-  taller: { nombre: string; telefono: string | null; direccion: string | null };
+  taller: {
+    nombre: string;
+    telefono: string | null;
+    direccion: string | null;
+    /** El portal lo ve el cliente final: se le habla en el idioma y la moneda
+     *  del taller. Vienen de la función 0044, no del navegador. */
+    idioma?: Idioma;
+    moneda?: Moneda;
+  };
   telemetria?: TelemetriaPublica;
   notas: NotaPublica[];
   items: ItemPublico[];

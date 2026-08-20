@@ -69,6 +69,58 @@ export async function actualizarTaller(
   }
 }
 
+const idiomaMonedaSchema = z.object({
+  idioma: z.enum(["es", "en", "pt"]).optional(),
+  moneda: z.enum(["ARS", "USD", "BRL", "MXN", "EUR", "CLP", "COP"]).optional(),
+});
+
+/**
+ * Idioma y moneda del taller.
+ *
+ * Antes esto solo se guardaba en localStorage, así que era una preferencia de
+ * dispositivo: el mismo taller se veía en un idioma en la compu del mostrador
+ * y en otro en el celular de la fosa. Y las cotizaciones salían en la moneda
+ * del aparato que las armó, que en un taller de Brasil eran pesos argentinos.
+ *
+ * Lo cambia el dueño: es un ajuste del negocio, no una preferencia personal.
+ * La pantalla lo mostraba editable para todos.
+ */
+export async function guardarIdiomaMoneda(datos: unknown): Promise<ResultadoConfig> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida" };
+  if (sesion.perfil.rol !== "dueno") {
+    return { error: "El idioma y la moneda los define el dueño del taller" };
+  }
+
+  const parseado = idiomaMonedaSchema.safeParse(datos);
+  if (!parseado.success) return { error: "Idioma o moneda no reconocidos" };
+
+  const cambios: { idioma?: string; moneda?: string } = {};
+  if (parseado.data.idioma) cambios.idioma = parseado.data.idioma;
+  if (parseado.data.moneda) cambios.moneda = parseado.data.moneda;
+  if (Object.keys(cambios).length === 0) return { ok: true };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("taller")
+      .update(cambios)
+      .eq("id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[guardarIdiomaMoneda]", error.code);
+      return { error: "No se pudo guardar la configuración regional" };
+    }
+
+    // Toca todas las pantallas: los precios y las fechas se formatean con esto.
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar" };
+  }
+}
+
 /**
  * Agrega un ítem al checklist.
  *

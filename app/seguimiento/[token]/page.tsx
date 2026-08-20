@@ -10,23 +10,14 @@ import { LivePoller } from "@/components/seguimiento/LivePoller";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { obtenerSeguimiento } from "@/lib/actions/seguimiento";
 import { COLUMNAS_KANBAN, etiquetaEstado } from "@/lib/estados-ot";
+import { formatearFecha, formatearMoneda, localeDe } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-
-const hora = (iso: string) =>
-  new Date(iso).toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+/* Esta pantalla la abre el CLIENTE del taller, que puede estar en cualquier
+   país: los importes y las fechas salen del idioma y la moneda que el taller
+   tenga configurados, no de "es-AR"/"ARS" fijos. Acá no hay contexto de i18n
+   porque no hay sesión, así que los valores viajan dentro de la respuesta. */
 
 const TITULO_NOTA: Record<string, string> = {
   anomalia: "Lo que nos contaste",
@@ -46,6 +37,17 @@ export default async function PaginaSeguimiento({
   const ot = await obtenerSeguimiento(token);
 
   if (!ot) notFound();
+
+  const idioma = ot.taller.idioma ?? "es";
+  const moneda = ot.taller.moneda ?? "ARS";
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const hora = (iso: string) =>
+    formatearFecha(iso, idioma, {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const esperandoAprobacion = ot.estado === "presupuesto";
 
@@ -80,6 +82,7 @@ export default async function PaginaSeguimiento({
       {/* Telemetría de Recepción (Combustible y Kilometraje) */}
       {ot.telemetria && (
         <TelemetriaIngreso
+          locale={localeDe(idioma)}
           km={ot.telemetria.km}
           combustible={ot.telemetria.combustible}
         />

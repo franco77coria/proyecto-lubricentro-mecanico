@@ -6,9 +6,17 @@ interface TelemetriaIngresoProps {
   km: number | null;
   combustible: number | null;
   className?: string;
+  /** Viene del taller dueño de la orden: el portal público no tiene sesión ni
+   *  contexto de idioma, así que el formato viaja por props. */
+  locale?: string;
 }
 
-export function TelemetriaIngreso({ km, combustible, className }: TelemetriaIngresoProps) {
+export function TelemetriaIngreso({
+  km,
+  combustible,
+  className,
+  locale = "es-AR",
+}: TelemetriaIngresoProps) {
   if (km == null && combustible == null) return null;
 
   const nivel = combustible != null ? Math.min(Math.max(combustible, 0), 100) : null;
@@ -26,7 +34,7 @@ export function TelemetriaIngreso({ km, combustible, className }: TelemetriaIngr
               Odómetro al Ingresar
             </span>
             <div className="text-base font-black text-foreground">
-              <OdometroNumero valor={km} formato="km" />
+              <OdometroNumero valor={km} formato="km" locale={locale} />
             </div>
           </div>
         </div>

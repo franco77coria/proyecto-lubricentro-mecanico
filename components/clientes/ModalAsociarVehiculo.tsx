@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Search, Car, X, ScanLine } from "lucide-react";
+import { Plus, Search, ScanLine } from "lucide-react";
 import { Sheet } from "@/components/sheet/Sheet";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { LectorCodigo } from "@/components/campos/LectorCodigo";

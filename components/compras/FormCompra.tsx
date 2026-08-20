@@ -12,7 +12,6 @@ import {
 } from "@/components/compras/GaleriaComprobantesCompra";
 import { crearCompra, crearProveedor, type ProveedorListado } from "@/lib/actions/compras";
 import { analizarComprobanteCompraAction } from "@/lib/actions/ocr-compras";
-import type { ComprobanteCompraOCRData } from "@/lib/ia/ocr-compras";
 import {
   obtenerTallerIdActual,
   registrarFotoCompra,
@@ -20,6 +19,7 @@ import {
 import { comprimirImagen, rutaFotoCompra } from "@/lib/imagen";
 import { BUCKET_FOTOS } from "@/lib/storage";
 import { crearClienteNavegador } from "@/lib/supabase/client";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 export interface OpcionProductoCompra {
   id: string;
@@ -36,8 +36,8 @@ interface Linea {
 
 const LINEA_VACIA: Linea = { productoId: "", cantidad: "1", costoUnitario: "" };
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller (idioma + moneda), no de
+   "es-AR"/"ARS" escritos a mano. */
 
 function hoyLocal() {
   const d = new Date();
@@ -55,6 +55,7 @@ export function FormCompra({
   productos: OpcionProductoCompra[];
   tallerId?: string;
 }) {
+  const { money } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [abierto, setAbierto] = useState(false);
@@ -164,7 +165,7 @@ export function FormCompra({
           mensaje: `✨ Factura procesada con IA: ${d.items.length} ítems extraídos de "${d.proveedor}".`,
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("[FormCompra/OCR]", err);
       notificar({ tipo: "error", mensaje: "Error al procesar el archivo del comprobante." });
     } finally {

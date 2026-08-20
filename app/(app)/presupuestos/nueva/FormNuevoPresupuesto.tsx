@@ -12,6 +12,7 @@ import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo
 import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/presupuestos";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { obtenerFichaPorMotorizacion, type FichaTecnica } from "@/lib/actions/tecnica";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 const DRAFT_KEY = "draft_nuevo_presupuesto";
@@ -25,6 +26,7 @@ type ItemTemporal = {
 };
 
 export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
+  const { money } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [isPending, startTransition] = useTransition();
@@ -43,12 +45,21 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [items, setItems] = useState<ItemTemporal[]>([
     { id: "init-1", tipo: "mano_obra", descripcion: "", cantidad: 1, precioUnitario: 0 },
   ]);
-  const [tieneBorrador, setTieneBorrador] = useState(false);
   
   // Ficha Tecnica
   const [ficha, setFicha] = useState<Partial<FichaTecnica> | null>(null);
 
-  // Recuperar borrador
+  // Recuperar el borrador guardado en el navegador.
+  //
+  // Esto es exactamente lo que un efecto tiene que hacer: sincronizar React
+  // con un sistema externo (localStorage) al montar. No se puede hacer en el
+  // inicializador de useState porque este componente también se renderiza en
+  // el servidor, donde no hay localStorage: leerlo ahí daría un HTML distinto
+  // del que el cliente hidrata.
+  //
+  // La regla no puede distinguir este caso del setState en cascada que sí es
+  // un problema, así que se desactiva acá y solo acá.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
@@ -61,12 +72,12 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (d.clienteTelefono) setClienteTelefono(d.clienteTelefono);
         if (d.descargo) setDescargo(d.descargo);
         if (d.items?.length) setItems(d.items);
-        setTieneBorrador(true);
       }
     } catch {
       // Ignorar errores de parseo
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Guardar borrador automáticamente
   useEffect(() => {
@@ -81,9 +92,17 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         items,
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
-      setTieneBorrador(true);
     }
   }, [patente, vehiculo, anio, clienteNombre, clienteTelefono, descargo, items]);
+
+  // Derivado, no un estado que un efecto enciende: así no hay un render de
+  // más por cada tecla.
+  const tieneBorrador =
+    Boolean(patente.trim()) ||
+    Boolean(clienteNombre.trim()) ||
+    Boolean(anio.trim()) ||
+    items.some((i) => i.descripcion.trim()) ||
+    Boolean(descargo.trim());
 
   const limpiarBorrador = () => {
     localStorage.removeItem(DRAFT_KEY);
@@ -94,7 +113,6 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
     setClienteTelefono("");
     setDescargo("");
     setItems([{ id: "init-1", tipo: "mano_obra", descripcion: "", cantidad: 1, precioUnitario: 0 }]);
-    setTieneBorrador(false);
     notificar({ tipo: "alerta", mensaje: "Borrador limpiado." });
   };
 
@@ -441,15 +459,15 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         <div className="space-y-1 rounded-xl bg-muted/60 p-3 text-xs border border-border/60">
           <div className="flex justify-between text-muted-foreground">
             <span>Mano de obra y servicios:</span>
-            <span className="font-semibold text-foreground">${totalManoObra.toLocaleString("es-AR")}</span>
+            <span className="font-semibold text-foreground">{money(totalManoObra)}</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
             <span>Repuestos e insumos:</span>
-            <span className="font-semibold text-foreground">${totalRepuestos.toLocaleString("es-AR")}</span>
+            <span className="font-semibold text-foreground">{money(totalRepuestos)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-1.5 text-sm font-bold text-foreground">
             <span>Total Presupuestado:</span>
-            <span className="text-accent font-black text-base">${subtotal.toLocaleString("es-AR")}</span>
+            <span className="text-accent font-black text-base">{money(subtotal)}</span>
           </div>
         </div>
 

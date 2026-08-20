@@ -1,5 +1,4 @@
 import { LogOut } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { AprobarCatalogo } from "@/components/config/AprobarCatalogo";
 import { AjustesIdiomaMoneda } from "@/components/config/AjustesIdiomaMoneda";
@@ -12,13 +11,13 @@ import { cerrarSesion } from "@/lib/actions/auth";
 import { listarPendientesCatalogo } from "@/lib/actions/catalogo-aprobacion";
 import { listarServicios } from "@/lib/actions/servicios";
 import { obtenerAuditoriaEquipo } from "@/lib/actions/equipo";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function Config() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/config");
 
   const supabase = await crearClienteServidor();
   const esDueno = sesion.perfil.rol === "dueno";
@@ -78,7 +77,7 @@ export default async function Config() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="entrar" style={{ "--i": 1 } as React.CSSProperties}>
-            <AjustesIdiomaMoneda editable={true} />
+            <AjustesIdiomaMoneda editable={esDueno} />
           </div>
 
           <div className="entrar" style={{ "--i": 2 } as React.CSSProperties}>

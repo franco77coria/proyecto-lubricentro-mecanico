@@ -1,25 +1,29 @@
 import { Truck } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { DetalleRemito } from "@/components/compras/DetalleRemito";
 import { FormCompra } from "@/components/compras/FormCompra";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { listarProveedores } from "@/lib/actions/compras";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearFecha, formatearMoneda } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata y de fecha sale del taller. */
 
-const fechaCorta = (iso: string) =>
-  new Date(`${iso}T12:00:00`).toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+
 
 export default async function PaginaCompras() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/compras");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  // El mediodía evita que la fecha se corra un día al interpretarla: una
+  // fecha suelta "YYYY-MM-DD" se parsea como medianoche UTC (lección #80).
+  const fechaCorta = (iso: string) =>
+    formatearFecha(`${iso}T12:00:00`, idioma, { day: "2-digit", month: "short" });
   // Las compras son costos: el mecánico no las ve, igual que caja y reportes.
-  if (sesion.perfil.rol === "mecanico") redirect("/tablero");
 
   const supabase = await crearClienteServidor();
 

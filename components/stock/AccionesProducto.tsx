@@ -12,6 +12,7 @@ import {
   type MovimientoHistorial,
 } from "@/lib/actions/movimientos";
 import { editarProducto, eliminarProducto } from "@/lib/actions/stock";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 const ETIQUETA_TIPO: Record<string, string> = {
   compra: "Ingreso",
@@ -43,6 +44,7 @@ export function AccionesProducto({
   precioVenta?: number;
   marca?: string;
 }) {
+  const { locale } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [abierto, setAbierto] = useState<"ingreso" | "ajuste" | "historial" | "editar" | "eliminar" | null>(null);
@@ -241,7 +243,7 @@ export function AccionesProducto({
                             {ETIQUETA_TIPO[m.tipo] ?? m.tipo}
                           </span>
                           <span className="block truncate text-caption text-muted-foreground">
-                            {new Intl.DateTimeFormat("es-AR", {
+                            {new Intl.DateTimeFormat(locale, {
                               day: "2-digit",
                               month: "short",
                               hour: "2-digit",

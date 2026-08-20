@@ -2,10 +2,13 @@ import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { listarPresupuestos } from "@/lib/actions/presupuestos";
 import { TarjetaPresupuesto } from "./TarjetaPresupuesto";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaPresupuestos() {
+  await exigirVista("/presupuestos");
+
   const presupuestos = await listarPresupuestos();
 
   return (

@@ -1,12 +1,12 @@
 import { Mail, Phone, Users } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { FormCliente } from "@/components/clientes/FormCliente";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +22,7 @@ export default async function PaginaClientes({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/clientes");
 
   const { q } = await searchParams;
   const supabase = await crearClienteServidor();

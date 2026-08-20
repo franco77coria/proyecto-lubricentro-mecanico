@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Script suelto en la raíz que no forma parte de la app.
     "kimi-proxy.js",
+    // Lo genera `supabase gen types`: cualquier arreglo a mano se pierde en la
+    // próxima regeneración, y los `any` que trae son de la plantilla del CLI.
+    "lib/supabase/database.types.ts",
   ]),
   {
     // Los scripts de verificación usan `condición ? ok(...) : fail(...)` como

@@ -52,3 +52,14 @@ next-env.d.ts
 /kimi-proxy.js
 /start-claude-kimi.bat
 /start-claude-kimi.ps1
+
+# Prospección comercial B2B. Nada de esto es de la app: son scripts sueltos y
+# una base de 550 empresas con teléfono, WhatsApp y email de contacto. Vivían
+# sin trackear Y sin ignorar en la raíz, a un `git add .` de quedar publicados
+# en un repo conectado a Vercel. Si el trabajo sigue, va en su propio repo.
+/*.py
+/__pycache__/
+/cleaned_leads_raw.json
+/raw_targeted_elements.json
+/prospectos_empresas_argentina_*.csv
+/prospectos_empresas_argentina_*.xlsx

@@ -7,22 +7,13 @@ import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { SiluetaVehiculo } from "@/components/ui/SiluetaVehiculo";
 import { ModalAsociarVehiculo } from "@/components/clientes/ModalAsociarVehiculo";
 import { ESTADO_TONO, etiquetaEstado } from "@/lib/estados-ot";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearFecha, formatearMoneda } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
-
-const fechaFormat = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+/* Plata y fechas se formatean con lo que tenga configurado el taller. */
 
 interface VehiculoItem {
   id: string;
@@ -59,6 +50,12 @@ export default async function PaginaDetalleCliente({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await exigirVista("/clientes");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const fechaFormat = (iso: string) =>
+    formatearFecha(iso, idioma, { day: "2-digit", month: "2-digit", year: "numeric" });
+
   const { id } = await params;
   const [detalle, vehiculosTaller] = await Promise.all([
     obtenerClienteDetalle(id),

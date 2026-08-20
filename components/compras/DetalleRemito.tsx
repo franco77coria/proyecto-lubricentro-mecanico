@@ -11,9 +11,10 @@ import {
   obtenerDetalleCompra,
   type LineaRemito,
 } from "@/lib/actions/compras";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller (idioma + moneda), no de
+   "es-AR"/"ARS" escritos a mano. */
 
 /**
  * Abrir un remito para revisarlo línea por línea.
@@ -37,6 +38,7 @@ export function DetalleRemito({
   puedeCorregir: boolean;
   tallerId?: string;
 }) {
+  const { money } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [abierto, setAbierto] = useState(false);

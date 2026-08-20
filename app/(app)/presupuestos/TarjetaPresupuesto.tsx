@@ -2,6 +2,8 @@ import Link from "next/link";
 import { FileText, User } from "lucide-react";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { formatearVehiculoBadge } from "@/lib/vehiculo";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda, localeDe } from "@/lib/i18n";
 
 interface ItemPresupuesto {
   cantidad: number;
@@ -33,9 +35,10 @@ export interface PresupuestoTarjetaProps {
   };
 }
 
-export function TarjetaPresupuesto({ presupuesto }: PresupuestoTarjetaProps) {
+export async function TarjetaPresupuesto({ presupuesto }: PresupuestoTarjetaProps) {
+  const { idioma, moneda } = await obtenerAjustesTaller();
   const fecha = new Date(presupuesto.creado_en);
-  const formatter = new Intl.DateTimeFormat("es-AR", {
+  const formatter = new Intl.DateTimeFormat(localeDe(idioma), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -98,7 +101,7 @@ export function TarjetaPresupuesto({ presupuesto }: PresupuestoTarjetaProps) {
           {items.length} {items.length === 1 ? "ítem" : "ítems"}
         </span>
         <span className="text-lg font-black text-accent tabular-nums">
-          ${total.toLocaleString("es-AR", { minimumFractionDigits: 0 })}
+          {formatearMoneda(total, moneda, idioma)}
         </span>
       </div>
     </Link>

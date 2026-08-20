@@ -2,10 +2,17 @@ import { CalendarDays, Plus } from "lucide-react";
 import Link from "next/link";
 import { listarTurnos } from "@/lib/actions/turnos";
 import { TarjetaTurno } from "./TarjetaTurno";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { localeDe } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaTurnos() {
+  await exigirVista("/turnos");
+  const { idioma } = await obtenerAjustesTaller();
+  const localeTurnos = localeDe(idioma);
+
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   
@@ -18,7 +25,7 @@ export default async function PaginaTurnos() {
   // Group turnos by date
   const turnosPorDia = turnos.reduce((acc, turno) => {
     const fecha = new Date(turno.fecha_hora);
-    const formatterDia = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long" });
+    const formatterDia = new Intl.DateTimeFormat(localeTurnos, { weekday: "long", day: "numeric", month: "long" });
     let label = formatterDia.format(fecha);
     
     // Convertir primera letra a mayúscula

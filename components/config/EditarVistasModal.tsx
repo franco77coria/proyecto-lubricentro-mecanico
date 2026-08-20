@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Layers, ShieldCheck, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { Sheet } from "@/components/sheet/Sheet";
@@ -64,7 +64,13 @@ export function EditarVistasModal({
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {ITEMS_NAV.filter((i) => !i.soloDueno && i.href !== "/config").map((item) => {
+          {/* Se ofrecen solo las pantallas que el rol puede abrir. Antes
+              aparecían también las de `sinMecanico` (Compras, Avisos): el
+              dueño las tildaba, el botón salía en el sidebar y la pantalla lo
+              rebotaba igual. La lista de vistas achica, no amplía. */}
+          {ITEMS_NAV.filter(
+            (i) => !i.soloDueno && !i.sinMecanico && i.href !== "/config",
+          ).map((item) => {
             const seleccionada = vistas.includes(item.href);
             const Icono = item.icono;
             return (

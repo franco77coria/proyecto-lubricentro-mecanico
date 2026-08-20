@@ -1,6 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { obtenerCliente } from "./cliente.ts";
-import { detectarMimeType, extraerJSON, prepararImagen, type EntradaImagen } from "./vision.ts";
+import { extraerJSON, prepararImagen, type EntradaImagen } from "./vision.ts";
 
 export interface ItemComprobanteOCR {
   descripcion: string;
@@ -41,10 +40,14 @@ export interface ResultadoOCRCompra {
   error?: string;
 }
 
-export function sanitizarOCRCompra(crudo: any): ComprobanteCompraOCRData {
-  const itemsCrudos = Array.isArray(crudo.items) ? crudo.items : [];
+/** Lo que devuelve el modelo: claves variables, tipos variables. Normalizarlo
+ *  es exactamente el trabajo de esta función. */
+type CrudoIA = Record<string, unknown>;
+
+export function sanitizarOCRCompra(crudo: CrudoIA): ComprobanteCompraOCRData {
+  const itemsCrudos: CrudoIA[] = Array.isArray(crudo.items) ? (crudo.items as CrudoIA[]) : [];
   const items: ItemComprobanteOCR[] = itemsCrudos
-    .map((it: any) => {
+    .map((it) => {
       const cantidad = typeof it.cantidad === "number" && !isNaN(it.cantidad) ? it.cantidad : Number(it.cantidad) || 1;
       const precioUnitario = typeof it.precioUnitario === "number" && !isNaN(it.precioUnitario)
         ? it.precioUnitario
