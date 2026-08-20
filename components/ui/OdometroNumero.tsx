@@ -7,12 +7,19 @@ interface OdometroNumeroProps {
   valor: number;
   formato?: "km" | "pesos" | "entero";
   className?: string;
+  /** Locale y moneda llegan por props y no por contexto: este componente
+   *  también se usa en el portal público, que no tiene I18nProvider porque no
+   *  hay sesión. Ahí los valores salen del taller dueño de la orden. */
+  locale?: string;
+  moneda?: string;
 }
 
 export function OdometroNumero({
   valor,
   formato = "entero",
   className,
+  locale = "es-AR",
+  moneda = "ARS",
 }: OdometroNumeroProps) {
   const [displayValor, setDisplayValor] = useState(0);
 
@@ -38,16 +45,16 @@ export function OdometroNumero({
 
   const formatear = (num: number) => {
     if (formato === "pesos") {
-      return new Intl.NumberFormat("es-AR", {
+      return new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: "ARS",
+        currency: moneda,
         maximumFractionDigits: 0,
       }).format(num);
     }
     if (formato === "km") {
-      return `${new Intl.NumberFormat("es-AR").format(num)} km`;
+      return `${new Intl.NumberFormat(locale).format(num)} km`;
     }
-    return new Intl.NumberFormat("es-AR").format(num);
+    return new Intl.NumberFormat(locale).format(num);
   };
 
   return (

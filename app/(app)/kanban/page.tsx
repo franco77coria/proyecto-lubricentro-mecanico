@@ -1,15 +1,14 @@
-import { redirect } from "next/navigation";
 
 import { TableroKanban, type OTKanban } from "@/components/kanban/TableroKanban";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { COLUMNAS_KANBAN } from "@/lib/estados-ot";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaKanban() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/kanban");
 
   const supabase = await crearClienteServidor();
   const { data: ordenes } = await supabase

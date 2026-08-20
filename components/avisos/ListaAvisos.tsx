@@ -11,6 +11,7 @@ import {
   type RecordatorioAContactar,
 } from "@/lib/actions/recordatorios";
 import { armarLinkRecordatorio } from "@/lib/whatsapp";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 const fechaCorta = (iso: string | null) =>
   iso
@@ -35,6 +36,7 @@ export function ListaAvisos({
   avisos: RecordatorioAContactar[];
   tallerNombre: string;
 }) {
+  const { numero, fecha } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [avisos, setAvisos] = useState(iniciales);
@@ -113,8 +115,8 @@ export function ListaAvisos({
             </span>
             <span className="mt-0.5 block text-caption font-semibold text-amber-700">
               {a.vencePor === "km"
-                ? `Pasó los ${a.kmObjetivo?.toLocaleString("es-AR")} km${
-                    a.kmActual ? ` (va en ${a.kmActual.toLocaleString("es-AR")})` : ""
+                ? `Pasó los ${numero(a.kmObjetivo ?? 0)} km${
+                    a.kmActual ? ` (va en ${numero(a.kmActual)})` : ""
                   }`
                 : `Toca por fecha${a.fechaObjetivo ? `: ${fechaCorta(a.fechaObjetivo)}` : ""}`}
             </span>

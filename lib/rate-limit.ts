@@ -72,6 +72,44 @@ export async function limpiarIntentosAuth(email: string): Promise<void> {
   }
 }
 
+/**
+ * Freno para las llamadas a la IA.
+ *
+ * Todas las funciones de IA salen por la MISMA `ANTHROPIC_API_KEY`, que paga
+ * quien opera la plataforma y no el taller que la usa. Sin tope, una cuenta de
+ * prueba en un bucle quema presupuesto real sin tocar nada más del sistema.
+ *
+ * El freno va por taller y no por usuario: si fuera por usuario, alcanzaría
+ * con dar de alta empleados para multiplicar la cuota.
+ *
+ * Los topes son por operación porque no cuestan lo mismo. El peritaje manda
+ * todas las fotos de la orden en un solo request y es el más caro con
+ * diferencia; el traductor de descargos es texto corto y sale casi gratis.
+ * Están calibrados sobre un día de taller ocupado, no sobre el caso promedio:
+ * la idea es que nadie que trabaje normal los toque nunca.
+ */
+const TOPES_IA: Record<string, { max: number; ventana: string }> = {
+  diagnostico: { max: 60, ventana: "1 hour" },
+  traduccion: { max: 80, ventana: "1 hour" },
+  peritaje: { max: 25, ventana: "1 hour" },
+  cedula: { max: 60, ventana: "1 hour" },
+  comprobante: { max: 60, ventana: "1 hour" },
+};
+
+export async function limitarIA(
+  tallerId: string,
+  operacion: keyof typeof TOPES_IA,
+): Promise<ResultadoLimite> {
+  const tope = TOPES_IA[operacion];
+  return chequear(`ia:${operacion}:${tallerId}`, tope.max, tope.ventana);
+}
+
+/** El mensaje que ve el mecánico cuando se topó. Dice qué pasó y cuándo puede
+ *  volver a intentar, sin hablar de cuotas ni de tokens. */
+export function mensajeLimiteIA(esperaSegundos: number): string {
+  return `El asistente se usó mucho en la última hora. Volvé a probar en ${formatearEspera(esperaSegundos)}.`;
+}
+
 /** "3 minutos" en vez de "180 segundos": nadie cuenta segundos. */
 export function formatearEspera(segundos: number): string {
   if (segundos < 60) return `${segundos} segundos`;

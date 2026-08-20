@@ -1,26 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
+type Tema = "dark" | "light";
+
+/**
+ * Quién manda sobre el tema.
+ *
+ * El script inline del layout raíz ya dejó el tema aplicado en `<html>` antes
+ * de que se pinte nada — para eso existe, para evitar el destello blanco. Así
+ * que el DOM ES la fuente de verdad y este botón la lee, en vez de tener su
+ * propio estado que arranca en "light" y se corrige después de montar (eso
+ * causaba un render de más y dejaba el botón mostrando el tema equivocado por
+ * un instante).
+ *
+ * Los suscriptores se avisan a mano porque el cambio lo dispara este mismo
+ * componente: no hay un evento del navegador al que engancharse.
+ */
+const oyentes = new Set<() => void>();
+
+function suscribir(alCambiar: () => void) {
+  oyentes.add(alCambiar);
+  return () => {
+    oyentes.delete(alCambiar);
+  };
+}
+
+function temaActual(): Tema {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
+/** En el servidor no hay DOM. Se asume claro, que es el default de la app, y
+ *  el primer render del cliente ya trae el valor real. */
+function temaEnServidor(): Tema {
+  return "light";
+}
+
 export function SelectorTema({ className = "" }: { className?: string }) {
-  const [tema, setTema] = useState<"dark" | "light">("light");
-  const [montado, setMontado] = useState(false);
+  const tema = useSyncExternalStore(suscribir, temaActual, temaEnServidor);
+  const montado = useSyncExternalStore(suscribir, () => true, () => false);
 
-  useEffect(() => {
-    setMontado(true);
-    const guardado = localStorage.getItem("fierros-tema") as "dark" | "light" | null;
-    if (guardado) {
-      setTema(guardado);
-      aplicarTema(guardado);
-    } else {
-      // Default a light (modo claro)
-      setTema("light");
-      aplicarTema("light");
-    }
-  }, []);
-
-  function aplicarTema(nuevoTema: "dark" | "light") {
+  const aplicarTema = useCallback((nuevoTema: Tema) => {
     const root = document.documentElement;
     if (nuevoTema === "light") {
       root.classList.remove("dark");
@@ -31,11 +52,11 @@ export function SelectorTema({ className = "" }: { className?: string }) {
       root.classList.add("dark");
       root.setAttribute("data-theme", "dark");
     }
-  }
+    oyentes.forEach((avisar) => avisar());
+  }, []);
 
   function toggleTema() {
-    const siguiente = tema === "dark" ? "light" : "dark";
-    setTema(siguiente);
+    const siguiente: Tema = tema === "dark" ? "light" : "dark";
     localStorage.setItem("fierros-tema", siguiente);
     aplicarTema(siguiente);
   }

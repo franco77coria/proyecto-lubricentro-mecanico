@@ -10,9 +10,10 @@ import {
   crearServicio,
   type ServicioListado,
 } from "@/lib/actions/servicios";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller (idioma + moneda), no de
+   "es-AR"/"ARS" escritos a mano. */
 
 /**
  * Precios de la mano de obra del taller.
@@ -32,6 +33,7 @@ export function CatalogoServicios({
   servicios: ServicioListado[];
   editable: boolean;
 }) {
+  const { money } = useFormato();
   const { notificar } = useIsla();
   const [servicios, setServicios] = useState(iniciales);
   const [agregando, setAgregando] = useState(false);

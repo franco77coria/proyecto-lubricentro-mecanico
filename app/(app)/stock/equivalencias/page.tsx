@@ -1,9 +1,12 @@
 import { Wrench } from "lucide-react";
 import { BuscadorFiltros } from "./BuscadorFiltros";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
-export default function PaginaEquivalencias() {
+export default async function PaginaEquivalencias() {
+  await exigirVista("/stock/equivalencias");
+
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8">
       <div className="contenedor-angosto space-y-6">

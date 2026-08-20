@@ -148,6 +148,47 @@ export const ITEMS_BARRA: readonly ItemNav[] = ATAJOS_BARRA.map(
 );
 
 /**
+ * Si un rol puede abrir una pantalla.
+ *
+ * ESTA es la regla, y hay una sola. La navegación la usa para decidir qué
+ * botón dibuja y `exigirVista()` la usa para decidir si deja entrar. Tenerla
+ * escrita en dos lados es la forma de que un día dejen de coincidir y la
+ * pantalla se esconda sin que la puerta se cierre — que es exactamente lo que
+ * pasaba antes: `vistas_permitidas` solo filtraba el menú, y escribiendo la
+ * URL a mano se entraba igual.
+ *
+ * `vistasPermitidas` RESTRINGE, nunca amplía. Un dueño que le tilda una
+ * pantalla a un mecánico le está sacando el resto, no dándole permisos que su
+ * rol no tiene: la lista personalizada se cruza con lo que el rol ya podía
+ * ver. Sin eso, tildar "Compras" para un mecánico le mostraba el botón de una
+ * pantalla que después lo rebota, y tildar algo más sensible sería una
+ * escalada de privilegios servida desde la pantalla de configuración.
+ */
+export function puedeVerRuta(
+  href: string,
+  rol: string,
+  vistasPermitidas?: string[] | null,
+): boolean {
+  // El dueño ve todo. No hay pantalla del sistema que le esté vedada.
+  if (rol === "dueno") return true;
+
+  const item = ITEMS_NAV.find((i) => i.href === href);
+  if (!item) return false;
+
+  // 1. Lo que el rol permite de base.
+  if (item.soloDueno) return false;
+  if (item.sinMecanico && rol === "mecanico") return false;
+
+  // 2. Y encima, si el dueño achicó la lista, lo que quedó en ella.
+  //    Configuración queda siempre: es de donde se cierra la sesión.
+  if (vistasPermitidas && vistasPermitidas.length > 0) {
+    return vistasPermitidas.includes(href) || href === "/config";
+  }
+
+  return true;
+}
+
+/**
  * Devuelve los ítems de navegación visibles según el rol y las vistas permitidas personalizadas.
  */
 export function itemsVisibles(
@@ -155,20 +196,7 @@ export function itemsVisibles(
   rol: string,
   vistasPermitidas?: string[] | null,
 ): ItemNav[] {
-  // El dueño siempre ve todo
-  if (rol === "dueno") return [...items];
-
-  // Si tiene asignadas vistas específicas personalizadas por el dueño
-  if (vistasPermitidas && vistasPermitidas.length > 0) {
-    return items.filter(
-      (i) => vistasPermitidas.includes(i.href) || i.href === "/config",
-    );
-  }
-
-  // Regla por defecto según rol
-  return items.filter(
-    (i) => (!i.soloDueno || rol === "dueno") && (!i.sinMecanico || rol !== "mecanico"),
-  );
+  return items.filter((i) => puedeVerRuta(i.href, rol, vistasPermitidas));
 }
 
 /**

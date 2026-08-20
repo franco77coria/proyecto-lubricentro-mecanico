@@ -1,3 +1,7 @@
+"use client";
+
+import { formatearDistancia } from "@/lib/i18n";
+import { useFormato, useI18n } from "@/lib/i18n/I18nContext";
 import { formatearPatente } from "@/lib/patente";
 import { formatearTelefono } from "@/lib/telefono";
 
@@ -39,11 +43,8 @@ export interface DatosComprobante {
   recomendados: NotaComprobante[];
 }
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n);
-
-const fechaLarga = (iso: string) =>
-  new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(iso));
+/* El comprobante se lo lleva el cliente en la mano: los importes y la fecha
+   salen del idioma y la moneda del taller, no de "es-AR"/"ARS" fijos. */
 
 /** Los tipos de ítem se agrupan en dos bloques con subtotal propio: es lo que
  *  el cliente quiere saber, cuánto es trabajo y cuánto es material. */
@@ -77,6 +78,8 @@ export function ComprobanteOT({
   ot: DatosComprobante;
   modo?: "a4" | "termico";
 }) {
+  const { money, fecha: fechaLarga } = useFormato();
+  const { idioma } = useI18n();
   const totalRecomendado = ot.recomendados.reduce((s, r) => s + Number(r.precio_estimado ?? 0), 0);
   const hayChecklist = ot.checklist.some((c) => c.estado);
   const observados = ot.checklist.filter((c) => c.estado === "observado" || c.estado === "critico");
@@ -98,7 +101,7 @@ export function ComprobanteOT({
             {ot.estado === "presupuesto" ? "Presupuesto" : "Orden de trabajo"}
           </span>
           <span className="cmp-numero">{ot.numero}</span>
-          <span className="cmp-fecha">{fechaLarga(ot.fecha_ingreso)}</span>
+          <span className="cmp-fecha">{fechaLarga(ot.fecha_ingreso, { day: "2-digit", month: "long", year: "numeric" })}</span>
         </div>
       </header>
 
@@ -113,7 +116,7 @@ export function ComprobanteOT({
           <span className="cmp-dato-tenue">
             {[
               ot.vehiculo.color,
-              ot.km_ingreso != null ? `${ot.km_ingreso.toLocaleString("es-AR")} km` : null,
+              ot.km_ingreso != null ? formatearDistancia(ot.km_ingreso, idioma) : null,
             ]
               .filter(Boolean)
               .join(" · ")}

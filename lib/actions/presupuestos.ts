@@ -205,10 +205,12 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
 
     const { error } = await supabase
       .from("orden_trabajo")
-      .update({
-        estado: "aprobado",
-        aprobado_cliente_en: new Date().toISOString(),
-      })
+      // NO se toca `aprobado_cliente_en`: esa columna es la constancia de que
+      // el CLIENTE autorizó el trabajo desde el portal público, y la escribe
+      // solo aprobar_presupuesto_publico() con el token en la mano. Que el
+      // taller pase el presupuesto a orden es una decisión del taller, no del
+      // cliente; escribirla acá convertía la constancia en un campo más.
+      .update({ estado: "aprobado" })
       .eq("id", id)
       .eq("taller_id", sesion.perfil.taller_id);
 

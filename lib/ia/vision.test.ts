@@ -142,7 +142,8 @@ describe("prepararImagen", () => {
   test("retorna null para entradas vacías", async () => {
     const res1 = await prepararImagen("");
     assert.equal(res1, null);
-    const res2 = await prepararImagen({} as any);
+    // Un objeto sin url ni base64: entrada inválida a propósito.
+    const res2 = await prepararImagen({});
     assert.equal(res2, null);
   });
 });

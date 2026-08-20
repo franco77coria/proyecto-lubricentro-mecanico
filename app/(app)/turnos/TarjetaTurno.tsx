@@ -4,6 +4,7 @@ import { useTransition, useOptimistic } from "react";
 import { Clock, CheckCircle2, User, Car, Phone } from "lucide-react";
 import { type Turno, cambiarEstadoTurno, type EstadoTurno } from "@/lib/actions/turnos";
 import { useIsla } from "@/components/isla/IslaContext";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 const COLORES_ESTADO: Record<EstadoTurno, string> = {
   pendiente: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
@@ -22,9 +23,10 @@ export function TarjetaTurno({ turno }: { turno: Turno }) {
     (estado, nuevoEstado) => nuevoEstado
   );
   
+  const { locale } = useFormato();
   const fecha = new Date(turno.fecha_hora);
-  const formatterHora = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" });
-  const formatterDia = new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric", month: "short" });
+  const formatterHora = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" });
+  const formatterDia = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short" });
 
   const cambiarEstado = (nuevoEstado: EstadoTurno) => {
     startTransition(async () => {

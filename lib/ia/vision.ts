@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { MODELO_IA, obtenerCliente } from "./cliente.ts";
 
 /**
@@ -106,8 +105,52 @@ export function detectarMimeType(buffer: Buffer): TipoImagenVision {
   return "image/jpeg";
 }
 
+/** Tope de descarga. El bucket ya limita a 8 MB por archivo (0012); esto es la
+ *  red de contención de este lado, para que una respuesta enorme no se coma la
+ *  memoria de la función mientras se pasa a base64. */
+const MAX_BYTES_IMAGEN = 12 * 1024 * 1024;
+
+/** Cuánto se espera a que responda Storage antes de abandonar. */
+const TIMEOUT_DESCARGA_MS = 15_000;
+
 /**
- * Convierte una entrada (URL http/https, data URI o base64 puro) en un objeto ImagenProcesada listo para la IA.
+ * Si una URL es una URL firmada de NUESTRO Storage y de ningún otro lado.
+ *
+ * Esto es una barrera de seguridad, no una validación de formato. Sin ella,
+ * `prepararImagen` descarga cualquier cosa que le pasen: las acciones de OCR
+ * reciben un string libre del navegador, así que un `http://` apuntando a la
+ * red interna, a localhost o al endpoint de metadata del cloud convertía al
+ * servidor en un proxy hacia adentro — y el contenido descargado además salía
+ * hacia la API del modelo.
+ *
+ * Se compara el host exacto contra el del proyecto de Supabase. Nada de
+ * `includes()` ni de `endsWith()`: `mi-proyecto.supabase.co.atacante.com`
+ * pasaría los dos.
+ */
+function esUrlDeStoragePropio(url: string): boolean {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return false;
+
+  try {
+    const u = new URL(url);
+    const propio = new URL(base);
+
+    return (
+      u.protocol === "https:" &&
+      u.hostname === propio.hostname &&
+      u.pathname.startsWith("/storage/v1/object/")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Convierte una entrada (URL firmada propia, data URI o base64 puro) en un
+ * objeto ImagenProcesada listo para la IA.
+ *
+ * La rama de URL acepta SOLO URLs firmadas de nuestro propio Storage, que las
+ * genera el servidor. Cualquier otra URL se rechaza: ver `esUrlDeStoragePropio`.
  */
 export async function prepararImagen(entrada: EntradaImagen): Promise<ImagenProcesada | null> {
   try {
@@ -132,17 +175,38 @@ export async function prepararImagen(entrada: EntradaImagen): Promise<ImagenProc
         }
       }
 
-      // Caso 2: URL HTTP / HTTPS
+      // Caso 2: URL firmada de nuestro propio Storage. Ninguna otra.
       if (limpio.startsWith("http://") || limpio.startsWith("https://")) {
+        if (!esUrlDeStoragePropio(limpio)) {
+          // No se loguea la URL: si vino de un intento de SSRF, dejarla en los
+          // logs es guardar el payload del atacante en texto plano.
+          console.error("[prepararImagen] URL rechazada: no es Storage del proyecto");
+          return null;
+        }
+
         const res = await fetch(limpio, {
           headers: { Accept: "image/*" },
           cache: "no-store",
+          signal: AbortSignal.timeout(TIMEOUT_DESCARGA_MS),
         });
         if (!res.ok) {
-          console.error(`[prepararImagen] Error descargando ${limpio}: HTTP ${res.status}`);
+          console.error(`[prepararImagen] Storage devolvió HTTP ${res.status}`);
           return null;
         }
+
+        // El Content-Length puede mentir o no venir, así que se chequea antes
+        // (barato) y después contra los bytes reales (definitivo).
+        const declarado = Number(res.headers.get("content-length") ?? 0);
+        if (declarado > MAX_BYTES_IMAGEN) {
+          console.error("[prepararImagen] Imagen demasiado grande, descartada");
+          return null;
+        }
+
         const arrayBuffer = await res.arrayBuffer();
+        if (arrayBuffer.byteLength > MAX_BYTES_IMAGEN) {
+          console.error("[prepararImagen] Imagen demasiado grande, descartada");
+          return null;
+        }
         const buffer = Buffer.from(arrayBuffer);
         const headerMime = res.headers.get("content-type")?.toLowerCase();
         let mediaType: TipoImagenVision = "image/jpeg";

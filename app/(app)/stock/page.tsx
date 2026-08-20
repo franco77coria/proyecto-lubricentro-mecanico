@@ -1,24 +1,26 @@
 import { AlertTriangle, Package } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { AccionesProducto } from "@/components/stock/AccionesProducto";
 import { EscanearProducto } from "@/components/stock/EscanearProducto";
 import { FormNuevoProducto } from "@/components/stock/FormNuevoProducto";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata sale del taller. */
 
 export default async function PaginaStock({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/stock");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
 
   const { q } = await searchParams;
   const supabase = await crearClienteServidor();

@@ -6,6 +6,7 @@ import { useTransition } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { cargarAceiteDeFicha, type FichaVehiculo } from "@/lib/actions/ficha";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 /**
  * "Este auto lleva".
@@ -28,6 +29,7 @@ export function PanelFicha({
   otId: string;
   vehiculoId: string;
 }) {
+  const { numero } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
   const [pendiente, iniciar] = useTransition();
@@ -66,7 +68,7 @@ export function PanelFicha({
     [
       "Service cada",
       ficha.service_km
-        ? `${ficha.service_km.toLocaleString("es-AR")} km${ficha.service_meses ? ` o ${ficha.service_meses} meses` : ""}`
+        ? `${numero(ficha.service_km)} km${ficha.service_meses ? ` o ${ficha.service_meses} meses` : ""}`
         : null,
     ],
   ];

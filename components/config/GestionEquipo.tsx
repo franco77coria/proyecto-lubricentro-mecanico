@@ -3,17 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Activity,
   Check,
   Copy,
   Eye,
-  KeyRound,
   MessageCircle,
-  ShieldCheck,
   Trash2,
   UserPlus,
   Users,
-  Wrench,
 } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
@@ -27,6 +23,7 @@ import {
 import { CrearUsuarioModal } from "./CrearUsuarioModal";
 import { EditarVistasModal } from "./EditarVistasModal";
 import { PanelAuditoriaEquipo } from "./PanelAuditoriaEquipo";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 export interface Miembro {
   user_id: string;
@@ -87,6 +84,7 @@ export function GestionEquipo({
   yoSoy: string;
   esDueno: boolean;
 }) {
+  const { locale } = useFormato();
   const router = useRouter();
   const { notificar } = useIsla();
 
@@ -341,7 +339,7 @@ export function GestionEquipo({
                     </div>
                     <span className="block text-[11px] text-muted-foreground font-medium mt-0.5">
                       Válido hasta el{" "}
-                      {new Intl.DateTimeFormat("es-AR", {
+                      {new Intl.DateTimeFormat(locale, {
                         day: "2-digit",
                         month: "short",
                         hour: "2-digit",

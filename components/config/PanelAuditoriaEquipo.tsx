@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Clock, Eye, Layers, ShieldCheck, Sparkles, UserCheck, Wrench } from "lucide-react";
+import { Activity, Eye } from "lucide-react";
 import type { RegistroAuditoria } from "@/lib/actions/equipo";
 
 const NOMBRE_ROL: Record<string, string> = {

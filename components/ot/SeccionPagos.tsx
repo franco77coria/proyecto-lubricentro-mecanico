@@ -4,6 +4,7 @@ import { CreditCard, Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { METODOS_PAGO, MetodoPago, registrarPagoOT } from "@/lib/actions/caja";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 const ETIQUETA_METODO: Record<MetodoPago, string> = {
   efectivo: "Efectivo",
@@ -30,6 +31,7 @@ export function SeccionPagos({
   totalOT: number;
   pagosIniciales: Pago[];
 }) {
+  const { money } = useFormato();
   const [pagos, setPagos] = useState(pagosIniciales);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -86,7 +88,7 @@ export function SeccionPagos({
         <div className="text-right">
           <span className="text-caption text-muted-foreground">Saldo Pendiente: </span>
           <span className={`text-sm font-extrabold ${saldoPendiente > 0 ? "text-red-600" : "text-emerald-600"}`}>
-            $ {saldoPendiente.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {money(saldoPendiente)}
           </span>
         </div>
       </div>
@@ -98,7 +100,7 @@ export function SeccionPagos({
             <div key={p.id} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-xs font-medium">
               <span className="capitalize text-foreground">{p.metodo.replace("_", " ")}</span>
               <span className="font-bold text-emerald-600 tabular">
-                +$ {Number(p.monto).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                +{money(Number(p.monto))}
               </span>
             </div>
           ))}

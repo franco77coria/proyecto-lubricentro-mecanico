@@ -80,9 +80,11 @@ export function GaleriaComprobantesCompra({
   const [fotosRemotas, setFotosRemotas] = useState<FotoCompraConUrl[]>(
     fotosIniciales ?? [],
   );
-  const [tallerIdLocal, setTallerIdLocal] = useState<string | null>(
-    tallerIdProp ?? null,
-  );
+  // Solo se resuelve por red cuando la prop no vino. Copiar la prop a estado
+  // obligaba a un efecto que la sincronizara, y ese efecto era un render de
+  // más cada vez que el padre la pasaba.
+  const [tallerIdResuelto, setTallerIdResuelto] = useState<string | null>(null);
+  const tallerIdLocal = tallerIdProp ?? tallerIdResuelto;
   const [cargandoRemotas, setCargandoRemotas] = useState(
     !borrador && Boolean(compraId) && !fotosIniciales,
   );
@@ -101,15 +103,13 @@ export function GaleriaComprobantesCompra({
   const [borrandoId, setBorrandoId] = useState<string | null>(null);
   const [, iniciarTransicion] = useTransition();
 
-  // Obtener taller_id si no fue pasado por props
+  // Obtener taller_id solo si no vino por props
   useEffect(() => {
-    if (tallerIdProp) {
-      setTallerIdLocal(tallerIdProp);
-      return;
-    }
+    if (tallerIdProp) return;
+
     let montado = true;
     obtenerTallerIdActual().then((id) => {
-      if (montado && id) setTallerIdLocal(id);
+      if (montado && id) setTallerIdResuelto(id);
     });
     return () => {
       montado = false;
@@ -120,8 +120,10 @@ export function GaleriaComprobantesCompra({
   useEffect(() => {
     if (borrador || !compraId || fotosIniciales) return;
 
+    // No hace falta prender la bandera acá: el estado ya arranca en true
+    // cuando corresponde (ver useState de arriba), y prenderla de nuevo era
+    // un setState sincrónico dentro del efecto.
     let cancelado = false;
-    setCargandoRemotas(true);
 
     fotosDeCompra(compraId)
       .then((items) => {
@@ -155,11 +157,18 @@ export function GaleriaComprobantesCompra({
       ? items[fotoActivaIndex]
       : null;
 
-  // Reset de zoom al cambiar de foto activa
-  useEffect(() => {
+  // Reset de zoom al cambiar de foto activa.
+  //
+  // Va durante el render y no en un efecto: React descarta este render y
+  // vuelve a empezar con los valores nuevos, así que la foto siguiente nunca
+  // llega a pintarse con el zoom de la anterior. Con un efecto se veía un
+  // cuadro con el encuadre viejo.
+  const [indiceAnterior, setIndiceAnterior] = useState(fotoActivaIndex);
+  if (indiceAnterior !== fotoActivaIndex) {
+    setIndiceAnterior(fotoActivaIndex);
     setZoom(1);
     setPosicion({ x: 0, y: 0 });
-  }, [fotoActivaIndex]);
+  }
 
   // Manejo de teclado para Lightbox (Escape, Zoom, Flechas)
   useEffect(() => {
@@ -228,7 +237,7 @@ export function GaleriaComprobantesCompra({
     let tallerId = tallerIdLocal;
     if (!tallerId) {
       tallerId = await obtenerTallerIdActual();
-      if (tallerId) setTallerIdLocal(tallerId);
+      if (tallerId) setTallerIdResuelto(tallerId);
     }
 
     if (!tallerId) {

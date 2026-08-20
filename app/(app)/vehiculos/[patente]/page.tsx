@@ -1,20 +1,21 @@
 import { ArrowLeft, Car, Gauge, Phone, Plus, User } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { EditarVehiculo } from "@/components/vehiculos/EditarVehiculo";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { formatearPatente, normalizarPatente } from "@/lib/patente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearFecha, formatearMoneda, formatearNumero } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+/* El formato de plata y de fecha sale del taller. */
 
-const fecha = (iso: string) =>
-  new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(iso));
+
 
 /**
  * Historial de un vehículo.
@@ -31,8 +32,11 @@ export default async function HistorialVehiculo({
 }: {
   params: Promise<{ patente: string }>;
 }) {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/vehiculos");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const fecha = (iso: string) =>
+    formatearFecha(iso, idioma, { day: "2-digit", month: "short", year: "numeric" });
 
   const { patente } = await params;
   const norm = normalizarPatente(decodeURIComponent(patente));
@@ -125,7 +129,7 @@ export default async function HistorialVehiculo({
                         <span className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground">
                           <span>{fecha(o.fecha_ingreso)}</span>
                           {o.km_ingreso != null && (
-                            <span className="tabular">· {o.km_ingreso.toLocaleString("es-AR")} km</span>
+                            <span className="tabular">· {formatearNumero(o.km_ingreso, idioma)} km</span>
                           )}
                         </span>
                       </span>
@@ -154,7 +158,7 @@ export default async function HistorialVehiculo({
                 <Dato
                   icono={Gauge}
                   etiqueta="Kilómetros"
-                  valor={vehiculo.km_actual != null ? `${vehiculo.km_actual.toLocaleString("es-AR")} km` : "Sin registrar"}
+                  valor={vehiculo.km_actual != null ? `${formatearNumero(vehiculo.km_actual, idioma)} km` : "Sin registrar"}
                 />
                 {vehiculo.color && <Dato etiqueta="Color" valor={vehiculo.color} />}
                 {vehiculo.combustible && <Dato etiqueta="Combustible" valor={vehiculo.combustible} />}

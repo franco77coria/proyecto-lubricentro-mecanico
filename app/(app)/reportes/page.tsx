@@ -1,17 +1,19 @@
 import { Clock, Receipt, TrendingUp, Wrench } from "lucide-react";
-import { redirect } from "next/navigation";
 
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearMoneda, localeDe, type Idioma } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
-
-const NOMBRE_MES = (ym: string) => {
+/* Plata y meses se formatean con el idioma y la moneda del taller. */
+const nombreMes = (ym: string, idioma: Idioma) => {
   const [a, m] = ym.split("-").map(Number);
-  return new Intl.DateTimeFormat("es-AR", { month: "short", year: "2-digit" }).format(new Date(a, m - 1, 1));
+  return new Intl.DateTimeFormat(localeDe(idioma), { month: "short", year: "2-digit" }).format(
+    new Date(a, m - 1, 1),
+  );
 };
 
 interface Metricas {
@@ -28,12 +30,13 @@ interface Metricas {
 }
 
 export default async function Reportes() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/reportes");
+  const { idioma, moneda } = await obtenerAjustesTaller();
+  const money = (n: number) => formatearMoneda(n, moneda, idioma);
+  const NOMBRE_MES = (ym: string) => nombreMes(ym, idioma);
 
   // Los reportes son del dueño. La función además lo valida del lado de
   // Postgres: esto es solo para no mostrar una pantalla de error.
-  if (sesion.perfil.rol !== "dueno") redirect("/tablero");
 
   const supabase = await crearClienteServidor();
   const [{ data, error }, { data: horas }] = await Promise.all([

@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { agregarItemOT, eliminarItemOT } from "@/lib/actions/ot";
+import { useFormato } from "@/lib/i18n/I18nContext";
 
 interface ItemTabla {
   id: string;
@@ -46,6 +47,7 @@ export function ItemsEditor({
   servicios?: OpcionServicio[];
   productos?: OpcionProducto[];
 }) {
+  const { money } = useFormato();
   const [items, setItems] = useState(initialItems);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -157,12 +159,12 @@ export function ItemsEditor({
                 <p className="text-sm font-semibold text-foreground truncate">{it.descripcion}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="capitalize px-1.5 py-0.5 rounded bg-muted font-medium">{it.tipo.replace("_", " ")}</span>
-                  <span>{it.cantidad} x ${it.precio_unitario.toLocaleString("es-AR")}</span>
+                  <span>{it.cantidad} × {money(it.precio_unitario)}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-bold text-foreground tabular">
-                  $ {it.subtotal.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                  {money(it.subtotal)}
                 </span>
                 <button
                   type="button"
@@ -185,7 +187,7 @@ export function ItemsEditor({
         <div className="flex items-center justify-between border-t border-border bg-muted/30 p-3">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Calculado</span>
           <span className="text-lg font-black text-accent tabular">
-            $ {totalCalculado.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+            {money(totalCalculado)}
           </span>
         </div>
       </div>
@@ -252,7 +254,7 @@ export function ItemsEditor({
                 <option value="">Escribir a mano…</option>
                 {servicios.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.nombre} — ${s.precioManoObra.toLocaleString("es-AR")}
+                    {s.nombre} — {money(s.precioManoObra)}
                   </option>
                 ))}
               </select>

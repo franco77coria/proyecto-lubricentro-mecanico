@@ -5,6 +5,8 @@ import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { normalizarTelefono } from "@/lib/telefono";
+import { hoyEnZona } from "@/lib/fechas";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export interface ResultadoCliente {
@@ -104,7 +106,10 @@ export async function cambiarDuenoVehiculo(
 
   try {
     const supabase = await crearClienteServidor();
-    const hoy = new Date().toISOString().slice(0, 10);
+    // Fecha del taller: este valor cierra el período de tenencia anterior
+    // del vehículo, así que un día de más o de menos falsea el historial.
+    const { zonaHoraria } = await obtenerAjustesTaller();
+    const hoy = hoyEnZona(zonaHoraria);
 
     const { data: vigente } = await supabase
       .from("vehiculo_cliente")

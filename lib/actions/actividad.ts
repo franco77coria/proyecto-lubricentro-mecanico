@@ -2,6 +2,8 @@
 
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
+import { hoyEnZona } from "@/lib/fechas";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 const pulsoSchema = z.object({
@@ -19,7 +21,13 @@ export async function registrarPulsoActividad(datos: { ruta: string; segundosAct
   const { ruta, segundosActivos } = parseado.data;
   const tallerId = sesion.perfil.taller_id;
   const userId = sesion.user.id;
-  const hoyStr = new Date().toISOString().slice(0, 10);
+
+  // El día del TALLER, no el de UTC. La fila tiene un UNIQUE por
+  // (taller, usuario, fecha): con la fecha UTC, todo lo trabajado después de
+  // las 21:00 hora argentina abría una fila del día siguiente y el panel de
+  // auditoría mostraba las horas partidas en dos.
+  const { zonaHoraria } = await obtenerAjustesTaller();
+  const hoyStr = hoyEnZona(zonaHoraria);
 
   try {
     const supabase = await crearClienteServidor();

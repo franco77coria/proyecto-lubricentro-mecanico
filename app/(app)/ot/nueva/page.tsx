@@ -1,14 +1,12 @@
-import { redirect } from "next/navigation";
 
 import { FormNuevaOT } from "./FormNuevaOT";
 import { listarMarcas } from "@/lib/actions/catalogo";
-import { obtenerSesion } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaNuevaOT() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/kanban");
 
   // Antes esto traía las marcas con `.limit(100)`, que con el catálogo ampliado
   // (108 marcas) empezaba a cortar justo las últimas del alfabeto sin avisar.

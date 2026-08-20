@@ -1,17 +1,15 @@
-import { redirect } from "next/navigation";
 
 import { ListaAvisos } from "@/components/avisos/ListaAvisos";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { listarRecordatorios } from "@/lib/actions/recordatorios";
-import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteServidor } from "@/lib/supabase/server";
+import { exigirVista } from "@/lib/permisos";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaAvisos() {
-  const sesion = await obtenerSesion();
-  if (!sesion?.perfil) redirect("/login");
+  const sesion = await exigirVista("/avisos");
   // Contactar clientes es trabajo de mostrador. El mecánico no tiene la lista.
-  if (sesion.perfil.rol === "mecanico") redirect("/tablero");
 
   const supabase = await crearClienteServidor();
   const [avisos, { data: taller }] = await Promise.all([

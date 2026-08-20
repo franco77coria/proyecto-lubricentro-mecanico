@@ -41,9 +41,18 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [anomaliaTexto, setAnomaliaTexto] = useState("");
   const [anomalias, setAnomalias] = useState<string[]>([]);
   const [observaciones, setObservaciones] = useState("");
-  const [tieneBorrador, setTieneBorrador] = useState(false);
 
-  // Cargar borrador al montar
+  // Recuperar el borrador guardado en el navegador.
+  //
+  // Esto es exactamente lo que un efecto tiene que hacer: sincronizar React
+  // con un sistema externo (localStorage) al montar. No se puede hacer en el
+  // inicializador de useState porque este componente también se renderiza en
+  // el servidor, donde no hay localStorage: leerlo ahí daría un HTML distinto
+  // del que el cliente hidrata.
+  //
+  // La regla no puede distinguir este caso del setState en cascada que sí es
+  // un problema, así que se desactiva acá y solo acá.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
@@ -60,12 +69,12 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (d.clienteTelefono) setClienteTelefono(d.clienteTelefono);
         if (d.anomalias) setAnomalias(d.anomalias);
         if (d.observaciones) setObservaciones(d.observaciones);
-        setTieneBorrador(true);
       }
     } catch {
       // Ignorar errores de parseo
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Guardar borrador automáticamente al cambiar cualquier campo
   useEffect(() => {
@@ -84,9 +93,16 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         observaciones,
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
-      setTieneBorrador(true);
     }
   }, [patente, vehiculo, km, anio, vin, tipo, clienteNombre, clienteApellido, clienteTelefono, anomalias, observaciones]);
+
+  // Hay borrador si hay algo cargado. Antes esto era un estado que un efecto
+  // encendía, lo que obligaba a un render extra por cada tecla escrita.
+  const tieneBorrador =
+    Boolean(patente.trim()) ||
+    Boolean(clienteNombre.trim()) ||
+    anomalias.length > 0 ||
+    Boolean(observaciones.trim());
 
   const limpiarBorrador = () => {
     localStorage.removeItem(DRAFT_KEY);
@@ -101,7 +117,6 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     setAnomalias([]);
     setObservaciones("");
     setCedulaResumen(null);
-    setTieneBorrador(false);
     notificar({ tipo: "alerta", mensaje: "Borrador limpiado." });
   };
 

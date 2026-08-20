@@ -24,7 +24,12 @@ export interface ResultadoOCRCedulaVerde {
   error?: string;
 }
 
-export function sanitizarCedulaVerde(crudo: any): CedulaVerdeOCRData {
+/** Lo que devuelve el modelo. Se declara como diccionario abierto porque el
+ *  JSON puede traer las claves en cualquier idioma (patente/placa/dominio) y
+ *  eso es justo lo que esta función normaliza. */
+type CrudoIA = Record<string, unknown>;
+
+export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
   const patenteCruda = String(crudo.patente || crudo.dominio || crudo.placa || "").trim();
   const patente = normalizarPatente(patenteCruda);
 
