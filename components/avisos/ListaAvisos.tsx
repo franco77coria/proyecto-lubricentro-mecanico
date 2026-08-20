@@ -13,10 +13,6 @@ import {
 import { armarLinkRecordatorio } from "@/lib/whatsapp";
 import { useFormato } from "@/lib/i18n/I18nContext";
 
-const fechaCorta = (iso: string | null) =>
-  iso
-    ? new Date(`${iso}T12:00:00`).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })
-    : null;
 
 /**
  * A quién contactar esta semana.
@@ -37,6 +33,11 @@ export function ListaAvisos({
   tallerNombre: string;
 }) {
   const { numero, fecha } = useFormato();
+
+  // El mediodía evita que la fecha se corra un día: "YYYY-MM-DD" suelto se
+  // parsea como medianoche UTC (lección #80).
+  const fechaCorta = (iso: string | null) =>
+    iso ? fecha(`${iso}T12:00:00`, { day: "2-digit", month: "short" }) : null;
   const router = useRouter();
   const { notificar } = useIsla();
   const [avisos, setAvisos] = useState(iniciales);
