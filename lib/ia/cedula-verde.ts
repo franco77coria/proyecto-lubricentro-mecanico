@@ -1,4 +1,4 @@
-import { obtenerCliente } from "./cliente.ts";
+import { MODELO_IA, obtenerCliente } from "./cliente.ts";
 import { extraerJSON, prepararImagen, type EntradaImagen } from "./vision.ts";
 import { normalizarPatente } from "../patente.ts";
 
@@ -107,9 +107,8 @@ export async function procesarOCRCedulaVerde(
   if (clienteClaude) {
     try {
       const response = await clienteClaude.messages.create({
-        model: "claude-3-5-sonnet-latest",
+        model: MODELO_IA,
         max_tokens: 1500,
-        temperature: 0.1,
         system: "Eres un extractor de datos de cédulas y documentos vehiculares. Devuelves estrictamente JSON.",
         messages: [
           {

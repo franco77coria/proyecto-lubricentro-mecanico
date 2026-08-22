@@ -8,7 +8,18 @@ import Anthropic from "@anthropic-ai/sdk";
  * de IA (diagnóstico y traducción) comparten todo eso.
  */
 
-export const MODELO_IA = "claude-3-5-sonnet-latest";
+/**
+ * El modelo que usan TODAS las funciones de IA.
+ *
+ * Está acá y no repetido en cada archivo por una razón que ya nos mordió:
+ * cuando el string vivía copiado en tres lados, quedó apuntando a
+ * `claude-3-5-sonnet-latest` —un modelo RETIRADO— y las cuatro funciones de IA
+ * devolvían 404 sin que nada lo avisara, porque cada una atrapa su error y cae
+ * a un fallback en silencio.
+ *
+ * Si se cambia, se cambia una vez.
+ */
+export const MODELO_IA = "claude-opus-5";
 
 /**
  * La feature es OPCIONAL y tiene que poder no estar.

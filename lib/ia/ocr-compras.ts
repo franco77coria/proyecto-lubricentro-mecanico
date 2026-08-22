@@ -1,4 +1,4 @@
-import { obtenerCliente } from "./cliente.ts";
+import { MODELO_IA, obtenerCliente } from "./cliente.ts";
 import { extraerJSON, prepararImagen, type EntradaImagen } from "./vision.ts";
 
 export interface ItemComprobanteOCR {
@@ -138,9 +138,8 @@ export async function procesarOCRComprobanteCompra(
   if (clienteClaude) {
     try {
       const response = await clienteClaude.messages.create({
-        model: "claude-3-5-sonnet-latest",
+        model: MODELO_IA,
         max_tokens: 2048,
-        temperature: 0.1,
         system: "Eres un extractor de datos de comprobantes y facturas de compras automotrices. Devuelves estrictamente JSON.",
         messages: [
           {
