@@ -97,3 +97,43 @@ export async function quitarNota(notaId: string, otId: string): Promise<Resultad
     return { error: "No se pudo conectar" };
   }
 }
+
+/**
+ * Decide si una nota se publica en el portal del cliente.
+ *
+ * `visible_cliente` existía en la base desde 0030 y el portal ya la filtraba,
+ * pero no había forma de tocarla: como el default es `true`, TODO lo que
+ * escribía el taller salía publicado y no había manera de dejar una nota
+ * interna. El default se mantiene —el portal vacío no le sirve a nadie y la
+ * transparencia es el punto de la feature— pero ahora se puede apagar por nota.
+ */
+export async function cambiarVisibilidadNota(
+  notaId: string,
+  otId: string,
+  visible: boolean,
+): Promise<ResultadoNota> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida" };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("ot_nota")
+      .update({ visible_cliente: visible })
+      .eq("id", notaId)
+      // RLS ya acota al taller, pero el filtro explícito evita depender de eso
+      // para una escritura: un UPDATE que no matchea devuelve éxito silencioso.
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[cambiarVisibilidadNota]", error.code);
+      return { error: "No se pudo cambiar la visibilidad" };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar" };
+  }
+}

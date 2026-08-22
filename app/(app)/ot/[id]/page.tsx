@@ -160,6 +160,7 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     tipo: n.tipo,
     texto: n.texto,
     precio_estimado: n.precio_estimado,
+    visible_cliente: n.visible_cliente,
   }));
 
   // Fotos, firma y los catálogos que alimentan el editor de ítems y miembros.

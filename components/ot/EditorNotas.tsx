@@ -2,10 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquare, Plus, Stethoscope, Trash2, TrendingUp } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Plus, Stethoscope, Trash2, TrendingUp } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
-import { agregarNota, quitarNota, type TipoNota } from "@/lib/actions/notas";
+import {
+  agregarNota,
+  cambiarVisibilidadNota,
+  quitarNota,
+  type TipoNota,
+} from "@/lib/actions/notas";
 import { useFormato } from "@/lib/i18n/I18nContext";
 
 export interface Nota {
@@ -13,6 +18,8 @@ export interface Nota {
   tipo: string;
   texto: string;
   precio_estimado: number | null;
+  /** Si se publica en el portal de seguimiento del cliente. */
+  visible_cliente: boolean;
 }
 
 /* El formato de plata sale del taller (idioma + moneda), no de
@@ -67,6 +74,9 @@ export function EditorNotas({
   const [texto, setTexto] = useState("");
   const [precio, setPrecio] = useState("");
   const [pendiente, iniciar] = useTransition();
+  // Overrides optimistas por id: lo que el usuario acaba de tocar y el
+  // servidor todavía no confirmó.
+  const [oculto, setOculto] = useState<Record<string, boolean>>({});
 
   const cfg = CONFIG[tipo];
   const Icono = cfg.icono;
@@ -87,6 +97,25 @@ export function EditorNotas({
       if (res.error) return notificar({ tipo: "error", mensaje: res.error });
       setTexto("");
       setPrecio("");
+      router.refresh();
+    });
+  }
+
+  /**
+   * Publicar o reservar una nota.
+   *
+   * Optimista: el ojo cambia al toque y se revierte si el servidor rechaza.
+   * Es una preferencia de visibilidad, no una operación destructiva — esperar
+   * el ida y vuelta para ver si el ojo se tachó haría sentir la app trabada.
+   */
+  function alternarVisibilidad(id: string, visibleAhora: boolean) {
+    setOculto((prev) => ({ ...prev, [id]: visibleAhora }));
+    iniciar(async () => {
+      const res = await cambiarVisibilidadNota(id, otId, !visibleAhora);
+      if (res.error) {
+        setOculto((prev) => ({ ...prev, [id]: !visibleAhora }));
+        return notificar({ tipo: "error", mensaje: res.error });
+      }
       router.refresh();
     });
   }
@@ -118,12 +147,47 @@ export function EditorNotas({
         <ul className="divide-y divide-border">
           {propias.map((n) => (
             <li key={n.id} className="flex items-start gap-2 py-2.5">
-              <span className="min-w-0 flex-1 text-sm text-foreground">{n.texto}</span>
+              <span
+                className={`min-w-0 flex-1 text-sm ${
+                  (oculto[n.id] ?? n.visible_cliente)
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {n.texto}
+              </span>
               {n.precio_estimado != null && (
                 <span className="tabular shrink-0 text-sm font-semibold text-foreground">
                   {money(Number(n.precio_estimado))}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={() => alternarVisibilidad(n.id, oculto[n.id] ?? n.visible_cliente)}
+                disabled={pendiente}
+                aria-pressed={oculto[n.id] ?? n.visible_cliente}
+                title={
+                  (oculto[n.id] ?? n.visible_cliente)
+                    ? "El cliente ve esta nota en el seguimiento. Tocá para reservarla."
+                    : "Solo la ve el taller. Tocá para publicarla."
+                }
+                aria-label={
+                  (oculto[n.id] ?? n.visible_cliente)
+                    ? `Reservar "${n.texto}" — dejar de mostrarla al cliente`
+                    : `Publicar "${n.texto}" — mostrarla al cliente`
+                }
+                className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors disabled:opacity-50 ${
+                  (oculto[n.id] ?? n.visible_cliente)
+                    ? "text-accent hover:bg-accent-suave"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {(oculto[n.id] ?? n.visible_cliente) ? (
+                  <Eye className="h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => quitar(n.id)}
