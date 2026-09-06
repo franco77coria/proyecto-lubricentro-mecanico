@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, Car, User, Wrench } from "lucide-react";
+import { ArrowLeft, Ban, Car, CheckCircle2, User, Wrench } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -7,6 +7,7 @@ import { AsistenteIA } from "@/components/ot/AsistenteIA";
 import { CompartirSeguimiento } from "@/components/ot/CompartirSeguimiento";
 import { BotonCrearPresupuesto } from "@/components/ot/BotonCrearPresupuesto";
 import { BotonPDFWhatsApp, DatosOTPDF } from "@/components/ot/BotonPDFWhatsApp";
+import { BotonWhatsAppDirecto } from "@/components/ot/BotonWhatsAppDirecto";
 import { CapturaFotos } from "@/components/ot/CapturaFotos";
 import { ChecklistEditor } from "@/components/ot/ChecklistEditor";
 import { EditorNotas } from "@/components/ot/EditorNotas";
@@ -25,11 +26,15 @@ import { asistenteHabilitado } from "@/lib/actions/ia";
 import { listarServicios } from "@/lib/actions/servicios";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
+import { obtenerResponsablesOT, formatearRol, type DatosOTResponsables } from "@/lib/ot-usuarios";
+import { obtenerAjustesTaller } from "@/lib/taller";
+import { formatearFecha } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaDetalleOT({ params }: { params: Promise<{ id: string }> }) {
   const sesion = await exigirVista("/kanban");
+  const esDueno = sesion.perfil.rol === "dueno";
 
   const { id } = await params;
   const supabase = await crearClienteServidor();
@@ -39,6 +44,9 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
     .from("orden_trabajo")
     .select(`
       *,
+      mecanico:asignado_a (
+        user_id, nombre, rol
+      ),
       vehiculo:vehiculo_id (
         id, patente, anio, color, combustible,
         marca:marca_id (nombre),
@@ -54,40 +62,36 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
 
   if (!ot) notFound();
 
-  // 2. Obtener los datos del taller
-  const { data: taller } = await supabase
-    .from("taller")
-    .select("nombre, direccion, telefono, cuit")
-    .eq("id", sesion.perfil.taller_id)
-    .single();
+  // 2. Obtener ajustes del taller y datos para comprobante
+  const [{ data: taller }, { idioma }] = await Promise.all([
+    supabase
+      .from("taller")
+      .select("nombre, direccion, telefono, cuit, logo_url")
+      .eq("id", sesion.perfil.taller_id)
+      .single(),
+    obtenerAjustesTaller(),
+  ]);
 
-  // 3. Obtener los ítems
-  const { data: items } = await supabase
-    .from("ot_item")
-    .select("*")
-    .eq("ot_id", ot.id)
-    .order("orden", { ascending: true });
+  // 3. Obtener ítems, checklist, notas, pagos y logs de estado
+  const [{ data: items }, { data: checklist }, { data: notas }, { data: pagos }, { data: logsEstado }] = await Promise.all([
+    supabase.from("ot_item").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("ot_checklist").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("ot_nota").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("pago").select("id, metodo, monto, fecha").eq("ot_id", ot.id).order("fecha", { ascending: true }),
+    supabase
+      .from("ot_estado_log")
+      .select(`
+        id, estado_anterior, estado_nuevo, creado_en, usuario_id,
+        usuario:usuario_id ( user_id, nombre, rol )
+      `)
+      .eq("ot_id", ot.id)
+      .order("creado_en", { ascending: false }),
+  ]);
 
-  // 4. Obtener el checklist
-  const { data: checklist } = await supabase
-    .from("ot_checklist")
-    .select("*")
-    .eq("ot_id", ot.id)
-    .order("orden", { ascending: true });
-
-  // 5. Obtener las notas / anomalías
-  const { data: notas } = await supabase
-    .from("ot_nota")
-    .select("*")
-    .eq("ot_id", ot.id)
-    .order("orden", { ascending: true });
-
-  // 6. Obtener los pagos
-  const { data: pagos } = await supabase
-    .from("pago")
-    .select("id, metodo, monto, fecha")
-    .eq("ot_id", ot.id)
-    .order("fecha", { ascending: true });
+  const resp = obtenerResponsablesOT({
+    ...ot,
+    logs: logsEstado,
+  } as unknown as DatosOTResponsables);
 
   const datosPdf: DatosOTPDF = {
     id: ot.id,
@@ -105,6 +109,7 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
       direccion: taller?.direccion,
       telefono: taller?.telefono,
       cuit: taller?.cuit,
+      logo_url: taller?.logo_url,
     },
     vehiculo: {
       patente: ot.vehiculo.patente,
@@ -214,6 +219,20 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
             <span>Volver al Tablero</span>
           </Link>
           <div className="flex items-center gap-2">
+            <BotonWhatsAppDirecto
+              numero={ot.numero}
+              estado={ot.estado}
+              total={Number(ot.total || 0)}
+              totalManoObra={Number(ot.total_mano_obra || 0)}
+              totalRepuestos={Number(ot.total_repuestos || 0)}
+              vehiculo={{
+                patente: ot.vehiculo.patente,
+                marca: ot.vehiculo.marca?.nombre,
+                modelo: ot.vehiculo.modelo?.nombre,
+              }}
+              cliente={ot.cliente}
+              tallerNombre={taller?.nombre}
+            />
             <BotonCrearPresupuesto otId={ot.id} estadoActual={ot.estado} />
             <BotonPDFWhatsApp ot={datosPdf} />
           </div>
@@ -233,6 +252,23 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
               <EstadoSwitcher otId={ot.id} estadoActual={ot.estado} />
             </div>
           </div>
+
+          {resp.cerradoPorNombre && (
+            <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 px-4 py-3 text-xs text-emerald-800 dark:text-emerald-300">
+              <CheckCircle2 className="h-4.5 w-4.5 text-emerald-500 shrink-0" aria-hidden />
+              <div>
+                <span className="font-bold text-foreground">Orden completada y cerrada:</span>{" "}
+                <span>
+                  Cerrada por <strong className="font-semibold text-foreground">{resp.cerradoPorNombre}</strong> ({formatearRol(resp.cerradoPorRol)})
+                </span>
+                {resp.cerradoEn && (
+                  <span className="text-muted-foreground ml-1.5 font-medium">
+                    el {formatearFecha(resp.cerradoEn, idioma, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
             <div className="space-y-1.5">
@@ -277,8 +313,10 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
           tallerNombre={taller?.nombre ?? "el taller"}
         />
 
-        {/* Registro de Pagos */}
-        <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
+        {/* Registro de Pagos (Solo dueño) */}
+        {esDueno && (
+          <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
+        )}
 
         {/* Los tres bloques de texto de la orden. Antes las anomalías eran
             de solo lectura y no había forma de cargar el diagnóstico ni un

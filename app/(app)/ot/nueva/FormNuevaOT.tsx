@@ -14,6 +14,7 @@ import { FORMATOS_CEDULA } from "@/lib/codigo";
 import { resolverDesdeCedula, type OpcionCatalogo } from "@/lib/actions/catalogo";
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
+import { SelectorCliente } from "@/components/clientes/SelectorCliente";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 const DRAFT_KEY = "draft_nueva_ot";
@@ -416,39 +417,18 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             <h2 className="text-sm font-bold text-foreground">Cliente / Titular</h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-caption text-muted-foreground">Nombre</label>
-              <input
-                type="text"
-                placeholder="Ej: Juan"
-                value={clienteNombre}
-                onChange={(e) => setClienteNombre(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-caption text-muted-foreground">Apellido</label>
-              <input
-                type="text"
-                placeholder="Ej: Pérez"
-                value={clienteApellido}
-                onChange={(e) => setClienteApellido(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-caption text-muted-foreground">Teléfono (WhatsApp)</label>
-            <input
-              type="tel"
-              placeholder="Ej: 11 4455 6677"
-              value={clienteTelefono}
-              onChange={(e) => setClienteTelefono(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-            />
-          </div>
+          <SelectorCliente
+            clienteNombre={clienteNombre}
+            clienteApellido={clienteApellido}
+            clienteTelefono={clienteTelefono}
+            onCambioNombre={setClienteNombre}
+            onCambioApellido={setClienteApellido}
+            onCambioTelefono={setClienteTelefono}
+            onSeleccionarVehiculo={(v) => {
+              if (v.patente) setPatente(v.patente);
+              if (v.anio) setAnio(String(v.anio));
+            }}
+          />
         </section>
 
         {/* Bloque 3: Trabajo y Anomalías */}

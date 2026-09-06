@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import {
   descartarRecordatorio,
   marcarContactado,
@@ -98,48 +99,54 @@ export function ListaAvisos({
   }
 
   return (
-    <ul className="grid gap-2.5 lg:grid-cols-2">
+    <ul className="grid gap-3 lg:grid-cols-2">
       {avisos.map((a, i) => (
         <li
           key={a.id}
-          className="tarjeta entrar flex items-center gap-3 p-3.5"
+          className="tarjeta entrar flex items-center justify-between gap-3 p-4"
           style={{ "--i": i + 2 } as React.CSSProperties}
         >
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-foreground">
-              {a.descripcion}
-              <span className="ml-1.5 font-bold text-accent">{a.patente}</span>
-            </span>
-            <span className="block truncate text-caption text-muted-foreground">
-              {a.clienteNombre ?? "Sin dueño cargado"}
-              {a.telefono ? "" : " · sin teléfono"}
-            </span>
-            <span className="mt-0.5 block text-caption font-semibold text-amber-700">
-              {a.vencePor === "km"
-                ? `Pasó los ${numero(a.kmObjetivo ?? 0)} km${
-                    a.kmActual ? ` (va en ${numero(a.kmActual)})` : ""
-                  }`
-                : `Toca por fecha${a.fechaObjetivo ? `: ${fechaCorta(a.fechaObjetivo)}` : ""}`}
-            </span>
-          </span>
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <PlacaPatente patente={a.patente} size="sm" />
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-bold text-foreground">
+                {a.descripcion || "Vehículo sin modelo"}
+              </span>
+              <span className="block truncate text-caption text-muted-foreground">
+                {a.clienteNombre ?? "Sin dueño cargado"}
+                {a.telefono ? "" : " · sin teléfono"}
+              </span>
+              <span className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-400 border border-amber-500/20">
+                {a.vencePor === "km"
+                  ? `Pasó los ${numero(a.kmObjetivo ?? 0)} km${
+                      a.kmActual ? ` (va en ${numero(a.kmActual)})` : ""
+                    }`
+                  : `Toca por fecha${a.fechaObjetivo ? `: ${fechaCorta(a.fechaObjetivo)}` : ""}`}
+              </span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => contactar(a)}
-            disabled={!a.telefono}
-            aria-label={`Avisar por WhatsApp a ${a.clienteNombre ?? a.patente}`}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-emerald-600 text-white transition-transform active:scale-95 disabled:opacity-30"
-          >
-            <MessageCircle className="h-4.5 w-4.5" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={() => descartar(a)}
-            aria-label={`Descartar el aviso de ${a.patente}`}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-sm)] text-muted-foreground hover:bg-muted"
-          >
-            <X className="h-4.5 w-4.5" aria-hidden />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => contactar(a)}
+              disabled={!a.telefono}
+              aria-label={`Avisar por WhatsApp a ${a.clienteNombre ?? a.patente}`}
+              title="Abrir WhatsApp con aviso redactado"
+              className="grid min-h-12 min-w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 active:scale-95 transition-all disabled:opacity-30"
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => descartar(a)}
+              aria-label={`Descartar el aviso de ${a.patente}`}
+              title="Descartar aviso"
+              className="grid min-h-12 min-w-12 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
         </li>
       ))}
     </ul>

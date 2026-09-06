@@ -7,6 +7,7 @@ import { useState, useTransition } from "react";
 
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
+import { SelectorCliente } from "@/components/clientes/SelectorCliente";
 import { useIsla } from "@/components/isla/IslaContext";
 import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
@@ -32,6 +33,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [anio, setAnio] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
+  const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
   const [buscandoPatente, setBuscandoPatente] = useState(false);
 
@@ -94,6 +96,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
         if (anio) formDataVehiculo.append("anio", anio);
         if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
+        if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
         if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
 
         const resVehiculo = await crearVehiculo({}, formDataVehiculo);
@@ -168,22 +171,34 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
             <div className="flex gap-1.5 mt-2">
               <button
                 type="button"
-                onClick={() => setFecha(getFechaOffset(0))}
-                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
+                onClick={() => setFecha(hoyStr)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                  fecha === hoyStr
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                }`}
               >
                 Hoy
               </button>
               <button
                 type="button"
-                onClick={() => setFecha(getFechaOffset(1))}
-                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
+                onClick={() => setFecha(mananaStr)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                  fecha === mananaStr
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                }`}
               >
                 Mañana
               </button>
               <button
                 type="button"
-                onClick={() => setFecha(getFechaOffset(2))}
-                className="text-[11px] font-bold px-2 py-1 bg-muted hover:bg-accent/10 hover:text-accent rounded-lg transition-colors text-muted-foreground"
+                onClick={() => setFecha(pasadoStr)}
+                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                  fecha === pasadoStr
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                }`}
               >
                 Pasado
               </button>
@@ -289,8 +304,8 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
           <>
             <SelectorVehiculo marcas={marcas} valor={vehiculo} onChange={setVehiculo} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
+            <div className="space-y-4 pt-1">
+              <div className="max-w-xs">
                 <label className="text-caption text-muted-foreground font-semibold">Año (Opcional)</label>
                 <input
                   type="number"
@@ -303,24 +318,19 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
                   className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
                 />
               </div>
-              <div>
-                <label className="text-caption text-muted-foreground font-semibold">Nombre del Cliente</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Marcelo"
-                  value={clienteNombre}
-                  onChange={(e) => setClienteNombre(e.target.value)}
-                  className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-caption text-muted-foreground font-semibold">Teléfono</label>
-                <input
-                  type="tel"
-                  placeholder="Ej: 11 2345-6789"
-                  value={clienteTelefono}
-                  onChange={(e) => setClienteTelefono(e.target.value)}
-                  className="mt-1 min-h-12 w-full rounded-2xl border border-border/80 bg-card px-3.5 text-base font-semibold text-foreground shadow-sm focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+
+              <div className="pt-2 border-t border-border/50">
+                <SelectorCliente
+                  clienteNombre={clienteNombre}
+                  clienteApellido={clienteApellido}
+                  clienteTelefono={clienteTelefono}
+                  onCambioNombre={setClienteNombre}
+                  onCambioApellido={setClienteApellido}
+                  onCambioTelefono={setClienteTelefono}
+                  onSeleccionarVehiculo={(v) => {
+                    if (v.patente) setPatente(v.patente);
+                    if (v.anio) setAnio(String(v.anio));
+                  }}
                 />
               </div>
             </div>

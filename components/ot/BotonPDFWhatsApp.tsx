@@ -19,7 +19,6 @@ export type DatosOTPDF = DatosComprobante & { id: string; tipo: string };
 export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
   const { idioma, moneda } = useI18n();
   const [abierto, setAbierto] = useState(false);
-  const [modo, setModo] = useState<"a4" | "termico">("a4");
 
   const linkWa = armarLinkWhatsApp({
     numero: ot.numero,
@@ -55,7 +54,7 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
         className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-card border border-border/80 px-3.5 text-xs font-bold text-foreground transition-transform active:scale-95 hover:border-accent"
       >
         <FileText className="h-4 w-4 text-accent" aria-hidden />
-        <span>Comprobante</span>
+        <span>Comprobante PDF</span>
       </button>
 
       {abierto && (
@@ -66,33 +65,15 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
           aria-label={`Comprobante de la orden ${ot.numero}`}
         >
           <div className="mx-auto max-w-4xl">
-            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-4 py-3 sm:rounded-t-2xl print:hidden">
-              <div className="flex items-center gap-3">
+            <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:rounded-t-2xl print:hidden">
+              <div className="flex items-center gap-2.5">
                 <FileText className="h-5 w-5 text-accent" aria-hidden />
                 <span className="text-sm font-black text-foreground">
                   Comprobante #{ot.numero}
                 </span>
-
-                <div className="flex rounded-xl bg-muted p-0.5 border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setModo("a4")}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
-                      modo === "a4" ? "bg-card text-accent shadow-sm" : "text-muted-foreground"
-                    }`}
-                  >
-                    Hoja A4
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModo("termico")}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
-                      modo === "termico" ? "bg-card text-accent shadow-sm" : "text-muted-foreground"
-                    }`}
-                  >
-                    Ticket 80mm
-                  </button>
-                </div>
+                <span className="hidden sm:inline-flex items-center rounded-lg bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground border border-border">
+                  Formato A4 / PDF Digital
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -101,7 +82,7 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
                     href={linkWa}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm"
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm hover:bg-emerald-500"
                   >
                     <Send className="h-3.5 w-3.5" aria-hidden />
                     <span>WhatsApp</span>
@@ -115,10 +96,10 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-xs font-bold text-white transition-transform active:scale-95 shadow-sm hover:brightness-110"
                 >
                   <Printer className="h-3.5 w-3.5" aria-hidden />
-                  <span>Imprimir / PDF</span>
+                  <span>Guardar PDF / Imprimir A4</span>
                 </button>
 
                 <button
@@ -133,7 +114,7 @@ export function BotonPDFWhatsApp({ ot }: { ot: DatosOTPDF }) {
             </div>
 
             <div className="bg-white pb-10 shadow-2xl sm:rounded-b-2xl flex justify-center">
-              <ComprobanteOT ot={ot} modo={modo} />
+              <ComprobanteOT ot={ot} />
             </div>
           </div>
         </div>

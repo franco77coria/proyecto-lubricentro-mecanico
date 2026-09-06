@@ -225,7 +225,12 @@ export async function obtenerClienteDetalle(clienteId: string) {
       supabase
         .from("orden_trabajo")
         .select(`
-          id, numero, estado, total, fecha_ingreso, fecha_entrega,
+          id, numero, estado, total, fecha_ingreso, fecha_entrega, asignado_a,
+          mecanico:asignado_a ( user_id, nombre, rol ),
+          logs:ot_estado_log (
+            id, estado_anterior, estado_nuevo, creado_en, usuario_id,
+            usuario:usuario_id ( user_id, nombre, rol )
+          ),
           vehiculo:vehiculo_id ( patente, marca:marca_id(nombre), modelo:modelo_id(nombre) )
         `)
         .eq("cliente_id", clienteId)
@@ -244,4 +249,147 @@ export async function obtenerClienteDetalle(clienteId: string) {
     return null;
   }
 }
+
+export interface ClienteOmniResultado {
+  id: string;
+  nombre: string;
+  apellido: string | null;
+  telefono: string | null;
+  documento: string | null;
+  vehiculos: {
+    id: string;
+    patente: string;
+    anio?: number | null;
+    marca?: string | null;
+    modelo?: string | null;
+    color?: string | null;
+    km_actual?: number | null;
+  }[];
+}
+
+/**
+ * Búsqueda unificada omnicanal de clientes y vehículos para autocompletado en recepción.
+ *
+ * Permite encontrar a un cliente existente por:
+ * - Nombre o Apellido
+ * - Teléfono / WhatsApp
+ * - DNI o CUIT
+ * - Chapa Patente de cualquier vehículo que haya atendido
+ */
+export async function buscarClientesOmni(termino: string): Promise<ClienteOmniResultado[]> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return [];
+
+  const q = termino.trim();
+  if (q.length < 2) return [];
+
+  try {
+    const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    // 1. Buscar clientes directos por texto
+    const { data: clientesPorTexto } = await supabase
+      .from("cliente")
+      .select("id, nombre, apellido, telefono, documento")
+      .eq("taller_id", tallerId)
+      .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,telefono.ilike.%${q}%,documento.ilike.%${q}%`)
+      .limit(12);
+
+    // 2. Buscar vehículos por patente para deducir clientes
+    const patenteNormalizada = q.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const { data: vehiculosMatch } = await supabase
+      .from("vehiculo")
+      .select(`
+        id, patente, anio, color, km_actual,
+        marca:marca_id(nombre),
+        modelo:modelo_id(nombre),
+        vinculos:vehiculo_cliente (
+          cliente:cliente_id (id, nombre, apellido, telefono, documento)
+        )
+      `)
+      .eq("taller_id", tallerId)
+      .ilike("patente", `%${patenteNormalizada || q}%`)
+      .limit(8);
+
+    const mapClientes = new Map<string, ClienteOmniResultado>();
+
+    for (const c of clientesPorTexto || []) {
+      mapClientes.set(c.id, {
+        id: c.id,
+        nombre: c.nombre,
+        apellido: c.apellido,
+        telefono: c.telefono,
+        documento: c.documento,
+        vehiculos: [],
+      });
+    }
+
+    for (const v of vehiculosMatch || []) {
+      const vinculos = (v.vinculos || []) as unknown as Array<{
+        cliente?: { id: string; nombre: string; apellido: string | null; telefono: string | null; documento: string | null } | null;
+      }>;
+      for (const vinculo of vinculos) {
+        if (vinculo.cliente && !mapClientes.has(vinculo.cliente.id)) {
+          mapClientes.set(vinculo.cliente.id, {
+            id: vinculo.cliente.id,
+            nombre: vinculo.cliente.nombre,
+            apellido: vinculo.cliente.apellido,
+            telefono: vinculo.cliente.telefono,
+            documento: vinculo.cliente.documento,
+            vehiculos: [],
+          });
+        }
+      }
+    }
+
+    if (mapClientes.size === 0) return [];
+
+    const idsClientes = Array.from(mapClientes.keys());
+
+    // 3. Cargar los vehículos de los clientes encontrados
+    const { data: vehiculosClientes } = await supabase
+      .from("vehiculo_cliente")
+      .select(`
+        cliente_id,
+        vehiculo:vehiculo_id (
+          id, patente, anio, color, km_actual,
+          marca:marca_id(nombre),
+          modelo:modelo_id(nombre)
+        )
+      `)
+      .in("cliente_id", idsClientes);
+
+    for (const vc of vehiculosClientes || []) {
+      const c = mapClientes.get(vc.cliente_id);
+      if (c && vc.vehiculo) {
+        const v = vc.vehiculo as unknown as {
+          id: string;
+          patente: string;
+          anio?: number | null;
+          color?: string | null;
+          km_actual?: number | null;
+          marca?: { nombre: string } | null;
+          modelo?: { nombre: string } | null;
+        };
+        if (!c.vehiculos.some((existente) => existente.id === v.id)) {
+          c.vehiculos.push({
+            id: v.id,
+            patente: v.patente,
+            anio: v.anio,
+            color: v.color,
+            km_actual: v.km_actual,
+            marca: v.marca?.nombre,
+            modelo: v.modelo?.nombre,
+          });
+        }
+      }
+    }
+
+    return Array.from(mapClientes.values());
+  } catch (error) {
+    unstable_rethrow(error);
+    return [];
+  }
+}
+
 

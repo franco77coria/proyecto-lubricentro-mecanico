@@ -38,7 +38,7 @@ export default async function PaginaDetallePresupuesto({
       .limit(500),
     supabase
       .from("taller")
-      .select("nombre, direccion, telefono, cuit")
+      .select("nombre, direccion, telefono, cuit, logo_url")
       .eq("id", sesion?.perfil?.taller_id || "")
       .maybeSingle(),
   ]);
@@ -153,6 +153,7 @@ export default async function PaginaDetallePresupuesto({
                   direccion: taller?.direccion,
                   telefono: taller?.telefono,
                   cuit: taller?.cuit,
+                  logo_url: taller?.logo_url,
                 },
                 vehiculo: {
                   patente: vehiculo?.patente || "",
@@ -173,10 +174,20 @@ export default async function PaginaDetallePresupuesto({
                   precio_unitario: it.precio_unitario,
                   subtotal: it.subtotal,
                 })),
-                checklist: [],
-                anomalias: [],
-                descargos: [],
-                recomendados: [],
+                checklist: ((presupuesto.checklists as Array<{ etiqueta_snapshot: string; estado: "ok" | "observado" | "critico" | "no_aplica" | null; nota?: string | null }>) || []).map((chk) => ({
+                  etiqueta_snapshot: chk.etiqueta_snapshot,
+                  estado: chk.estado,
+                  nota: chk.nota,
+                })),
+                anomalias: ((presupuesto.notas as Array<{ tipo: string; texto: string }>) || [])
+                  .filter((n) => n.tipo === "anomalia")
+                  .map((n) => ({ texto: n.texto })),
+                descargos: ((presupuesto.notas as Array<{ tipo: string; texto: string }>) || [])
+                  .filter((n) => n.tipo === "descargo")
+                  .map((n) => ({ texto: n.texto })),
+                recomendados: ((presupuesto.notas as Array<{ tipo: string; texto: string; precio_estimado?: number | null }>) || [])
+                  .filter((n) => n.tipo === "recomendado")
+                  .map((n) => ({ texto: n.texto, precio_estimado: n.precio_estimado })),
               }}
             />
           </div>

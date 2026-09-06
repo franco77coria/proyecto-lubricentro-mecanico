@@ -33,7 +33,13 @@ export interface DatosComprobante {
   total_mano_obra: number;
   total_repuestos: number;
   total: number;
-  taller: { nombre: string; direccion?: string | null; telefono?: string | null; cuit?: string | null };
+  taller: {
+    nombre: string;
+    direccion?: string | null;
+    telefono?: string | null;
+    cuit?: string | null;
+    logo_url?: string | null;
+  };
   vehiculo: { patente: string; marca?: string | null; modelo?: string | null; anio?: number | null; color?: string | null };
   cliente?: { nombre: string; apellido?: string | null; telefono?: string | null } | null;
   items: ItemComprobante[];
@@ -73,28 +79,36 @@ const ESTADO_CHECK: Record<string, { texto: string; clase: string }> = {
  */
 export function ComprobanteOT({
   ot,
-  modo = "a4",
 }: {
   ot: DatosComprobante;
-  modo?: "a4" | "termico";
+  modo?: "a4";
 }) {
   const { money, fecha: fechaLarga } = useFormato();
   const { idioma } = useI18n();
   const totalRecomendado = ot.recomendados.reduce((s, r) => s + Number(r.precio_estimado ?? 0), 0);
-  const hayChecklist = ot.checklist.some((c) => c.estado);
   const observados = ot.checklist.filter((c) => c.estado === "observado" || c.estado === "critico");
 
   return (
-    <article className={modo === "termico" ? "comprobante comprobante-termico" : "comprobante"}>
+    <article className="comprobante">
       <header className="cmp-cabecera">
-        <div>
-          <h1 className="cmp-taller">{ot.taller.nombre}</h1>
-          <p className="cmp-taller-datos">
-            {[ot.taller.direccion, ot.taller.telefono ? formatearTelefono(ot.taller.telefono) : null]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-          {ot.taller.cuit && <p className="cmp-taller-datos">CUIT {ot.taller.cuit}</p>}
+        <div className="cmp-cabecera-datos">
+          {ot.taller.logo_url && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={ot.taller.logo_url}
+              alt={`Logo ${ot.taller.nombre}`}
+              className="cmp-logo"
+            />
+          )}
+          <div>
+            <h1 className="cmp-taller">{ot.taller.nombre}</h1>
+            <p className="cmp-taller-datos">
+              {[ot.taller.direccion, ot.taller.telefono ? formatearTelefono(ot.taller.telefono) : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {ot.taller.cuit && <p className="cmp-taller-datos">CUIT {ot.taller.cuit}</p>}
+          </div>
         </div>
         <div className="cmp-numero-caja">
           <span className="cmp-etiqueta">
@@ -235,32 +249,46 @@ export function ComprobanteOT({
         </section>
       )}
 
-      {/* --- Inspección --- */}
-      {hayChecklist && (
+      {/* --- Inspección Pericial de Seguridad (Checklist) --- */}
+      {ot.checklist.length > 0 && (
         <section className="cmp-bloque">
-          <h2 className="cmp-titulo">Inspección</h2>
+          <h2 className="cmp-titulo">
+            Inspección Pericial de Seguridad ({ot.checklist.length} Puntos)
+          </h2>
           <div className="cmp-checklist">
-            {ot.checklist
-              .filter((c) => c.estado)
-              .map((c, i) => (
-                <div key={i} className="cmp-check">
-                  <span className={`cmp-punto ${ESTADO_CHECK[c.estado!]?.clase ?? ""}`} />
-                  <span className="cmp-check-texto">{c.etiqueta_snapshot}</span>
-                  <span className="cmp-check-estado">{ESTADO_CHECK[c.estado!]?.texto}</span>
-                </div>
-              ))}
+            {ot.checklist.map((c, i) => (
+              <div key={i} className="cmp-check">
+                <span
+                  className={`cmp-punto ${
+                    c.estado ? (ESTADO_CHECK[c.estado]?.clase ?? "") : "estado-pendiente"
+                  }`}
+                />
+                <span className="cmp-check-texto">{c.etiqueta_snapshot}</span>
+                <span className="cmp-check-estado">
+                  {c.estado ? ESTADO_CHECK[c.estado]?.texto : "[ Pendiente ]"}
+                </span>
+              </div>
+            ))}
           </div>
           {observados.length > 0 && (
-            <ul className="cmp-lista cmp-observaciones">
-              {observados
-                .filter((o) => o.nota)
-                .map((o, i) => (
+            <div className="cmp-observaciones-caja">
+              <span className="cmp-etiqueta" style={{ margin: "2mm 0 1mm" }}>
+                Anomalías observadas en fosa / Pendientes de reparación
+              </span>
+              <ul className="cmp-lista cmp-observaciones">
+                {observados.map((o, i) => (
                   <li key={i}>
-                    <strong>{o.etiqueta_snapshot}:</strong> {o.nota}
+                    <strong>{o.etiqueta_snapshot}:</strong> {o.nota || "Requiere intervención mecánica"}
                   </li>
                 ))}
-            </ul>
+              </ul>
+            </div>
           )}
+          <div className="cmp-diagnostico-lineas">
+            <span className="cmp-etiqueta">Anotaciones Técnicas / Diagnóstico de Fosa</span>
+            <div className="cmp-linea-punteada" />
+            <div className="cmp-linea-punteada" />
+          </div>
         </section>
       )}
 
@@ -283,20 +311,31 @@ export function ComprobanteOT({
         </p>
       </div>
 
+      {/* --- Descargo Técnico y Garantía del Taller --- */}
+      <section className="cmp-descargo-legal">
+        <span className="cmp-descargo-titulo">Constancia de Recepción, Garantía y Descargo Técnico</span>
+        <p className="cmp-descargo-texto">
+          1. <strong>Custodia de Bienes:</strong> El taller no se responsabiliza por dinero, herramientas ni objetos de valor que no hayan sido formalmente declarados e inventariados al momento de la recepción del vehículo.
+          <br />
+          2. <strong>Pruebas de Rodaje:</strong> El titular/cliente autoriza expresamente la realización de pruebas dinámicas de rodaje en vía pública para diagnóstico preventivo y control de calidad post-reparación.
+          <br />
+          3. <strong>Garantía Oficial:</strong> Todo trabajo de mano de obra y repuestos provistos por el taller cuenta con 90 días corridos de garantía legal bajo condiciones normales de uso.
+        </p>
+      </section>
+
       <footer className="cmp-pie">
         <div className="cmp-firma">
           <span className="cmp-firma-linea" />
-          <span className="cmp-firma-label">Firma del cliente</span>
+          <span className="cmp-firma-label">Firma del cliente / Titular</span>
         </div>
         <div className="cmp-firma">
           <span className="cmp-firma-linea" />
-          <span className="cmp-firma-label">Por {ot.taller.nombre}</span>
+          <span className="cmp-firma-label">Responsable Técnico · {ot.taller.nombre}</span>
         </div>
       </footer>
 
       <p className="cmp-legal">
-        Este comprobante detalla los trabajos realizados sobre el vehículo{" "}
-        {formatearPatente(ot.vehiculo.patente)} y su valor. Conservalo para futuros servicios.
+        Comprobante técnico y comercial sobre dominio {formatearPatente(ot.vehiculo.patente)}. Conservar este ejemplar como constancia de servicio y garantía.
       </p>
     </article>
   );

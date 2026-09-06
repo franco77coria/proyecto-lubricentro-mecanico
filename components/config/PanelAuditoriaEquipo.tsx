@@ -4,7 +4,7 @@ import { Activity, Eye } from "lucide-react";
 import type { RegistroAuditoria } from "@/lib/actions/equipo";
 
 const NOMBRE_ROL: Record<string, string> = {
-  dueno: "Dueño / Admin",
+  dueno: "Dueño / Encargado",
   mostrador: "Mostrador / Recepción",
   mecanico: "Mecánico / Fosa",
 };

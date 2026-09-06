@@ -6,7 +6,7 @@ import { exigirVista } from "@/lib/permisos";
 export const dynamic = "force-dynamic";
 
 export default async function PaginaNuevaOT() {
-  const sesion = await exigirVista("/kanban");
+  await exigirVista("/kanban");
 
   // Antes esto traía las marcas con `.limit(100)`, que con el catálogo ampliado
   // (108 marcas) empezaba a cortar justo las últimas del alfabeto sin avisar.

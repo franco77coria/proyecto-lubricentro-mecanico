@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Car, Phone, FileText, User } from "lucide-react";
+import { ArrowLeft, Car, CheckCircle2, Phone, FileText, User, Wrench } from "lucide-react";
 import { obtenerClienteDetalle } from "@/lib/actions/clientes";
 import { obtenerVehiculosParaAsignar } from "@/lib/actions/vehiculos";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
@@ -10,6 +10,7 @@ import { ESTADO_TONO, etiquetaEstado } from "@/lib/estados-ot";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { formatearFecha, formatearMoneda } from "@/lib/i18n";
+import { obtenerResponsablesOT, formatearRol, type DatosOTResponsables } from "@/lib/ot-usuarios";
 
 export const dynamic = "force-dynamic";
 
@@ -204,41 +205,74 @@ export default async function PaginaDetalleCliente({
             </div>
           ) : (
             <ul className="divide-y divide-border/80 overflow-hidden rounded-3xl border border-border/80 bg-card shadow-sm">
-              {listaOrdenes.map((ot) => (
-                <li key={ot.id}>
-                  <Link
-                    href={`/ot/${ot.id}`}
-                    className="flex items-center justify-between gap-4 p-4 hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2.5">
-                        <span className="font-mono text-xs font-black text-accent">
-                          #{ot.numero || ot.id.slice(0, 8)}
-                        </span>
-                        {ot.vehiculo?.patente && (
-                          <PlacaPatente patente={ot.vehiculo.patente} size="sm" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Ingresado el {fechaFormat(ot.fecha_ingreso)}
-                      </p>
-                    </div>
+              {listaOrdenes.map((ot) => {
+                const resp = obtenerResponsablesOT(ot as unknown as DatosOTResponsables);
+                return (
+                  <li key={ot.id}>
+                    <Link
+                      href={`/ot/${ot.id}`}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-xs font-black text-accent">
+                            #{ot.numero || ot.id.slice(0, 8)}
+                          </span>
+                          {ot.vehiculo?.patente && (
+                            <PlacaPatente patente={ot.vehiculo.patente} size="sm" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Ingresado el {fechaFormat(ot.fecha_ingreso)}
+                        </p>
 
-                    <div className="text-right shrink-0 space-y-1">
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                          ESTADO_TONO[ot.estado] || "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {etiquetaEstado(ot.estado)}
-                      </span>
-                      <p className="text-sm font-black text-foreground tabular-nums">
-                        {money(Number(ot.total || 0))}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              ))}
+                        {/* Responsables: Mecánico que lo hizo y quién lo cerró */}
+                        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs pt-0.5">
+                          {resp.mecanicoNombre ? (
+                            <span className="inline-flex items-center gap-1.5 text-foreground font-medium">
+                              <Wrench className="h-3 w-3 text-accent shrink-0" aria-hidden />
+                              <span>
+                                Mecánico: <strong className="font-semibold">{resp.mecanicoNombre}</strong>
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                              <Wrench className="h-3 w-3 text-muted-foreground/60 shrink-0" aria-hidden />
+                              <span>Sin mecánico</span>
+                            </span>
+                          )}
+
+                          {resp.cerradoPorNombre && (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" aria-hidden />
+                              <span>
+                                Cerrado por:{" "}
+                                <strong className="font-semibold">{resp.cerradoPorNombre}</strong>{" "}
+                                <span className="text-muted-foreground font-normal">
+                                  ({formatearRol(resp.cerradoPorRol)})
+                                </span>
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-border/60 shrink-0 gap-1">
+                        <span
+                          className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                            ESTADO_TONO[ot.estado] || "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {etiquetaEstado(ot.estado)}
+                        </span>
+                        <p className="text-sm font-black text-foreground tabular-nums">
+                          {money(Number(ot.total || 0))}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

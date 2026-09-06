@@ -44,23 +44,23 @@ export interface Invitacion {
 const ROLES = [
   {
     v: "dueno",
-    t: "Dueño / Administrador",
-    d: "Acceso total irrestricto: facturación, caja, costos de repuestos, reportes y configuración.",
+    t: "Dueño / Encargado",
+    d: "Acceso total: facturación, caja, costos de repuestos, reportes y configuración del taller.",
   },
   {
     v: "mecanico",
     t: "Mecánico / Fosa",
-    d: "Vista técnica y de trabajo: Tablero, Kanban, checklists y fotos. Sin acceso a costos ni caja.",
+    d: "Vista de trabajo: Tablero, autos en taller, checklists y fotos. Sin acceso a caja ni costos.",
   },
   {
     v: "mostrador",
     t: "Mostrador / Recepción",
-    d: "Recepción de clientes, creación de presupuestos, órdenes y cobros. Sin reportes del dueño.",
+    d: "Recepción de clientes, presupuestos, órdenes y cobros. Sin reportes del dueño.",
   },
 ] as const;
 
 const NOMBRE_ROL: Record<string, string> = {
-  dueno: "Dueño / Admin",
+  dueno: "Dueño / Encargado",
   mostrador: "Mostrador / Recepción",
   mecanico: "Mecánico / Fosa",
 };

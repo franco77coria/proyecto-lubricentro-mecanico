@@ -17,6 +17,7 @@ const tallerSchema = z.object({
   cuit: z.string().trim().max(15).optional(),
   direccion: z.string().trim().max(120).optional(),
   telefono: z.string().trim().max(30).optional(),
+  logo_url: z.string().optional().nullable(),
 });
 
 /**
@@ -39,20 +40,32 @@ export async function actualizarTaller(
     cuit: formData.get("cuit"),
     direccion: formData.get("direccion"),
     telefono: formData.get("telefono"),
+    logo_url: formData.get("logo_url"),
   });
   if (!parseado.success) return { error: parseado.error.issues[0].message };
 
   try {
     const supabase = await crearClienteServidor();
+    const updateData: {
+      nombre: string;
+      cuit: string | null;
+      direccion: string | null;
+      telefono: string | null;
+      logo_url?: string | null;
+    } = {
+      nombre: parseado.data.nombre,
+      cuit: parseado.data.cuit || null,
+      direccion: parseado.data.direccion || null,
+      telefono: parseado.data.telefono ? normalizarTelefono(parseado.data.telefono, false) : null,
+    };
+
+    if (parseado.data.logo_url !== undefined) {
+      updateData.logo_url = parseado.data.logo_url || null;
+    }
+
     const { error } = await supabase
       .from("taller")
-      .update({
-        nombre: parseado.data.nombre,
-        cuit: parseado.data.cuit || null,
-        direccion: parseado.data.direccion || null,
-        // Se guarda en E.164 para que el link de WhatsApp arme bien.
-        telefono: parseado.data.telefono ? normalizarTelefono(parseado.data.telefono, false) : null,
-      })
+      .update(updateData)
       .eq("id", sesion.perfil.taller_id);
 
     if (error) {

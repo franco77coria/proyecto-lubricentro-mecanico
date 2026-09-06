@@ -70,11 +70,13 @@ export default async function PaginaStock({
 
         {bajos > 0 && (
           <p
-            className="entrar flex items-center gap-2 rounded-[var(--radius-sm)] bg-amber-50 px-3.5 py-2.5 text-sm text-amber-800"
+            className="entrar flex items-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-4 py-3 text-sm font-bold text-amber-400 shadow-sm"
             style={{ "--i": 2 } as React.CSSProperties}
           >
-            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            {bajos} {bajos === 1 ? "producto está" : "productos están"} bajo el mínimo
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+            <span>
+              {bajos} {bajos === 1 ? "producto está" : "productos están"} bajo el stock mínimo de seguridad
+            </span>
           </p>
         )}
 
@@ -100,41 +102,45 @@ export default async function PaginaStock({
             </p>
           </div>
         ) : (
-          <ul className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
             {lista.map((p, i) => {
               const stock = Number(p.stock ?? 0);
               const bajo = p.bajo_stock ?? stock <= Number(p.stock_min);
               return (
                 <li
                   key={p.id}
-                  className={`tarjeta entrar flex items-center gap-3 p-3.5 ${bajo ? "border-amber-200 bg-amber-50/40" : ""}`}
+                  className={`tarjeta entrar flex items-center gap-3 p-4 rounded-3xl border border-border/80 transition-all ${
+                    bajo ? "border-amber-500/40 bg-amber-500/[0.04]" : ""
+                  }`}
                   style={{ "--i": i + 3 } as React.CSSProperties}
                 >
                   <span
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] ${
-                      bajo ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground"
+                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border ${
+                      bajo
+                        ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                        : "bg-muted text-muted-foreground border-border/60"
                     }`}
                   >
                     {bajo ? (
-                      <AlertTriangle className="h-4.5 w-4.5" aria-hidden />
+                      <AlertTriangle className="h-5 w-5" aria-hidden />
                     ) : (
-                      <Package className="h-4.5 w-4.5" aria-hidden />
+                      <Package className="h-5 w-5" aria-hidden />
                     )}
                   </span>
 
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{p.nombre}</span>
-                    <span className="block truncate text-caption text-muted-foreground">
+                    <span className="block truncate text-sm font-black text-foreground">{p.nombre}</span>
+                    <span className="block truncate text-xs text-muted-foreground font-medium">
                       {[p.marca, p.categoria].filter(Boolean).join(" · ") || "Sin categoría"}
                     </span>
                   </span>
 
                   <span className="shrink-0 text-right">
-                    <span className={`tabular block text-base font-bold ${bajo ? "text-amber-700" : "text-foreground"}`}>
+                    <span className={`tabular block text-base font-black ${bajo ? "text-amber-400" : "text-foreground"}`}>
                       {stock}
-                      <span className="ml-1 text-caption font-medium text-muted-foreground">{p.unidad}</span>
+                      <span className="ml-1 text-xs font-semibold text-muted-foreground">{p.unidad}</span>
                     </span>
-                    <span className="tabular block text-caption text-muted-foreground">
+                    <span className="tabular block text-xs text-muted-foreground font-medium">
                       {money(Number(p.precio_venta ?? 0))}
                     </span>
                   </span>

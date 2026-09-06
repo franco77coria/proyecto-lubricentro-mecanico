@@ -7,6 +7,43 @@ interface PlacaPatenteProps {
   size?: "sm" | "md" | "lg";
 }
 
+function MercosurEmblem({ className = "w-3 h-2" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 16" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      {/* 4 estrellas de la Cruz del Sur */}
+      <circle cx="12" cy="3.5" r="1.2" fill="#FFFFFF" />
+      <circle cx="12" cy="11.5" r="1.2" fill="#FFFFFF" />
+      <circle cx="7" cy="7.5" r="1.2" fill="#FFFFFF" />
+      <circle cx="16.5" cy="6.5" r="0.9" fill="#FFFFFF" />
+      {/* Arco Mercosur */}
+      <path d="M4 14C8 10.5 16 10.5 20 14" stroke="#60A5FA" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BanderaArgentina({ className = "w-3.5 h-2.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 15" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect width="24" height="15" fill="#75AADB" rx="1" />
+      <rect y="5" width="24" height="5" fill="#FFFFFF" />
+      <circle cx="12" cy="7.5" r="1.8" fill="#F6B40E" />
+      <circle cx="12" cy="7.5" r="1" fill="#B45309" opacity="0.35" />
+    </svg>
+  );
+}
+
+function Tornillo({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "absolute rounded-full bg-zinc-900 border border-zinc-400/80 shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.9),0_0.5px_0.5px_rgba(255,255,255,0.7)] pointer-events-none opacity-85",
+        className,
+      )}
+      aria-hidden
+    />
+  );
+}
+
 export function PlacaPatente({ patente, className, size = "md" }: PlacaPatenteProps) {
   const formato = detectarFormato(patente);
   const textoFormateado = formatearPatente(patente);
@@ -18,141 +55,237 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
   const esChile = formato === "cl_nuevo" || formato === "cl_antiguo";
   const esColombia = formato === "co_moto";
 
-  const sizeClasses = {
-    sm: "px-2 py-0.5 text-[11px] rounded-md min-w-[70px]",
-    md: "px-3 py-1 text-sm rounded-lg min-w-[100px]",
-    lg: "px-4 py-1.5 text-lg rounded-xl min-w-[140px]",
-  };
-
-  // 1. Mercosur Argentina
+  // 1. PATENTE MERCOSUR ARGENTINA (Fotorrealista: marco exterior negro, bisel metálico blanco, cabecera azul oficial #0038A8, Cruz del Sur, Bandera Argentina con Sol de Mayo y tipografía vehicular estampada en relieve)
   if (esMercosurAR) {
-    return (
-      <div
-        className={cn(
-          "inline-flex flex-col items-center justify-center border-2 border-zinc-900 bg-white font-black shadow-sm select-none",
-          sizeClasses[size],
-          className,
-        )}
-        style={{ letterSpacing: "0.12em" }}
-      >
-        <div className="flex w-full items-center justify-between bg-[#003399] px-1.5 py-[1px] text-[7px] font-bold tracking-widest text-white">
-          <span className="opacity-90">MERCOSUR</span>
-          <span className="text-[6px] uppercase font-extrabold tracking-wider">REPÚBLICA ARGENTINA</span>
-          <span className="h-1.5 w-2 rounded-[1px] bg-amber-400 opacity-90 inline-block" />
+    if (size === "sm") {
+      return (
+        <div
+          className={cn(
+            "relative inline-flex flex-col items-center justify-between rounded-[4px] border-[1.5px] border-black bg-white shadow-[0_1px_2px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden select-none min-w-[80px] h-[26px]",
+            className,
+          )}
+        >
+          <Tornillo className="top-[2px] left-[15%] h-1 w-1" />
+          <Tornillo className="top-[2px] right-[15%] h-1 w-1" />
+          <div className="flex w-full items-center justify-between bg-[#0038A8] px-1 py-[0.5px] text-[6px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)]">
+            <MercosurEmblem className="w-2.5 h-1.5" />
+            <span className="text-[5.5px] font-black uppercase tracking-wider text-white">REPÚBLICA ARGENTINA</span>
+            <BanderaArgentina className="w-2.5 h-1.5" />
+          </div>
+          <span
+            className="text-display font-black text-zinc-950 pb-0.5 leading-none text-[12px] tracking-[0.12em]"
+            style={{ textShadow: "0 0.5px 0 rgba(255,255,255,0.8), 0 0.5px 1px rgba(0,0,0,0.35)" }}
+          >
+            {textoFormateado}
+          </span>
         </div>
-        <span className="text-display pt-0.5 font-black text-zinc-950">
-          {textoFormateado}
-        </span>
-      </div>
-    );
-  }
+      );
+    }
 
-  // 2. Mercosul Brasil
-  if (esMercosurBR) {
-    return (
-      <div
-        className={cn(
-          "inline-flex flex-col items-center justify-center border-2 border-zinc-900 bg-white font-black shadow-sm select-none",
-          sizeClasses[size],
-          className,
-        )}
-        style={{ letterSpacing: "0.12em" }}
-      >
-        <div className="flex w-full items-center justify-between bg-[#003399] px-1.5 py-[1px] text-[7px] font-bold tracking-widest text-white">
-          <span className="opacity-90">MERCOSUL</span>
-          <span className="text-[7px] uppercase font-extrabold tracking-wider">BRASIL</span>
-          <span className="text-[8px]">🇧🇷</span>
+    if (size === "lg") {
+      return (
+        <div
+          className={cn(
+            "relative inline-flex flex-col items-center justify-between rounded-[8px] border-[2.5px] border-black bg-white shadow-[0_3px_8px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.95)] overflow-hidden select-none min-w-[170px] h-[52px]",
+            className,
+          )}
+        >
+          <Tornillo className="top-[4px] left-[16%] h-2 w-2" />
+          <Tornillo className="top-[4px] right-[16%] h-2 w-2" />
+          <div className="flex w-full items-center justify-between bg-[#0038A8] px-2.5 py-[2.5px] text-[9px] font-black tracking-widest text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.4)]">
+            <MercosurEmblem className="w-4 h-2.5" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white drop-shadow-[0_0.5px_0.5px_rgba(0,0,0,0.5)]">
+              REPÚBLICA ARGENTINA
+            </span>
+            <BanderaArgentina className="w-4 h-2.5" />
+          </div>
+          <span
+            className="text-display font-black text-zinc-950 pb-1 leading-none text-[22px] tracking-[0.16em]"
+            style={{ textShadow: "0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.4)" }}
+          >
+            {textoFormateado}
+          </span>
         </div>
-        <span className="text-display pt-0.5 font-black text-zinc-950">
-          {textoFormateado}
-        </span>
-      </div>
-    );
-  }
+      );
+    }
 
-  // 3. España / Unión Europea (Eurobanda)
-  if (esEspanaUE) {
+    // Default: size === "md"
     return (
       <div
         className={cn(
-          "inline-flex items-stretch border-2 border-zinc-900 bg-white font-black shadow-sm select-none overflow-hidden",
-          sizeClasses[size],
+          "relative inline-flex flex-col items-center justify-between rounded-[6px] border-[2px] border-black bg-white shadow-[0_2px_4px_rgba(0,0,0,0.25),inset_0_1px_0.5px_rgba(255,255,255,0.9)] overflow-hidden select-none min-w-[115px] h-[36px]",
           className,
         )}
-        style={{ letterSpacing: "0.15em" }}
       >
-        <div className="bg-[#003399] px-1.5 flex flex-col items-center justify-center text-white mr-2 -ml-2 sm:-ml-3 my-[-6px]">
-          <span className="text-[8px] text-amber-300">★</span>
-          <span className="text-[9px] font-black leading-none">E</span>
+        <Tornillo className="top-[2.5px] left-[16%] h-1.5 w-1.5" />
+        <Tornillo className="top-[2.5px] right-[16%] h-1.5 w-1.5" />
+        <div className="flex w-full items-center justify-between bg-[#0038A8] px-1.5 py-[1.5px] text-[7px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)]">
+          <MercosurEmblem className="w-3 h-2" />
+          <span className="text-[6.5px] font-black uppercase tracking-wider text-white drop-shadow-[0_0.5px_0.5px_rgba(0,0,0,0.5)]">
+            REPÚBLICA ARGENTINA
+          </span>
+          <BanderaArgentina className="w-3 h-2" />
         </div>
-        <span className="text-display font-black text-zinc-950 self-center">
+        <span
+          className="text-display font-black text-zinc-950 pb-0.5 leading-none text-[15px] tracking-[0.14em]"
+          style={{ textShadow: "0 0.75px 0 rgba(255,255,255,0.85), 0 0.5px 1.5px rgba(0,0,0,0.35)" }}
+        >
           {textoFormateado}
         </span>
       </div>
     );
   }
 
-  // 4. Colombia (Fondo amarillo reflectivo)
-  if (esColombia) {
-    return (
-      <div
-        className={cn(
-          "inline-flex flex-col items-center justify-center border-2 border-zinc-950 bg-[#FACC15] font-black text-zinc-950 shadow-sm select-none",
-          sizeClasses[size],
-          className,
-        )}
-        style={{ letterSpacing: "0.15em" }}
-      >
-        <span className="text-display font-black tracking-wider">
-          {textoFormateado}
-        </span>
-        <span className="text-[6px] font-black uppercase tracking-widest opacity-80 -mt-0.5">COLOMBIA</span>
-      </div>
-    );
-  }
-
-  // 5. Chile (Blanca con ribete azul)
-  if (esChile) {
-    return (
-      <div
-        className={cn(
-          "inline-flex flex-col items-center justify-center border-2 border-blue-900 bg-white font-black text-blue-950 shadow-sm select-none",
-          sizeClasses[size],
-          className,
-        )}
-        style={{ letterSpacing: "0.12em" }}
-      >
-        <span className="text-display font-black">
-          {textoFormateado}
-        </span>
-        <span className="text-[6px] font-black uppercase tracking-widest text-blue-900 opacity-80 -mt-0.5">CHILE</span>
-      </div>
-    );
-  }
-
-  // 6. Formato Antiguo / Clásico
+  // 2. PATENTE ANTERIOR ARGENTINA 1995-2016 (Fotorrealista: placa negra mate, fino marco perimetral blanco reflectivo, dos orificios de tornillos y tipografía blanca estampada en relieve)
   if (esViejo) {
+    const sizeConfig = {
+      sm: { box: "min-w-[75px] h-[26px] px-1.5 border-[1.5px]", text: "text-[11px] tracking-[0.18em]", screw: "h-1 w-1 top-[2px]" },
+      md: { box: "min-w-[105px] h-[36px] px-2.5 border-[2px]", text: "text-[15px] tracking-[0.22em]", screw: "h-1.5 w-1.5 top-[3px]" },
+      lg: { box: "min-w-[150px] h-[50px] px-3.5 border-[2.5px]", text: "text-[21px] tracking-[0.26em]", screw: "h-2 w-2 top-[4px]" },
+    }[size];
+
     return (
       <div
         className={cn(
-          "inline-flex flex-col items-center justify-center border-2 border-zinc-400 bg-zinc-950 font-black text-zinc-100 shadow-sm select-none",
-          sizeClasses[size],
+          "relative inline-flex flex-col items-center justify-center rounded-[5px] border-zinc-200 bg-[#121214] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_0_1px_rgba(255,255,255,0.2)] select-none",
+          sizeConfig.box,
           className,
         )}
-        style={{ letterSpacing: "0.15em" }}
       >
-        <span className="text-display font-black tracking-widest">
+        <Tornillo className={cn("left-[14%]", sizeConfig.screw)} />
+        <Tornillo className={cn("right-[14%]", sizeConfig.screw)} />
+        <span
+          className={cn("text-display font-black text-zinc-100 uppercase", sizeConfig.text)}
+          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.9), 0 0 1px rgba(255,255,255,0.3)" }}
+        >
           {textoFormateado}
+        </span>
+      </div>
+    );
+  }
+
+  // 3. MERCOSUL BRASIL
+  if (esMercosurBR) {
+    const sizeConfig = {
+      sm: { box: "min-w-[80px] h-[26px]", text: "text-[12px]", bar: "text-[6px] py-[0.5px]" },
+      md: { box: "min-w-[115px] h-[36px]", text: "text-[15px]", bar: "text-[7px] py-[1.5px]" },
+      lg: { box: "min-w-[170px] h-[52px]", text: "text-[22px]", bar: "text-[9px] py-[2.5px]" },
+    }[size];
+
+    return (
+      <div
+        className={cn(
+          "relative inline-flex flex-col items-center justify-between rounded-[5px] border-[2px] border-black bg-white shadow-sm overflow-hidden select-none",
+          sizeConfig.box,
+          className,
+        )}
+      >
+        <Tornillo className="top-[2.5px] left-[15%] h-1.5 w-1.5" />
+        <Tornillo className="top-[2.5px] right-[15%] h-1.5 w-1.5" />
+        <div className={cn("flex w-full items-center justify-between bg-[#0038A8] px-1.5 text-white font-black tracking-widest", sizeConfig.bar)}>
+          <MercosurEmblem className="w-3 h-2" />
+          <span className="uppercase font-extrabold tracking-wider">BRASIL</span>
+          <span className="text-[9px]">🇧🇷</span>
+        </div>
+        <span className={cn("text-display font-black text-zinc-950 pb-0.5 tracking-[0.14em]", sizeConfig.text)}>
+          {textoFormateado}
+        </span>
+      </div>
+    );
+  }
+
+  // 4. ESPAÑA / UNIÓN EUROPEA (Eurobanda azul)
+  if (esEspanaUE) {
+    const sizeConfig = {
+      sm: { box: "min-w-[78px] h-[26px] text-[12px]", band: "px-1 text-[7px]" },
+      md: { box: "min-w-[110px] h-[36px] text-[15px]", band: "px-1.5 text-[9px]" },
+      lg: { box: "min-w-[155px] h-[50px] text-[21px]", band: "px-2.5 text-[11px]" },
+    }[size];
+
+    return (
+      <div
+        className={cn(
+          "relative inline-flex items-stretch rounded-[5px] border-[2px] border-black bg-white shadow-sm overflow-hidden select-none",
+          sizeConfig.box,
+          className,
+        )}
+      >
+        <div className={cn("bg-[#0038A8] flex flex-col items-center justify-center text-white", sizeConfig.band)}>
+          <span className="text-[7px] text-amber-300 leading-none">★</span>
+          <span className="font-black leading-none pt-0.5">E</span>
+        </div>
+        <span className="text-display font-black text-zinc-950 self-center px-2 tracking-[0.16em]">
+          {textoFormateado}
+        </span>
+      </div>
+    );
+  }
+
+  // 5. COLOMBIA (Fondo amarillo reflectivo)
+  if (esColombia) {
+    const sizeConfig = {
+      sm: { box: "min-w-[75px] h-[26px]", text: "text-[11px]", label: "text-[5.5px]" },
+      md: { box: "min-w-[105px] h-[36px]", text: "text-[14px]", label: "text-[7px]" },
+      lg: { box: "min-w-[145px] h-[48px]", text: "text-[20px]", label: "text-[9px]" },
+    }[size];
+
+    return (
+      <div
+        className={cn(
+          "relative inline-flex flex-col items-center justify-center rounded-[5px] border-[2px] border-zinc-950 bg-[#FACC15] font-black text-zinc-950 shadow-sm select-none",
+          sizeConfig.box,
+          className,
+        )}
+      >
+        <Tornillo className="top-[2px] left-[15%] h-1.5 w-1.5 bg-zinc-950" />
+        <Tornillo className="top-[2px] right-[15%] h-1.5 w-1.5 bg-zinc-950" />
+        <span className={cn("text-display font-black tracking-[0.15em]", sizeConfig.text)}>
+          {textoFormateado}
+        </span>
+        <span className={cn("font-black uppercase tracking-widest opacity-85 -mt-0.5", sizeConfig.label)}>
+          COLOMBIA
+        </span>
+      </div>
+    );
+  }
+
+  // 6. CHILE (Blanca con ribete azul)
+  if (esChile) {
+    const sizeConfig = {
+      sm: { box: "min-w-[75px] h-[26px]", text: "text-[11px]", label: "text-[5.5px]" },
+      md: { box: "min-w-[105px] h-[36px]", text: "text-[14px]", label: "text-[7px]" },
+      lg: { box: "min-w-[145px] h-[48px]", text: "text-[20px]", label: "text-[9px]" },
+    }[size];
+
+    return (
+      <div
+        className={cn(
+          "relative inline-flex flex-col items-center justify-center rounded-[5px] border-[2px] border-blue-900 bg-white font-black text-blue-950 shadow-sm select-none",
+          sizeConfig.box,
+          className,
+        )}
+      >
+        <span className={cn("text-display font-black tracking-[0.14em]", sizeConfig.text)}>
+          {textoFormateado}
+        </span>
+        <span className={cn("font-black uppercase tracking-widest text-blue-900 opacity-85 -mt-0.5", sizeConfig.label)}>
+          CHILE
         </span>
       </div>
     );
   }
 
   // 7. Fallback / Internacional
+  const sizeClasses = {
+    sm: "px-2 py-0.5 text-[11px] rounded-md min-w-[70px]",
+    md: "px-3 py-1 text-sm rounded-lg min-w-[100px]",
+    lg: "px-4 py-1.5 text-lg rounded-xl min-w-[140px]",
+  };
+
   return (
     <div
       className={cn(
-        "inline-flex items-center justify-center border-2 border-border bg-card font-mono font-black uppercase text-foreground shadow-sm",
+        "inline-flex items-center justify-center border-2 border-border bg-card font-mono font-black uppercase text-foreground shadow-sm select-none",
         sizeClasses[size],
         className,
       )}

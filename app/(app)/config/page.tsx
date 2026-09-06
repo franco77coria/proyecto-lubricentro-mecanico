@@ -33,7 +33,7 @@ export default async function Config() {
   ] = await Promise.all([
     supabase
       .from("taller")
-      .select("nombre, cuit, direccion, telefono")
+      .select("nombre, cuit, direccion, telefono, logo_url")
       .eq("id", sesion.perfil.taller_id)
       .single(),
     supabase

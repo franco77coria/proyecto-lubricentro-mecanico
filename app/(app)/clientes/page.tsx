@@ -125,18 +125,18 @@ export default async function PaginaClientes({
                           href={`https://wa.me/${paraWhatsApp(c.telefono)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-emerald-50 text-caption font-semibold text-emerald-700 transition-transform active:scale-[0.98]"
+                          className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/15 text-xs font-black text-emerald-400 border border-emerald-500/30 shadow-sm transition-transform hover:bg-emerald-500/25 active:scale-[0.98]"
                         >
-                          <Phone className="h-3.5 w-3.5" aria-hidden />
+                          <Phone className="h-4 w-4" aria-hidden />
                           WhatsApp
                         </a>
                       )}
                       {c.email && (
                         <a
                           href={`mailto:${c.email}`}
-                          className="flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-sm)] bg-muted text-caption font-semibold text-foreground transition-transform active:scale-[0.98]"
+                          className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-muted border border-border text-xs font-bold text-foreground transition-transform hover:bg-muted/80 active:scale-[0.98]"
                         >
-                          <Mail className="h-3.5 w-3.5" aria-hidden />
+                          <Mail className="h-4 w-4" aria-hidden />
                           Email
                         </a>
                       )}

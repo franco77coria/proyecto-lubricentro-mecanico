@@ -5,7 +5,6 @@ import {
   Car,
   ClipboardList,
   Columns3,
-  Layers,
   Users,
   LayoutGrid,
   type LucideIcon,
@@ -49,7 +48,7 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     etiqueta: "Tablero",
     icono: LayoutGrid,
     grupo: "taller",
-    ayuda: "Cómo viene el día y KPIs",
+    ayuda: "Resumen y números del día",
   },
   {
     href: "/kanban",
@@ -78,13 +77,6 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     icono: Users,
     grupo: "taller",
     ayuda: "Datos de contacto y autos de cada uno",
-  },
-  {
-    href: "/stock/equivalencias",
-    etiqueta: "Filtros & Cruces",
-    icono: Layers,
-    grupo: "taller",
-    ayuda: "Buscador y equivalencia de filtros",
   },
   {
     href: "/stock",

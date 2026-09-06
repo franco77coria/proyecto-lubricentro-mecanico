@@ -5,7 +5,7 @@ import { exigirVista } from "@/lib/permisos";
 export const dynamic = "force-dynamic";
 
 export default async function PaginaNuevoPresupuesto() {
-  const sesion = await exigirVista("/presupuestos");
+  await exigirVista("/presupuestos");
 
   const marcas = await listarMarcas();
 

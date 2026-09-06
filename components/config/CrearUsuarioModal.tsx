@@ -14,18 +14,18 @@ const ROLES = [
     v: "mecanico",
     t: "Mecánico / Fosa",
     d: "Vista técnica de trabajo. Carga órdenes y checklists sin acceso a caja ni costos.",
-    vistasDefault: ["/tablero", "/kanban", "/vehiculos", "/stock/equivalencias", "/turnos"],
+    vistasDefault: ["/tablero", "/kanban", "/vehiculos", "/turnos"],
   },
   {
     v: "mostrador",
     t: "Mostrador / Recepción",
     d: "Recepción de clientes, presupuestos, cobros y asignación de órdenes.",
-    vistasDefault: ["/tablero", "/kanban", "/vehiculos", "/clientes", "/presupuestos", "/turnos", "/stock", "/stock/equivalencias", "/compras", "/avisos"],
+    vistasDefault: ["/tablero", "/kanban", "/vehiculos", "/clientes", "/presupuestos", "/turnos", "/stock", "/compras", "/avisos"],
   },
   {
     v: "dueno",
-    t: "Dueño / Administrador",
-    d: "Acceso 100% irrestricto a todo el sistema, finanzas y configuración.",
+    t: "Dueño / Encargado",
+    d: "Acceso a todo el sistema, finanzas y configuración.",
     vistasDefault: ITEMS_NAV.map((i) => i.href),
   },
 ] as const;
@@ -49,7 +49,6 @@ export function CrearUsuarioModal({
     "/tablero",
     "/kanban",
     "/vehiculos",
-    "/stock/equivalencias",
     "/turnos",
   ]);
   const [error, setError] = useState<string | null>(null);

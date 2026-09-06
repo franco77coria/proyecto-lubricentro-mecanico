@@ -17,7 +17,7 @@ export interface SidebarProps {
 }
 
 const NOMBRE_ROL: Record<string, string> = {
-  dueno: "Dueño / Admin",
+  dueno: "Dueño / Encargado",
   mostrador: "Mostrador / Recepción",
   mecanico: "Mecánico / Fosa",
 };

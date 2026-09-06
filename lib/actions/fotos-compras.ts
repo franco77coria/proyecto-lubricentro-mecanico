@@ -131,7 +131,7 @@ export async function fotosDeCompra(compraId: string): Promise<FotoCompraConUrl[
  */
 export async function borrarFotoCompra(
   fotoId: string,
-  compraId: string,
+  compraId?: string,
 ): Promise<ResultadoFotoCompra> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida" };
@@ -143,22 +143,33 @@ export async function borrarFotoCompra(
   try {
     const supabase = await crearClienteServidor();
 
-    const { data: foto } = await supabase
+    let queryFoto = supabase
       .from("compra_foto")
       .select("path")
       .eq("id", fotoId)
-      .eq("taller_id", sesion.perfil.taller_id)
-      .maybeSingle();
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (compraId) {
+      queryFoto = queryFoto.eq("compra_id", compraId);
+    }
+
+    const { data: foto } = await queryFoto.maybeSingle();
 
     if (!foto) return { error: "El comprobante no existe" };
 
     await supabase.storage.from(BUCKET_FOTOS).remove([foto.path]);
 
-    const { error } = await supabase
+    let deleteFoto = supabase
       .from("compra_foto")
       .delete()
       .eq("id", fotoId)
       .eq("taller_id", sesion.perfil.taller_id);
+
+    if (compraId) {
+      deleteFoto = deleteFoto.eq("compra_id", compraId);
+    }
+
+    const { error } = await deleteFoto;
 
     if (error) {
       console.error("[borrarFotoCompra]", error.code);

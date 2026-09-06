@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Link2, Loader2, MessageCircle, RefreshCw } from "lucide-react";
+import { Copy, Link2, Loader2, MessageCircle, RefreshCw, Check } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
@@ -10,12 +10,7 @@ import { normalizarTelefono, paraWhatsApp } from "@/lib/telefono";
 /**
  * El link de seguimiento que se le manda al cliente.
  *
- * El token se genera acá y no al crear la orden a propósito: una orden que
- * nunca se compartió no tiene por qué tener un link público vivo. Menos
- * superficie expuesta por defecto.
- *
- * Rotar sirve cuando el cliente reenvió el link a quien no debía: el anterior
- * deja de funcionar.
+ * Áreas táctiles de mínimo 48px para operar cómodamente en el mostrador o fosa.
  */
 export function CompartirSeguimiento({
   otId,
@@ -34,6 +29,7 @@ export function CompartirSeguimiento({
 }) {
   const { notificar } = useIsla();
   const [token, setToken] = useState(tokenExistente);
+  const [copiado, setCopiado] = useState(false);
   const [pendiente, iniciar] = useTransition();
 
   const url = token
@@ -59,87 +55,91 @@ export function CompartirSeguimiento({
     if (!url) return;
     navigator.clipboard
       .writeText(url)
-      .then(() => notificar({ tipo: "exito", mensaje: "Link copiado" }))
+      .then(() => {
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 2000);
+        notificar({ tipo: "exito", mensaje: "Link copiado al portapapeles" });
+      })
       .catch(() => notificar({ tipo: "error", mensaje: "No se pudo copiar" }));
   }
 
   function porWhatsApp() {
     if (!url) return;
-    // `normalizarTelefono` devuelve null si el número no se puede interpretar;
-    // sin teléfono el link se abre igual y el taller elige el contacto a mano.
     const norm = telefonoCliente ? normalizarTelefono(telefonoCliente) : null;
     const tel = norm ? paraWhatsApp(norm) : null;
-    const saludo = nombreCliente?.trim() ? `Hola ${nombreCliente.trim()}!` : "Hola!";
+    const saludo = nombreCliente?.trim() ? `¡Hola ${nombreCliente.trim()}!` : "¡Hola!";
     const texto = `${saludo} Te escribimos de *${tallerNombre}*.
-Podés seguir el estado de tu vehículo *${patente}* y ver el detalle acá:
+Podés seguir el estado de tu vehículo *${patente}* en vivo, ver fotos de la reparación y el presupuesto acá:
 ${url}`;
     const base = tel ? `https://wa.me/${tel}` : "https://wa.me/";
     window.open(`${base}?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
   }
 
   return (
-    <section className="space-y-2.5 rounded-2xl border border-border bg-card p-4">
-      <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-foreground">
-        <Link2 className="h-4 w-4 text-accent" aria-hidden />
-        Seguimiento para el cliente
-      </h2>
+    <section className="space-y-3 rounded-3xl border border-border/80 bg-card p-5 shadow-sm">
+      <div className="flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-foreground">
+          <Link2 className="h-4 w-4 text-accent" aria-hidden />
+          Seguimiento para el cliente
+        </h2>
+        {token && (
+          <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            Activo 90 días
+          </span>
+        )}
+      </div>
 
       {!token ? (
         <>
-          <p className="text-caption text-muted-foreground">
-            Generá un link para que el cliente vea el estado y apruebe el
-            presupuesto desde su celular, sin instalar nada.
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Generá un link protegido para que el cliente vea el avance paso a paso, fotos del trabajo y apruebe el presupuesto desde el celular.
           </p>
           <button
             type="button"
             onClick={() => generar(false)}
             disabled={pendiente}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent text-sm font-bold text-white active:scale-[0.98] disabled:opacity-60"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-accent text-xs font-black text-white shadow-md shadow-orange-500/20 active:scale-[0.98] disabled:opacity-60 hover:brightness-110 transition-all"
           >
             {pendiente ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
-              <Link2 className="h-4 w-4" aria-hidden />
+              <Link2 className="h-4 w-4 stroke-[2.5]" aria-hidden />
             )}
             Generar link de seguimiento
           </button>
         </>
       ) : (
         <>
-          <p className="break-all rounded-xl bg-muted px-3 py-2 text-caption text-muted-foreground">
+          <p className="break-all rounded-xl bg-muted/60 border border-border/60 px-3 py-2 text-xs font-mono text-muted-foreground">
             {url}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={porWhatsApp}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-xs font-bold text-white active:scale-95"
+              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-black text-white shadow-sm active:scale-95 hover:bg-emerald-500 transition-all"
             >
-              <MessageCircle className="h-4 w-4" aria-hidden />
+              <MessageCircle className="h-4.5 w-4.5 stroke-[2.5]" aria-hidden />
               Enviar por WhatsApp
             </button>
             <button
               type="button"
               onClick={copiar}
               aria-label="Copiar el link"
-              className="grid min-h-11 w-11 place-items-center rounded-xl bg-muted text-foreground active:scale-95"
+              className="grid min-h-12 min-w-12 place-items-center rounded-xl bg-muted border border-border/80 text-foreground active:scale-95 hover:bg-muted/80 transition-all"
             >
-              <Copy className="h-4 w-4" aria-hidden />
+              {copiado ? <Check className="h-4.5 w-4.5 text-emerald-400" /> : <Copy className="h-4.5 w-4.5" aria-hidden />}
             </button>
             <button
               type="button"
               onClick={() => generar(true)}
               disabled={pendiente}
               aria-label="Generar un link nuevo e invalidar el anterior"
-              className="grid min-h-11 w-11 place-items-center rounded-xl bg-muted text-muted-foreground active:scale-95 disabled:opacity-50"
+              className="grid min-h-12 min-w-12 place-items-center rounded-xl bg-muted border border-border/80 text-muted-foreground active:scale-95 disabled:opacity-50 hover:bg-muted/80 transition-all"
             >
-              <RefreshCw className="h-4 w-4" aria-hidden />
+              <RefreshCw className={`h-4.5 w-4.5 ${pendiente ? "animate-spin" : ""}`} aria-hidden />
             </button>
           </div>
-          <p className="text-caption text-muted-foreground">
-            Vence en 90 días. El botón de refrescar genera uno nuevo y desactiva
-            el anterior.
-          </p>
         </>
       )}
     </section>

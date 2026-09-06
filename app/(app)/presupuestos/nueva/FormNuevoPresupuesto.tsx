@@ -7,6 +7,7 @@ import { useState, useTransition, useEffect } from "react";
 
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
+import { SelectorCliente } from "@/components/clientes/SelectorCliente";
 import { useIsla } from "@/components/isla/IslaContext";
 import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/presupuestos";
@@ -38,6 +39,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [anio, setAnio] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
+  const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
 
   // Items y Notas
@@ -176,6 +178,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
       if (anio) formDataVehiculo.append("anio", anio);
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
+      if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
 
       const resVehiculo = await crearVehiculo({}, formDataVehiculo);
@@ -318,25 +321,18 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
             />
           </div>
 
-          <div>
-            <label className="text-caption text-muted-foreground">Cliente (Nombre)</label>
-            <input
-              type="text"
-              placeholder="Ej: Marcelo"
-              value={clienteNombre}
-              onChange={(e) => setClienteNombre(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-caption text-muted-foreground">WhatsApp</label>
-            <input
-              type="tel"
-              placeholder="Ej: 11 3344 5566"
-              value={clienteTelefono}
-              onChange={(e) => setClienteTelefono(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+          <div className="sm:col-span-2 pt-2 border-t border-border/50">
+            <SelectorCliente
+              clienteNombre={clienteNombre}
+              clienteApellido={clienteApellido}
+              clienteTelefono={clienteTelefono}
+              onCambioNombre={setClienteNombre}
+              onCambioApellido={setClienteApellido}
+              onCambioTelefono={setClienteTelefono}
+              onSeleccionarVehiculo={(v) => {
+                if (v.patente) setPatente(v.patente);
+                if (v.anio) setAnio(String(v.anio));
+              }}
             />
           </div>
         </div>

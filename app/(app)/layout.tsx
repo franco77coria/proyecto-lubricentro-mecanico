@@ -45,7 +45,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </div>
 
-        <BarraInferior rol={sesion.perfil.rol} vistasPermitidas={vistasPermitidas} />
+        <BarraInferior
+          taller={taller?.nombre ?? "Mi taller"}
+          usuario={sesion.perfil.nombre || sesion.user.email?.split("@")[0] || ""}
+          rol={sesion.perfil.rol}
+          vistasPermitidas={vistasPermitidas}
+        />
       </IslaProvider>
     </I18nProvider>
   );

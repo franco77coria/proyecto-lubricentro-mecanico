@@ -557,6 +557,7 @@ function Nivel({
                   type="button"
                   data-item
                   role="option"
+                  aria-selected={indiceActivo === opcionesFiltradas.length}
                   onClick={() => seleccionar(OTRO)}
                   onMouseEnter={() => setIndiceActivo(opcionesFiltradas.length)}
                   className={`

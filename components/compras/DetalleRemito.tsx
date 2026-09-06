@@ -92,13 +92,13 @@ export function DetalleRemito({
         type="button"
         onClick={alternar}
         aria-expanded={abierto}
-        className="flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[var(--radius-sm)] text-caption font-semibold text-accent hover:bg-accent/5"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-muted/40 text-xs font-semibold text-accent hover:bg-accent/10 active:scale-[0.99] transition-all"
       >
         {pendiente && !lineas ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         ) : (
           <ChevronDown
-            className={`h-3.5 w-3.5 transition-transform ${abierto ? "rotate-180" : ""}`}
+            className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`}
             aria-hidden
           />
         )}
@@ -114,16 +114,16 @@ export function DetalleRemito({
           ) : (
             <ul className="divide-y divide-border">
               {lineas.map((l) => (
-                <li key={l.itemId} className="flex items-center gap-2 py-1.5">
+                <li key={l.itemId} className="flex items-center gap-2 py-2">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-caption font-medium text-foreground">
+                    <span className="block truncate text-sm font-medium text-foreground">
                       {l.producto}
                     </span>
                     <span className="block text-caption text-muted-foreground">
                       {l.cantidad} {l.unidad} × {money(l.costoUnitario)}
                     </span>
                   </span>
-                  <span className="tabular shrink-0 text-caption font-semibold text-foreground">
+                  <span className="tabular shrink-0 text-sm font-semibold text-foreground">
                     {money(l.subtotal)}
                   </span>
                   {puedeCorregir && (
@@ -132,9 +132,9 @@ export function DetalleRemito({
                       onClick={() => borrar(l)}
                       disabled={pendiente}
                       aria-label={`Quitar ${l.producto} del remito`}
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--radius-sm)] text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                      className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-all disabled:opacity-40"
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      <Trash2 className="h-4 w-4" aria-hidden />
                     </button>
                   )}
                 </li>

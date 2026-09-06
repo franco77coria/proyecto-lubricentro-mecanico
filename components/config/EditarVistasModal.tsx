@@ -27,7 +27,7 @@ export function EditarVistasModal({
   const [pendiente, iniciar] = useTransition();
 
   const [vistas, setVistas] = useState<string[]>(
-    usuario?.vistasPermitidas || ["/tablero", "/kanban", "/vehiculos", "/stock/equivalencias", "/turnos"],
+    usuario?.vistasPermitidas || ["/tablero", "/kanban", "/vehiculos", "/turnos"],
   );
 
   function toggleVista(href: string) {

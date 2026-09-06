@@ -219,6 +219,42 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
       return { error: "No se pudo convertir el presupuesto a orden de trabajo." };
     }
 
+    // Si la OT no tenía checklist inicial, sembramos la plantilla de inspección activa
+    const { count } = await supabase
+      .from("ot_checklist")
+      .select("*", { count: "exact", head: true })
+      .eq("ot_id", id);
+
+    if (!count || count === 0) {
+      const tallerId = sesion.perfil.taller_id;
+      const { data: plantilla } = await supabase
+        .from("checklist_plantilla")
+        .select("id")
+        .eq("taller_id", tallerId)
+        .eq("activa", true)
+        .maybeSingle();
+
+      if (plantilla) {
+        const { data: itemsPlantilla } = await supabase
+          .from("checklist_plantilla_item")
+          .select("id, etiqueta, orden")
+          .eq("plantilla_id", plantilla.id)
+          .eq("activo", true)
+          .order("orden", { ascending: true });
+
+        if (itemsPlantilla && itemsPlantilla.length > 0) {
+          const checklistOt = itemsPlantilla.map((item) => ({
+            taller_id: tallerId,
+            ot_id: id,
+            item_id: item.id,
+            etiqueta_snapshot: item.etiqueta,
+            orden: item.orden,
+          }));
+          await supabase.from("ot_checklist").insert(checklistOt);
+        }
+      }
+    }
+
     revalidatePath("/presupuestos");
     revalidatePath(`/presupuestos/${id}`);
     revalidatePath("/tablero");

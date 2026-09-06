@@ -2,101 +2,117 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutList, Plus } from "lucide-react";
+import { Menu, Plus, Sparkles, Columns3, CalendarDays } from "lucide-react";
 import { useState } from "react";
 
-import { HojaTodo } from "@/components/nav/HojaTodo";
-import { esRutaActiva, ITEMS_BARRA, type ItemNav } from "@/lib/navegacion";
+import { SidebarDrawer } from "@/components/nav/SidebarDrawer";
+import { esRutaActiva } from "@/lib/navegacion";
 
-/**
- * Navegación de celular.
- *
- * Vive abajo, al alcance del pulgar, y desaparece en escritorio (a partir de
- * lg manda el sidebar). Nunca se superpone con la isla, que va arriba: son dos
- * superficies translúcidas claras y una encima de la otra arruina la
- * legibilidad de las dos.
- *
- * 5 botones principales ergonómicos (3 atajos directos + Nueva OT + Más)
- * con dimensiones mínimas táctiles de 48px (min-h-12 min-w-12) optimizados
- * para pantallas desde 360px sin colisión ni desbordes.
- */
-export function BarraInferior({
-  rol,
-  vistasPermitidas,
-}: {
+export interface BarraInferiorProps {
+  taller?: string;
+  usuario?: string;
   rol?: string;
   vistasPermitidas?: string[] | null;
-}) {
-  const pathname = usePathname();
-  const [hojaAbierta, setHojaAbierta] = useState(false);
+}
 
-  // Los atajos van dos a la izquierda y uno a la derecha del botón central "Nueva OT",
-  // completando junto con "Más" exactamente 5 botones principales ergonómicos.
-  const izquierda = ITEMS_BARRA.slice(0, 2);
-  const derecha = ITEMS_BARRA.slice(2);
+/**
+ * Barra de navegación móvil ultra-ergonómica (Dock 70/30).
+ *
+ * Al alcance del pulgar, con bordes redondeados prolijos (rounded-3xl),
+ * botón de menú lateral (tres rayitas), accesos de carga rápida (+ OT y + Presupuesto)
+ * y atajos directos a Kanban y Turnos con áreas táctiles mínimas de 48px.
+ */
+export function BarraInferior({
+  taller = "Mi Taller",
+  usuario = "",
+  rol = "mostrador",
+  vistasPermitidas,
+}: BarraInferiorProps) {
+  const pathname = usePathname();
+  const [drawerAbierto, setDrawerAbierto] = useState(false);
 
   return (
     <>
-      <HojaTodo
-        abierto={hojaAbierta}
-        onCerrar={() => setHojaAbierta(false)}
+      <SidebarDrawer
+        abierto={drawerAbierto}
+        onCerrar={() => setDrawerAbierto(false)}
+        taller={taller}
+        usuario={usuario}
         rol={rol}
         vistasPermitidas={vistasPermitidas}
       />
 
       <nav
-        aria-label="Navegación principal"
-        className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-2 sm:px-3 pb-[calc(var(--safe-bottom)+0.75rem)] lg:hidden"
+        aria-label="Navegación principal móvil"
+        className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-2 sm:px-3 pb-[calc(var(--safe-bottom)+0.6rem)] lg:hidden pointer-events-none"
       >
-        <div className="material material-thick backdrop-blur-2xl backdrop-saturate-150 sin-transparencia:backdrop-blur-none flex w-full max-w-[26rem] items-center justify-between gap-1 rounded-[var(--radius-lg)] p-1.5 shadow-lg">
-          {izquierda.map((item) => (
-            <ItemBarra key={item.href} item={item} activo={esRutaActiva(pathname, item.href)} />
-          ))}
-
-          <Link
-            href="/ot/nueva"
-            aria-label="Nueva orden"
-            className="flex min-h-12 min-w-12 flex-1 max-w-[4.75rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] bg-accent px-1 py-1.5 text-accent-foreground shadow-[var(--sombra-media)] transition-transform active:scale-95 touch-manipulation shrink-0"
-          >
-            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
-            <span className="text-[0.625rem] font-bold tracking-wide truncate max-w-full">Nueva OT</span>
-          </Link>
-
-          {derecha.map((item) => (
-            <ItemBarra key={item.href} item={item} activo={esRutaActiva(pathname, item.href)} />
-          ))}
-
+        <div className="pointer-events-auto flex w-full max-w-[28rem] items-center justify-between gap-1 rounded-3xl border border-border/80 bg-card/90 backdrop-blur-2xl p-1.5 shadow-2xl">
+          {/* 1. Menú Hamburguesa (Tres Rayitas) */}
           <button
             type="button"
-            onClick={() => setHojaAbierta(true)}
-            aria-expanded={hojaAbierta}
-            aria-label="Ver todas las pantallas"
-            className="flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-1 py-1.5 text-muted-foreground transition-transform active:scale-95 touch-manipulation shrink-0"
+            onClick={() => setDrawerAbierto(true)}
+            aria-expanded={drawerAbierto}
+            aria-label="Abrir menú lateral"
+            className="flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-muted-foreground transition-transform active:scale-95 touch-manipulation hover:text-foreground"
           >
-            <LayoutList className="h-5 w-5" aria-hidden />
-            <span className="text-[0.625rem] font-medium tracking-wide truncate max-w-full">Más</span>
+            <Menu className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+            <span className="text-[0.625rem] font-medium tracking-tight truncate max-w-full">Menú</span>
           </button>
+
+          {/* 2. En el Taller (Kanban) */}
+          <Link
+            href="/kanban"
+            aria-current={esRutaActiva(pathname, "/kanban") ? "page" : undefined}
+            className={`flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-transform active:scale-95 touch-manipulation ${
+              esRutaActiva(pathname, "/kanban")
+                ? "text-accent font-bold bg-accent/10"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <Columns3 className="h-5 w-5" strokeWidth={esRutaActiva(pathname, "/kanban") ? 2.5 : 2} aria-hidden />
+            <span className="text-[0.625rem] tracking-tight truncate max-w-full">Fosa</span>
+          </Link>
+
+          {/* 3. Botón Central Destacado: + Nueva OT */}
+          <Link
+            href="/ot/nueva"
+            aria-label="Nueva Orden de Trabajo"
+            className="flex min-h-12 min-w-12 flex-1 max-w-[4.75rem] flex-col items-center justify-center gap-0.5 rounded-2xl bg-accent px-1 py-1.5 text-accent-foreground shadow-md transition-transform active:scale-95 touch-manipulation shrink-0 hover:brightness-105"
+          >
+            <Plus className="h-5 w-5 stroke-[2.5]" aria-hidden />
+            <span className="text-[0.625rem] font-black tracking-wide truncate max-w-full">+ OT</span>
+          </Link>
+
+          {/* 4. Botón de Carga Rápida: + Presupuesto */}
+          <Link
+            href="/presupuestos/nueva"
+            aria-label="Nuevo Presupuesto"
+            className={`flex min-h-12 min-w-12 flex-1 max-w-[4.75rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-transform active:scale-95 touch-manipulation shrink-0 border ${
+              esRutaActiva(pathname, "/presupuestos/nueva")
+                ? "border-accent bg-accent/20 text-accent font-bold"
+                : "border-accent/40 bg-accent/10 text-accent hover:bg-accent/15"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" aria-hidden />
+            <span className="text-[0.625rem] font-bold tracking-tight truncate max-w-full">+ Presup.</span>
+          </Link>
+
+          {/* 5. Agenda / Turnos */}
+          <Link
+            href="/turnos"
+            aria-current={esRutaActiva(pathname, "/turnos") ? "page" : undefined}
+            className={`flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-transform active:scale-95 touch-manipulation ${
+              esRutaActiva(pathname, "/turnos")
+                ? "text-accent font-bold bg-accent/10"
+                : "text-muted-foreground hover:text-foreground font-medium"
+            }`}
+          >
+            <CalendarDays className="h-5 w-5" strokeWidth={esRutaActiva(pathname, "/turnos") ? 2.5 : 2} aria-hidden />
+            <span className="text-[0.625rem] tracking-tight truncate max-w-full">Turnos</span>
+          </Link>
         </div>
       </nav>
     </>
-  );
-}
-
-function ItemBarra({ item, activo }: { item: ItemNav; activo: boolean }) {
-  const Icono = item.icono;
-  return (
-    <Link
-      href={item.href}
-      aria-current={activo ? "page" : undefined}
-      className={`flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-1 py-1.5 transition-transform active:scale-95 touch-manipulation shrink-0 ${
-        activo ? "text-accent font-semibold" : "text-muted-foreground hover:text-foreground font-medium"
-      }`}
-    >
-      <Icono className="h-5 w-5" strokeWidth={activo ? 2.5 : 2} aria-hidden />
-      <span className={`text-[0.625rem] tracking-wide truncate max-w-full ${activo ? "font-bold" : "font-medium"}`}>
-        {item.etiqueta}
-      </span>
-    </Link>
   );
 }
 

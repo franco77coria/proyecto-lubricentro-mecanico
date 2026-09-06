@@ -152,7 +152,7 @@ export default async function PaginaTablero() {
               className="flex min-h-11 items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-4 py-2 text-xs font-bold text-foreground transition-all hover:bg-muted active:scale-95 shadow-sm"
             >
               <Layers className="h-4 w-4 text-accent" />
-              <span>Ver Kanban</span>
+              <span>Ver autos en taller</span>
             </Link>
 
             <Link
@@ -306,23 +306,33 @@ export default async function PaginaTablero() {
             {/* Facturación del Mes */}
             {esDueno && (
               <section className="space-y-3">
-                <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4 text-emerald-400" />
-                  Rendimiento del Mes
-                </h2>
-                <MotionCard
-                  delay={0.25}
-                  interactive
-                  className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 shadow-lg"
-                >
-                  <div className="absolute -right-8 -top-8 h-28 w-28 bg-emerald-500/10 blur-2xl rounded-full" />
-                  <p className="text-3xl font-black text-foreground tabular-nums tracking-tight">
-                    {money(facturadoMes)}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground font-semibold">
-                    Facturado en órdenes entregadas este mes
-                  </p>
-                </MotionCard>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    Rendimiento del Mes
+                  </h2>
+                  <Link
+                    href="/reportes"
+                    className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
+                  >
+                    Ver métricas →
+                  </Link>
+                </div>
+                <Link href="/reportes" className="block group">
+                  <MotionCard
+                    delay={0.25}
+                    interactive
+                    className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 shadow-lg group-hover:border-emerald-500/60 transition-all"
+                  >
+                    <div className="absolute -right-8 -top-8 h-28 w-28 bg-emerald-500/10 blur-2xl rounded-full" />
+                    <p className="text-3xl font-black text-foreground tabular-nums tracking-tight">
+                      {money(facturadoMes)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground font-semibold">
+                      Facturado en órdenes entregadas este mes · Tocar para ver desglose
+                    </p>
+                  </MotionCard>
+                </Link>
               </section>
             )}
 

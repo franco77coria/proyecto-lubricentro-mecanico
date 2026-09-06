@@ -1,28 +1,30 @@
 "use client";
 
 import { useTransition, useOptimistic } from "react";
-import { Clock, CheckCircle2, User, Car, Phone } from "lucide-react";
+import { Clock, CheckCircle2, User, Phone, Plus, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { type Turno, cambiarEstadoTurno, type EstadoTurno } from "@/lib/actions/turnos";
 import { useIsla } from "@/components/isla/IslaContext";
 import { useFormato } from "@/lib/i18n/I18nContext";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
 
 const COLORES_ESTADO: Record<EstadoTurno, string> = {
-  pendiente: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
-  confirmado: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  ingresado: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  cancelado: "bg-destructive/10 text-destructive border-destructive/20",
+  pendiente: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  confirmado: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  ingresado: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  cancelado: "bg-rose-500/15 text-rose-400 border-rose-500/30",
   no_asistio: "bg-muted text-muted-foreground border-border",
 };
 
 export function TarjetaTurno({ turno }: { turno: Turno }) {
   const [isPending, startTransition] = useTransition();
   const { notificar } = useIsla();
-  
+
   const [estadoOptimista, setEstadoOptimista] = useOptimistic<EstadoTurno, EstadoTurno>(
     turno.estado,
-    (estado, nuevoEstado) => nuevoEstado
+    (estado, nuevoEstado) => nuevoEstado,
   );
-  
+
   const { locale } = useFormato();
   const fecha = new Date(turno.fecha_hora);
   const formatterHora = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" });
@@ -40,40 +42,60 @@ export function TarjetaTurno({ turno }: { turno: Turno }) {
     });
   };
 
+  const modeloNombre = [
+    turno.vehiculo?.motorizacion?.modelo?.marca?.nombre,
+    turno.vehiculo?.motorizacion?.modelo?.nombre,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`relative flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm transition-opacity ${isPending ? 'opacity-50' : ''}`}>
+    <div
+      className={`relative flex flex-col gap-3 rounded-3xl border border-border/80 bg-card p-5 shadow-sm transition-all hover:border-accent/40 ${
+        isPending ? "opacity-60" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+        <div className="flex items-center gap-2 text-sm font-black text-foreground">
           <Clock className="h-4 w-4 text-accent" />
-          <span>{formatterHora.format(fecha)}</span>
-          <span className="text-muted-foreground font-normal ml-1">{formatterDia.format(fecha)}</span>
+          <span className="font-mono text-base">{formatterHora.format(fecha)} hs</span>
+          <span className="text-muted-foreground font-semibold text-xs ml-1 capitalize">
+            {formatterDia.format(fecha)}
+          </span>
         </div>
-        <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${COLORES_ESTADO[estadoOptimista]}`}>
-          {estadoOptimista}
+        <span
+          className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${COLORES_ESTADO[estadoOptimista]}`}
+        >
+          {estadoOptimista.replace("_", " ")}
         </span>
       </div>
 
       <div className="space-y-1">
-        <h3 className="text-sm font-bold leading-tight">{turno.motivo}</h3>
+        <h3 className="text-base font-black text-foreground leading-tight">{turno.motivo}</h3>
         {turno.notas && <p className="text-xs text-muted-foreground line-clamp-2">{turno.notas}</p>}
       </div>
 
-      <div className="mt-auto flex flex-col gap-1.5 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+      {/* Ficha Rápida de Vehículo y Cliente */}
+      <div className="mt-auto flex flex-col gap-2 pt-3 border-t border-border/60 text-xs">
         {turno.vehiculo && (
-          <div className="flex items-center gap-1.5">
-            <Car className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-medium text-foreground">{turno.vehiculo.patente}</span>
-            <span className="truncate">
-              — {turno.vehiculo.motorizacion?.modelo?.marca?.nombre} {turno.vehiculo.motorizacion?.modelo?.nombre}
+          <div className="flex items-center justify-between gap-2">
+            <PlacaPatente patente={turno.vehiculo.patente} size="sm" />
+            <span className="font-bold text-foreground truncate text-right flex-1">
+              {modeloNombre || "Vehículo sin modelo"}
             </span>
           </div>
         )}
         {turno.cliente && (
-          <div className="flex items-center gap-1.5">
-            <User className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{turno.cliente.nombre}</span>
+          <div className="flex items-center justify-between gap-2 text-muted-foreground pt-1 border-t border-border/40">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <User className="h-3.5 w-3.5 shrink-0 text-accent" />
+              <span className="truncate font-semibold text-foreground">{turno.cliente.nombre}</span>
+            </div>
             {turno.cliente.telefono && (
-              <a href={`tel:${turno.cliente.telefono.replace(/\D/g, '')}`} className="flex items-center gap-1 ml-auto text-blue-600 hover:underline">
+              <a
+                href={`tel:${turno.cliente.telefono.replace(/\D/g, "")}`}
+                className="flex items-center gap-1 text-emerald-400 font-bold hover:underline shrink-0"
+              >
                 <Phone className="h-3 w-3" />
                 <span>{turno.cliente.telefono}</span>
               </a>
@@ -82,40 +104,59 @@ export function TarjetaTurno({ turno }: { turno: Turno }) {
         )}
       </div>
 
-      {estadoOptimista === 'pendiente' && (
-        <div className="flex gap-2 pt-3 mt-1">
-          <button 
+      {/* Acciones de 1-Tap con botones mínimos de 48px */}
+      {estadoOptimista === "pendiente" && (
+        <div className="flex gap-2 pt-3 mt-1 border-t border-border/60">
+          <button
+            type="button"
             disabled={isPending}
-            onClick={() => cambiarEstado('confirmado')}
-            className="flex-1 min-h-[44px] rounded-lg bg-blue-50 text-blue-600 py-1.5 text-xs font-bold hover:bg-blue-100"
+            onClick={() => cambiarEstado("confirmado")}
+            className="flex-1 min-h-12 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30 py-2 text-xs font-black hover:bg-blue-500/25 active:scale-95 transition-all"
           >
-            Confirmar
+            Confirmar Turno
           </button>
-          <button 
+          <button
+            type="button"
             disabled={isPending}
-            onClick={() => cambiarEstado('cancelado')}
-            className="flex-1 min-h-[44px] rounded-lg bg-red-50 text-red-600 py-1.5 text-xs font-bold hover:bg-red-100"
+            onClick={() => cambiarEstado("cancelado")}
+            className="flex-1 min-h-12 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 py-2 text-xs font-black hover:bg-rose-500/25 active:scale-95 transition-all"
           >
             Cancelar
           </button>
         </div>
       )}
-      {estadoOptimista === 'confirmado' && (
-        <div className="flex gap-2 pt-3 mt-1">
-          <button 
+
+      {estadoOptimista === "confirmado" && (
+        <div className="flex gap-2 pt-3 mt-1 border-t border-border/60">
+          <button
+            type="button"
             disabled={isPending}
-            onClick={() => cambiarEstado('ingresado')}
-            className="flex-1 flex min-h-[44px] items-center justify-center gap-1 rounded-lg bg-emerald-50 text-emerald-600 py-1.5 text-xs font-bold hover:bg-emerald-100"
+            onClick={() => cambiarEstado("ingresado")}
+            className="flex-1 flex min-h-12 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 text-black py-2 text-xs font-black hover:bg-emerald-400 active:scale-95 transition-all shadow-md shadow-emerald-500/20"
           >
-            <CheckCircle2 className="h-3.5 w-3.5" /> Ingresó
+            <CheckCircle2 className="h-4 w-4" /> Ingresó a Fosa
           </button>
-          <button 
+          <button
+            type="button"
             disabled={isPending}
-            onClick={() => cambiarEstado('no_asistio')}
-            className="flex-1 min-h-[44px] rounded-lg bg-muted text-muted-foreground py-1.5 text-xs font-bold hover:bg-muted/80"
+            onClick={() => cambiarEstado("no_asistio")}
+            className="min-h-12 px-4 rounded-xl bg-muted text-muted-foreground border border-border/80 text-xs font-bold hover:bg-muted/80 active:scale-95 transition-all"
           >
             No vino
           </button>
+        </div>
+      )}
+
+      {estadoOptimista === "ingresado" && (
+        <div className="pt-3 mt-1 border-t border-border/60">
+          <Link
+            href="/ot/nueva"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent text-white py-2 text-xs font-black shadow-md shadow-orange-500/20 hover:brightness-110 active:scale-95 transition-all"
+          >
+            <Plus className="h-4 w-4 stroke-[3]" />
+            <span>Abrir Orden de Trabajo (OT)</span>
+            <ArrowRight className="h-3.5 w-3.5 ml-1" />
+          </Link>
         </div>
       )}
     </div>

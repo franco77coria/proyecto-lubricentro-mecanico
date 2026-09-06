@@ -1,6 +1,7 @@
 import { CreditCard, DollarSign, Smartphone, Wallet } from "lucide-react";
 
 import { BotonCierreCaja } from "./BotonCierreCaja";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
@@ -80,32 +81,40 @@ export default async function PaginaCaja() {
           </p>
 
           <div className="grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs font-semibold">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-emerald-600" />
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <DollarSign className="h-4 w-4" />
+              </span>
               <div>
                 <p className="text-muted-foreground text-caption">Efectivo</p>
                 <p className="text-foreground font-bold">{money(totalEfectivo)}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-blue-600" />
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                <Wallet className="h-4 w-4" />
+              </span>
               <div>
                 <p className="text-muted-foreground text-caption">Transferencia</p>
                 <p className="text-foreground font-bold">{money(totalTransferencia)}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-purple-600" />
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                <CreditCard className="h-4 w-4" />
+              </span>
               <div>
                 <p className="text-muted-foreground text-caption">Tarjetas</p>
                 <p className="text-foreground font-bold">{money(totalTarjeta)}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Smartphone className="h-4 w-4 text-cyan-600" />
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <Smartphone className="h-4 w-4" />
+              </span>
               <div>
                 <p className="text-muted-foreground text-caption">Mercado Pago</p>
                 <p className="text-foreground font-bold">{money(totalMP)}</p>
@@ -125,22 +134,23 @@ export default async function PaginaCaja() {
               pagos.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-card p-3.5 shadow-sm"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3.5 shadow-sm"
                 >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-foreground">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {p.orden_trabajo?.vehiculo?.patente ? (
+                      <PlacaPatente patente={p.orden_trabajo.vehiculo.patente} size="sm" />
+                    ) : null}
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-xs font-bold text-foreground block">
                         OT #{p.orden_trabajo?.numero || "N/A"}
                       </span>
-                      <span className="text-caption font-bold text-accent">
-                        {p.orden_trabajo?.vehiculo?.patente}
-                      </span>
+                      <p className="text-caption text-muted-foreground capitalize font-medium">
+                        Método: {p.metodo.replace("_", " ")}
+                        {p.notas ? ` · ${p.notas}` : ""}
+                      </p>
                     </div>
-                    <p className="text-caption text-muted-foreground capitalize font-medium">
-                      Metodo: {p.metodo.replace("_", " ")}
-                    </p>
                   </div>
-                  <span className="text-sm font-bold text-emerald-600 tabular">
+                  <span className="text-sm font-bold text-emerald-400 tabular shrink-0">
                     +{money(Number(p.monto || 0))}
                   </span>
                 </div>

@@ -1,17 +1,14 @@
 "use client";
 
 import {
-  CalendarClock,
   Camera,
   ClipboardList,
-  FileText,
-  LineChart,
   Printer,
   ScanLine,
-  Wrench,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
+  Lock,
+  Droplets,
 } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -69,55 +66,65 @@ function Encabezado({
    ──────────────────────────────────────────────────────────────── */
 
 const ANTES = [
-  "Órdenes en un cuaderno manchado de aceite",
-  "“¿Cuándo cambió el filtro este auto?” — nadie sabe",
-  "Presupuestos por WhatsApp que se pierden en el chat",
-  "Te enterás de que faltaba aceite con el auto en la fosa",
-  "Clientes llamando 10 veces al día preguntando si el auto está listo",
+  "Órdenes en un cuaderno manchado de grasa que nadie encuentra",
+  "“¿Cuántos litros llevaba este motor?” — buscar en Google mientras el cliente espera",
+  "Presupuestos informales por WhatsApp que se pierden en el chat",
+  "Te enterás de que te quedaste sin aceite con el auto ya colgado en el elevador",
+  "El teléfono sonando todo el día: “¿che, a qué hora está lista la camioneta?”",
 ];
 
 const DESPUES = [
-  "Cada orden con su estado en vivo, en un tablero que ves de un vistazo",
-  "Historial completo por patente con fichas técnicas y lubricantes exactos",
-  "Presupuesto profesional en PDF con aprobación desde el celular",
-  "Avisos automáticos de stock mínimo y lector de código de barras",
-  "Live Tracker interactivo tipo Rappi/Mercado Libre con fotos en tiempo real",
+  "Tablero visual de fosas y elevadores con estados en tiempo real a 1 tap",
+  "Ficha técnica instantánea por patente: cárter exacto, viscosidad y filtros equivalentes",
+  "Presupuesto digital profesional con aprobación en 1 clic desde el celular del cliente",
+  "Control de inventario sincronizado por Postgres: cada litro cargado descuenta solo",
+  "Live Tracker con fotos y avance tipo delivery: el cliente sabe todo sin llamar",
 ];
 
 export function AntesDespues() {
   return (
     <section className="seccion">
-      <Encabezado eyebrow="El día a día" titulo="Lo que hoy te come el día" />
+      <Encabezado eyebrow="El día a día" titulo="Lo que hoy te come el tiempo y la plata" />
 
       <div className="mt-16 sm:mt-20 grid gap-12 md:grid-cols-2 md:gap-16 lg:gap-20">
         <Reveal delay={0.05}>
-          <p className="t-eyebrow !text-muted-foreground">Hoy</p>
-          <ul className="mt-6 sm:mt-8 space-y-5">
-            {ANTES.map((t) => (
-              <li
-                key={t}
-                className="border-t border-border pt-5 text-base sm:text-lg leading-relaxed text-muted-foreground flex items-start gap-3"
-              >
-                <span className="text-destructive font-black text-sm mt-0.5">✕</span>
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-3xl bg-white/[0.02] border border-white/[0.06] p-6 sm:p-8">
+            <p className="t-eyebrow !text-rose-400/90 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-rose-500" />
+              El taller tradicional
+            </p>
+            <ul className="mt-6 sm:mt-8 space-y-4">
+              {ANTES.map((t) => (
+                <li
+                  key={t}
+                  className="border-t border-white/[0.06] pt-4 text-base leading-relaxed text-white/60 flex items-start gap-3"
+                >
+                  <span className="text-rose-500 font-black text-sm mt-0.5 shrink-0">✕</span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </Reveal>
 
         <Reveal delay={0.12}>
-          <p className="t-eyebrow !text-accent">Con Fierros</p>
-          <ul className="mt-6 sm:mt-8 space-y-5">
-            {DESPUES.map((t) => (
-              <li
-                key={t}
-                className="border-t border-accent/30 pt-5 text-base sm:text-lg leading-relaxed text-foreground flex items-start gap-3"
-              >
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-3xl bg-orange-500/[0.03] border border-orange-500/20 p-6 sm:p-8 shadow-[0_10px_40px_rgba(249,115,22,0.08)]">
+            <p className="t-eyebrow !text-accent flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+              Con Fierros
+            </p>
+            <ul className="mt-6 sm:mt-8 space-y-4">
+              {DESPUES.map((t) => (
+                <li
+                  key={t}
+                  className="border-t border-orange-500/20 pt-4 text-base leading-relaxed text-white flex items-start gap-3"
+                >
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="font-medium">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </Reveal>
       </div>
     </section>
@@ -125,85 +132,233 @@ export function AntesDespues() {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   Funcionalidades
+   Funcionalidades (Asymmetrical Bento Grid con Double-Bezel)
    ──────────────────────────────────────────────────────────────── */
-
-const FEATURES = [
-  {
-    icon: ClipboardList,
-    title: "Tablero Kanban de órdenes",
-    body: "Cada OT con su estado en fosa, mecánico asignado y días en taller. Diseñado para verse en pantalla grande.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Live Tracker para clientes",
-    body: "Tus clientes ven el avance paso a paso tipo delivery, fotos del trabajo y aprueban presupuestos desde el celular.",
-  },
-  {
-    icon: Wrench,
-    title: "Base técnica & Filtros",
-    body: "Capacidades de cárter, especificación de viscosidad SAE y buscador de equivalencias cruzadas entre marcas.",
-  },
-  {
-    icon: ScanLine,
-    title: "Stock con lector de barras",
-    body: "Escaneá el bidón o repuesto con la cámara del celular. Descuento automático y alertas de stock crítico.",
-  },
-  {
-    icon: FileText,
-    title: "Presupuestos en PDF",
-    body: "Mano de obra y repuestos discriminados. Envío directo por WhatsApp en un toque.",
-  },
-  {
-    icon: Camera,
-    title: "Checklist de recepción & Daños",
-    body: "Diagrama 2D de carrocería para marcar abolladuras y registro fotográfico de ingreso y entrega.",
-  },
-  {
-    icon: Printer,
-    title: "Comprobantes A4 y Ticket 80mm",
-    body: "Imprimí en hoja membretada o tiras térmicas para ticketeras de mostrador (POS-80) con código de seguimiento.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Turnos y agenda",
-    body: "Planificá la semana sin huecos muertos en las fosas ni demoras en la recepción.",
-  },
-  {
-    icon: LineChart,
-    title: "Caja diaria y métricas",
-    body: "Control de cobros en efectivo, transferencias, cierres de caja con timezone exacto y rentabilidad de servicios.",
-  },
-] as const;
 
 export function Funcionalidades() {
   return (
     <section id="caracteristicas" className="seccion">
       <Encabezado
-        eyebrow="Todo en un solo lugar"
-        titulo="El taller completo, sin vueltas"
-        bajada="Cada módulo pensado para la velocidad de un taller real. Menos clics, más tiempo con las manos en el motor."
+        eyebrow="Arquitectura de Taller"
+        titulo="Herramientas fierreras. Cero burocracia."
+        bajada="Construido para soportar la velocidad, las manos con grasa y la exigencia de un lubricentro o taller moderno."
       />
 
-      <div className="mt-16 sm:mt-20 grid gap-x-12 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map((f, i) => (
-          <Reveal key={f.title} delay={Math.min(i, 6) * 0.05}>
-            <div className="border-t border-border/80 pt-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent border border-accent/25">
-                <f.icon className="h-5 w-5" strokeWidth={2} />
+      <div className="mt-16 sm:mt-20 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Bento 1: Tablero Kanban & Fosas (Span 2 cols) */}
+        <Reveal delay={0.05} className="md:col-span-2">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/15 text-accent border border-accent/25">
+                    <ClipboardList className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-accent uppercase tracking-wider">
+                    Control Visual
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl sm:text-2xl font-black">
+                  Tablero Kanban &amp; Ocupación de Fosas en Vivo
+                </h3>
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-white/70 max-w-xl">
+                  Mirá qué auto está en cada elevador, cuánto tiempo lleva, qué mecánico lo atiende
+                  y qué órdenes esperan repuestos. Pensado para proyectar en una TV de taller o usar desde una tablet.
+                </p>
               </div>
-              <h3 className="t-card mt-5 text-foreground">{f.title}</h3>
-              <p className="mt-2 text-sm sm:text-base leading-relaxed text-muted-foreground">{f.body}</p>
+
+              {/* Preview visual mini del tablero */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                  <div className="flex items-center justify-between text-[11px] text-white/50 mb-1.5">
+                    <span>Fosa 1</span>
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  </div>
+                  <p className="font-mono font-bold text-white text-xs">AE 789 CD</p>
+                  <p className="text-[11px] text-white/60 truncate">Hilux 2.8 · 18 min</p>
+                </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                  <div className="flex items-center justify-between text-[11px] text-white/50 mb-1.5">
+                    <span>Elevador 2</span>
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  </div>
+                  <p className="font-mono font-bold text-white text-xs">AF 342 XP</p>
+                  <p className="text-[11px] text-white/60 truncate">Amarok V6 · Listo</p>
+                </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                  <div className="flex items-center justify-between text-[11px] text-white/50 mb-1.5">
+                    <span>Recepción</span>
+                    <span className="h-2 w-2 rounded-full bg-blue-400" />
+                  </div>
+                  <p className="font-mono font-bold text-white text-xs">AC 112 LK</p>
+                  <p className="text-[11px] text-white/60 truncate">Cronos 1.3 · Turno 11hs</p>
+                </div>
+              </div>
             </div>
-          </Reveal>
-        ))}
+          </div>
+        </Reveal>
+
+        {/* Bento 2: Lector de Código de Barras Offline */}
+        <Reveal delay={0.1} className="md:col-span-1">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/15 text-orange-400 border border-orange-500/25">
+                    <ScanLine className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-orange-400 uppercase tracking-wider">
+                    Fosa sin señal
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl font-bold">
+                  Lector de Código de Barras
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                  En la fosa o el galpón no siempre hay buena señal. Podés escanear el bidón de aceite o repuesto directamente con la cámara del celu y descuenta el stock al instante.
+                </p>
+              </div>
+              <div className="mt-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-300 font-medium flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>Escaneo rápido con la cámara del celular</span>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Bento 3: Ficha de Lubricación OEM */}
+        <Reveal delay={0.15} className="md:col-span-1">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                    <Droplets className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
+                    Lubricación
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl font-bold">
+                  Litros de Aceite &amp; Viscosidad
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                  Capacidades exactas de cárter en litros y viscosidad recomendada de fábrica (5W-30, 10W-40) para más de 950 modelos. Sabés cuántos litros exactos lleva cada motor antes de empezar.
+                </p>
+              </div>
+              <div className="mt-6 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-xs text-white/70">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-white/40 block">Ficha de Fábrica</span>
+                <span className="font-mono font-bold text-white">Toyota Hilux 2.8 D-4D → 7.5L SAE 5W-30</span>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Bento 4: Permisos para Dueño y Mecánicos (Span 2 cols) */}
+        <Reveal delay={0.2} className="md:col-span-2">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                    <Lock className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                    Seguridad &amp; Cuentas
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl sm:text-2xl font-black">
+                  Cuentas Separadas para Dueño y Mecánicos
+                </h3>
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-white/70 max-w-xl">
+                  Tus mecánicos ven solo lo que necesitan: tareas del día, repuestos a colocar y checklist de trabajo con botones grandes para usar con guantes.
+                  <strong className="text-white block mt-1">
+                    Los precios que pagás a tus proveedores y las ganancias del taller están 100% protegidos y solo los ves vos desde tu cuenta.
+                  </strong>
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                  <p className="text-xs font-bold text-accent">Pantalla del Mecánico</p>
+                  <p className="text-[11px] text-white/60 mt-1">Botones grandes, semáforo de colores claro y orden de servicio en mano.</p>
+                </div>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                  <p className="text-xs font-bold text-emerald-400">Pantalla del Dueño</p>
+                  <p className="text-[11px] text-white/60 mt-1">Ganancia neta, plata en caja, compras a proveedores y control del equipo.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Bento 5: Comprobantes Térmicos POS-80 & A4 */}
+        <Reveal delay={0.25} className="md:col-span-1">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                    <Printer className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider">
+                    Impresión Rápida
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl font-bold">
+                  Comprobante PDF &amp; Hoja A4
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                  Generás el comprobante formal en PDF con el membrete de tu taller, listo para mandar por WhatsApp o imprimir en hoja A4 estándar.
+                </p>
+              </div>
+              <div className="mt-6 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-xs text-white/70 flex items-center justify-between">
+                <span>Comprobante instantáneo</span>
+                <span className="font-mono text-accent font-bold">1 toque</span>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Bento 6: Peritaje Visual de Recepción */}
+        <Reveal delay={0.3} className="md:col-span-2">
+          <div className="h-full rounded-[2rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+            <div className="h-full rounded-[calc(2rem-0.375rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-400 border border-purple-500/25">
+                    <Camera className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider">
+                    Respaldo Antifraude
+                  </span>
+                </div>
+                <h3 className="t-card mt-4 text-white text-xl sm:text-2xl font-black">
+                  Inspección de Ingreso &amp; Daños Previos
+                </h3>
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-white/70 max-w-xl">
+                  Marcá bollos, rayones o faltantes en el dibujo del auto y sacá fotos desde el teléfono antes de tocar el vehículo. Evitá los clásicos reclamos de “ese rayón no estaba”.
+                </p>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <span className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs font-medium text-white/80">
+                  📸 Fotos guardadas con la orden de trabajo
+                </span>
+                <span className="px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs font-medium text-white/80">
+                  🔍 Dibujo interactivo del auto para marcar golpes
+                </span>
+              </div>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
 }
 
 /* ────────────────────────────────────────────────────────────────
-   Seguimiento en Vivo (Diferencial)
+   Seguimiento en Vivo (Diferencial para clientes)
    ──────────────────────────────────────────────────────────────── */
 
 export function Seguimiento() {
@@ -222,7 +377,7 @@ export function Seguimiento() {
               href="/seguimiento"
               className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-accent-foreground shadow-md transition-all hover:opacity-90 active:scale-95"
             >
-              <span>Ver buscador de seguimiento</span>
+              <span>Ver buscador de seguimiento público</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -230,32 +385,32 @@ export function Seguimiento() {
 
         {/* Maqueta Interactiva del Live Tracker */}
         <Reveal delay={0.12}>
-          <div className="relative rounded-[2rem] border border-border/80 bg-[#121216]/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="relative rounded-[2rem] border border-white/10 bg-[#121216]/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
             {/* Header del Tracker */}
-            <div className="flex items-center justify-between border-b border-border/60 pb-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-mono font-bold text-emerald-400">EN VIVO</span>
               </div>
-              <span className="text-xs font-mono text-muted-foreground">OT #1042</span>
+              <span className="text-xs font-mono text-white/50">OT #2026-084</span>
             </div>
 
             {/* Vehículo y Patente */}
             <div className="mt-6 flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                <p className="text-xs uppercase tracking-wider text-white/50 font-semibold">
                   Vehículo en Fosa
                 </p>
-                <p className="text-lg font-black text-foreground mt-0.5">Toyota Hilux 2.8 D-4D</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Service 50.000 km + Filtros</p>
+                <p className="text-lg font-black text-white mt-0.5">Toyota Hilux 2.8 D-4D</p>
+                <p className="text-xs text-white/60 mt-0.5">Service 50.000 km + 4 Filtros</p>
               </div>
               <PlacaPatente patente="AE789CD" size="md" />
             </div>
 
             {/* Stepper tipo Mercado Libre */}
-            <div className="mt-8 space-y-4 rounded-2xl bg-card/60 border border-border/60 p-4">
+            <div className="mt-8 space-y-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4">
               {[
-                { label: "Ingreso & Inspección", status: "Completado", done: true },
+                { label: "Ingreso & Inspección", status: "Completado 10:14", done: true },
                 { label: "En elevador / Fosa", status: "En progreso ahora...", current: true },
                 { label: "Control de Calidad", status: "Pendiente", done: false },
                 { label: "Listo para retirar", status: "Pendiente", done: false },
@@ -268,7 +423,7 @@ export function Seguimiento() {
                           ? "bg-emerald-500 text-black"
                           : step.current
                             ? "bg-accent text-white ring-4 ring-accent/20 animate-pulse"
-                            : "bg-muted text-muted-foreground"
+                            : "bg-white/10 text-white/40"
                       }`}
                     >
                       {step.done ? "✓" : idx + 1}
@@ -280,13 +435,13 @@ export function Seguimiento() {
                         step.current
                           ? "text-accent"
                           : step.done
-                            ? "text-foreground"
-                            : "text-muted-foreground"
+                            ? "text-white"
+                            : "text-white/40"
                       }`}
                     >
                       {step.label}
                     </p>
-                    <p className="text-[11px] text-muted-foreground truncate">{step.status}</p>
+                    <p className="text-[11px] text-white/50 truncate">{step.status}</p>
                   </div>
                 </div>
               ))}
@@ -294,13 +449,13 @@ export function Seguimiento() {
 
             {/* Telemetría Mini */}
             <div className="mt-4 grid grid-cols-2 gap-2 text-center text-xs font-medium">
-              <div className="rounded-xl bg-muted/40 border border-border/40 p-2.5">
-                <span className="text-muted-foreground block text-[10px] uppercase font-bold">Aceite Cargado</span>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-2.5">
+                <span className="text-white/50 block text-[10px] uppercase font-bold">Aceite Cargado</span>
                 <span className="text-accent font-black text-sm">7.5 Litros (5W-30)</span>
               </div>
-              <div className="rounded-xl bg-muted/40 border border-border/40 p-2.5">
-                <span className="text-muted-foreground block text-[10px] uppercase font-bold">Fotos de Respaldo</span>
-                <span className="text-foreground font-black text-sm">3 imágenes</span>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-2.5">
+                <span className="text-white/50 block text-[10px] uppercase font-bold">Fotos de Respaldo</span>
+                <span className="text-white font-black text-sm">3 imágenes</span>
               </div>
             </div>
           </div>
@@ -318,17 +473,17 @@ const PASOS = [
   {
     n: "01",
     title: "Creás tu taller en 2 minutos",
-    body: "Cargás los datos de tu lubricentro o taller mecánico. Sin instalaciones complicadas.",
+    body: "Cargás el nombre de tu taller y ya tenés el tablero listo. Sin instalaciones ni tarjetas.",
   },
   {
     n: "02",
     title: "Sumás a tu equipo de mecánicos",
-    body: "Invitás a los operarios por WhatsApp con un link. Cada uno con su rol y permisos.",
+    body: "Invitás a los operarios por WhatsApp con un link. Cada uno con acceso ágil y sin ver costos de compra.",
   },
   {
     n: "03",
     title: "Cargás la primera patente",
-    body: "Ponés la chapa y listo. Desde ahí el historial, filtros y órdenes se guardan solos.",
+    body: "Ingresás la chapa y listo. Desde ahí el historial, filtros y órdenes se guardan solos.",
   },
 ] as const;
 
@@ -340,7 +495,7 @@ export function ComoEmpezar() {
       <div className="mt-16 sm:mt-20 grid gap-12 md:grid-cols-3 md:gap-16">
         {PASOS.map((p, i) => (
           <Reveal key={p.n} delay={i * 0.08}>
-            <div className="border-t border-border pt-7">
+            <div className="border-t border-white/10 pt-7">
               <motion.span
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -350,8 +505,8 @@ export function ComoEmpezar() {
               >
                 {p.n}
               </motion.span>
-              <h3 className="t-card mt-6 text-foreground font-bold">{p.title}</h3>
-              <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-muted-foreground">{p.body}</p>
+              <h3 className="t-card mt-6 text-white font-bold">{p.title}</h3>
+              <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-white/70">{p.body}</p>
             </div>
           </Reveal>
         ))}
@@ -366,28 +521,28 @@ export function ComoEmpezar() {
 
 const FAQS = [
   {
-    q: "¿Necesito instalar algún programa en la computadora?",
-    a: "No. Funciona 100% en la nube desde cualquier navegador (Chrome, Safari, Edge), tanto en computadoras de escritorio como en tablets y celulares. Podés instalarlo como app en la pantalla de inicio.",
+    q: "¿Necesito instalar algún programa o computadora especial?",
+    a: "No. Fierros funciona directo desde internet en cualquier celular, tablet o computadora. Podés agregarlo a la pantalla de inicio de tu teléfono para abrirlo como una app con 1 toque.",
   },
   {
     q: "¿Cómo funciona el seguimiento para mis clientes?",
-    a: "Cada orden de trabajo genera un enlace único de seguimiento. Con un clic en 'Enviar WhatsApp', el cliente recibe el link y puede ver el estado en vivo de su vehículo, fotos del trabajo y el comprobante.",
+    a: "Cada orden genera un enlace para ver el trabajo. Con un toque en 'Enviar por WhatsApp', el cliente recibe el mensaje y puede ver las fotos del auto, el estado y el presupuesto detallado.",
   },
   {
-    q: "¿Tiene base de datos de filtros y lubricantes?",
-    a: "Sí. Incluye base de especificaciones técnicas por motorización (litros de aceite, viscosidad SAE y códigos de filtros cruzados Fram, Mann, Mahle, Bosch, etc.).",
+    q: "¿Tiene datos de lubricación y litros para cada auto?",
+    a: "Sí. Incluye las fichas de fábrica con la capacidad de cárter en litros y la viscosidad recomendada (5W-30, 10W-40) para más de 950 modelos de Argentina.",
   },
   {
-    q: "¿Puedo imprimir tickets en impresoras térmicas de 80mm?",
-    a: "Sí. Podés alternar entre comprobante oficial A4 y formato ticket térmico de 80mm para ticketeras de mostrador (POS-58 / POS-80).",
+    q: "¿Puedo enviar y descargar los comprobantes en PDF?",
+    a: "Totalmente. Podés generar el comprobante digital en PDF con un toque para enviar por WhatsApp o imprimir directamente en hoja A4 formal con el logo de tu taller.",
   },
   {
-    q: "¿Puedo usarlo con varios mecánicos y sueldos/comisiones?",
-    a: "Sí. Podés invitar a todos los mecánicos de tu taller con su propio usuario y asignarles órdenes específicas para llevar el control de cada fosa.",
+    q: "¿Los mecánicos pueden ver mis costos de compra o la caja?",
+    a: "No. El sistema separa por completo los perfiles. Los mecánicos ven únicamente las tareas a realizar y el checklist en la fosa, sin acceso a los costos de compra ni a la plata de la caja.",
   },
   {
-    q: "¿Qué pasa con los datos de mis clientes si cambio de computadora?",
-    a: "Toda tu información está respaldada y encriptada en la nube de forma segura. Entrás con tu correo desde cualquier dispositivo y tenés todos tus historiales al instante.",
+    q: "¿Qué pasa si cambio de celular o de computadora?",
+    a: "No perdés nada. Todo queda guardado de forma segura en tu cuenta. Entrás desde el celular o la máquina nueva y tenés todos tus clientes, autos y órdenes al día.",
   },
 ] as const;
 
@@ -398,10 +553,10 @@ export function Preguntas() {
         <Encabezado eyebrow="Preguntas frecuentes" titulo="Todo lo que necesitás saber" />
 
         <Reveal delay={0.08}>
-          <div className="border-b border-border">
+          <div className="border-b border-white/10">
             {FAQS.map((f) => (
-              <details key={f.q} className="group border-t border-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-6 text-base sm:text-lg font-bold text-foreground marker:hidden select-none">
+              <details key={f.q} className="group border-t border-white/10">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-6 text-base sm:text-lg font-bold text-white marker:hidden select-none">
                   <span>{f.q}</span>
                   <span
                     aria-hidden
@@ -410,7 +565,7 @@ export function Preguntas() {
                     +
                   </span>
                 </summary>
-                <p className="max-w-2xl pb-6 pr-6 text-sm sm:text-base leading-relaxed text-muted-foreground">
+                <p className="max-w-2xl pb-6 pr-6 text-sm sm:text-base leading-relaxed text-white/70">
                   {f.a}
                 </p>
               </details>

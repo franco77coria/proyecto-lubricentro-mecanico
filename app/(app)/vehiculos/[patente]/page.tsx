@@ -1,8 +1,9 @@
-import { ArrowLeft, Car, Gauge, Phone, Plus, User } from "lucide-react";
+import { ArrowLeft, Car, CheckCircle2, Gauge, Phone, Plus, User, Wrench } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EditarVehiculo } from "@/components/vehiculos/EditarVehiculo";
+import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { formatearPatente, normalizarPatente } from "@/lib/patente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
@@ -10,6 +11,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { formatearFecha, formatearMoneda, formatearNumero } from "@/lib/i18n";
+import { obtenerResponsablesOT, formatearRol, type DatosOTResponsables } from "@/lib/ot-usuarios";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +58,14 @@ export default async function HistorialVehiculo({
   const [{ data: ordenes }, { data: duenos }, { data: clientesTaller }] = await Promise.all([
     supabase
       .from("orden_trabajo")
-      .select("id, numero, estado, fecha_ingreso, km_ingreso, total")
+      .select(`
+        id, numero, estado, fecha_ingreso, fecha_entrega, km_ingreso, total, asignado_a,
+        mecanico:asignado_a ( user_id, nombre, rol ),
+        logs:ot_estado_log (
+          id, estado_anterior, estado_nuevo, creado_en, usuario_id,
+          usuario:usuario_id ( user_id, nombre, rol )
+        )
+      `)
       .eq("vehiculo_id", vehiculo.id)
       .order("fecha_ingreso", { ascending: false }),
     supabase
@@ -95,16 +104,19 @@ export default async function HistorialVehiculo({
           Volver a autos
         </Link>
 
-        <header className="entrar flex flex-wrap items-end justify-between gap-3" style={{ "--i": 1 } as React.CSSProperties}>
-          <div className="space-y-1">
-            <p className="t-seccion">{descripcion || "Sin marca ni modelo"}</p>
-            <h1 className="text-display text-4xl text-foreground">
-              {formatearPatente(vehiculo.patente)}
-            </h1>
+        <header className="entrar flex flex-wrap items-end justify-between gap-4" style={{ "--i": 1 } as React.CSSProperties}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3.5">
+            <PlacaPatente patente={vehiculo.patente} size="lg" />
+            <div>
+              <p className="t-seccion">{descripcion || "Sin marca ni modelo"}</p>
+              <h1 className="text-display text-2xl sm:text-3xl text-foreground font-extrabold tracking-tight">
+                {formatearPatente(vehiculo.patente)}
+              </h1>
+            </div>
           </div>
           <Link
             href={`/ot/nueva?patente=${encodeURIComponent(vehiculo.patente)}`}
-            className="flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
+            className="flex min-h-12 items-center gap-2 rounded-xl bg-accent px-5 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
             Nueva orden
@@ -120,32 +132,85 @@ export default async function HistorialVehiculo({
                 Este auto todavía no tuvo órdenes de trabajo.
               </p>
             ) : (
-              <ul className="space-y-2">
-                {lista.map((o, i) => (
-                  <li key={o.id} className="entrar" style={{ "--i": i + 2 } as React.CSSProperties}>
-                    <Link href={`/ot/${o.id}`} className="tarjeta tarjeta-accion flex items-center gap-3 p-3.5">
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-foreground">{o.numero}</span>
-                        <span className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground">
-                          <span>{fecha(o.fecha_ingreso)}</span>
-                          {o.km_ingreso != null && (
-                            <span className="tabular">· {formatearNumero(o.km_ingreso, idioma)} km</span>
+              <ul className="space-y-2.5">
+                {lista.map((o, i) => {
+                  const resp = obtenerResponsablesOT(o as unknown as DatosOTResponsables);
+                  return (
+                    <li key={o.id} className="entrar" style={{ "--i": i + 2 } as React.CSSProperties}>
+                      <Link
+                        href={`/ot/${o.id}`}
+                        className="tarjeta tarjeta-accion flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
+                      >
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-foreground">#{o.numero}</span>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[0.6875rem] font-semibold ${
+                                ESTADO_TONO[o.estado] ?? ""
+                              }`}
+                            >
+                              {ESTADO_LABEL[o.estado] ?? o.estado}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2.5 text-caption text-muted-foreground">
+                            <span>Ingreso: {fecha(o.fecha_ingreso)}</span>
+                            {o.km_ingreso != null && (
+                              <span className="tabular">· {formatearNumero(o.km_ingreso, idioma)} km</span>
+                            )}
+                          </div>
+
+                          {/* Responsables de la orden: Mecánico asignado y quién la cerró */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs">
+                            {resp.mecanicoNombre ? (
+                              <span className="inline-flex items-center gap-1.5 text-foreground/90 font-medium">
+                                <Wrench className="h-3.5 w-3.5 text-accent shrink-0" aria-hidden />
+                                <span>
+                                  Mecánico:{" "}
+                                  <strong className="font-semibold text-foreground">
+                                    {resp.mecanicoNombre}
+                                  </strong>
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                                <Wrench className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" aria-hidden />
+                                <span>Sin mecánico asignado</span>
+                              </span>
+                            )}
+
+                            {resp.cerradoPorNombre && (
+                              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" aria-hidden />
+                                <span>
+                                  Cerrado por:{" "}
+                                  <strong className="font-semibold">
+                                    {resp.cerradoPorNombre}
+                                  </strong>{" "}
+                                  <span className="text-muted-foreground font-normal">
+                                    ({formatearRol(resp.cerradoPorRol)})
+                                  </span>
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-border/60 shrink-0 gap-1">
+                          {esDueno && Number(o.total) > 0 && (
+                            <span className="tabular text-sm font-bold text-foreground">
+                              {money(Number(o.total))}
+                            </span>
                           )}
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 flex-col items-end gap-1">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[0.6875rem] font-semibold ${ESTADO_TONO[o.estado] ?? ""}`}>
-                          {ESTADO_LABEL[o.estado] ?? o.estado}
-                        </span>
-                        {esDueno && Number(o.total) > 0 && (
-                          <span className="tabular text-caption font-semibold text-foreground">
-                            {money(Number(o.total))}
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                          {resp.cerradoEn && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Entregado: {fecha(resp.cerradoEn)}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -214,9 +279,9 @@ export default async function HistorialVehiculo({
                           rel="noopener noreferrer"
                           aria-label={`Escribir a ${d.cliente.nombre} por WhatsApp`}
                           title={formatearTelefono(d.cliente.telefono)}
-                          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-suave text-accent"
+                          className="grid min-h-12 min-w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all"
                         >
-                          <Phone className="h-4 w-4" aria-hidden />
+                          <Phone className="h-4.5 w-4.5" aria-hidden />
                         </a>
                       )}
                     </li>

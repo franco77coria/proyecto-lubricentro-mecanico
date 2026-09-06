@@ -141,10 +141,10 @@ async function main() {
     }
     await client.query("rollback to savepoint sp");
 
-    // Basura rechazada, salvo que se marque formato especial.
+    // Basura rechazada (longitud < 2 o solo signos), salvo que se marque formato especial.
     await client.query("savepoint sp");
     try {
-      await client.query(`insert into public.vehiculo (taller_id, patente) values ($1, 'HOLA')`, [t.id]);
+      await client.query(`insert into public.vehiculo (taller_id, patente) values ($1, 'X')`, [t.id]);
       fail("aceptó una patente con formato inválido");
     } catch {
       ok("rechaza formatos inválidos");
