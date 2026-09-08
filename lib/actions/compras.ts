@@ -138,16 +138,21 @@ export async function borrarLineaRemito(
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase
+    const { data: borrados, error } = await supabase
       .from("compra_item")
       .delete()
       .eq("id", itemId)
       .eq("compra_id", compraId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       console.error("[borrarLineaRemito]", error.code);
       return { error: "No se pudo borrar el renglón." };
+    }
+
+    if (!borrados || borrados.length === 0) {
+      return { error: "No se encontró el renglón en este remito." };
     }
 
     revalidatePath("/compras");

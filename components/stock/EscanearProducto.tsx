@@ -4,8 +4,13 @@ import { ScanBarcode } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { LectorCodigo } from "@/components/campos/LectorCodigo";
-import { FORMATOS_PRODUCTO } from "@/lib/codigo";
+import dynamic from "next/dynamic";
+
+const LectorCodigo = dynamic(
+  () => import("@/components/campos/LectorCodigo").then((mod) => mod.LectorCodigo),
+  { ssr: false },
+);
+import { FORMATOS_PRODUCTO } from "@/lib/codigo-formatos";
 
 /**
  * Escanear un producto del estante.

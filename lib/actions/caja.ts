@@ -29,6 +29,9 @@ export const pagoSchema = z.object({
 export async function registrarPagoOT(datos: z.infer<typeof pagoSchema>): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Los mecánicos no tienen permiso para registrar cobros." };
+  }
 
   const parseado = pagoSchema.safeParse(datos);
   if (!parseado.success) return { error: parseado.error.issues[0].message };
@@ -38,6 +41,18 @@ export async function registrarPagoOT(datos: z.infer<typeof pagoSchema>): Promis
 
   try {
     const supabase = await crearClienteServidor();
+
+    // Validar que la OT pertenezca al taller
+    const { data: otExiste } = await supabase
+      .from("orden_trabajo")
+      .select("id")
+      .eq("id", d.otId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!otExiste) {
+      return { error: "Orden de trabajo no encontrada en este taller." };
+    }
 
     const { error } = await supabase.from("pago").insert({
       taller_id: tallerId,

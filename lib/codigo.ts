@@ -16,25 +16,15 @@
  * regenere solo que acordarse de copiarlo a mano.
  */
 
-import { prepareZXingModule, readBarcodes, type ReaderOptions } from "zxing-wasm/reader";
+import { prepareZXingModule, readBarcodes } from "zxing-wasm/reader";
+import { type FormatosCodigo } from "./codigo-formatos.ts";
 
-export type FormatosCodigo = NonNullable<ReaderOptions["formats"]>;
-
-/** Los dos formatos que traen las cédulas del Mercosur. */
-export const FORMATOS_CEDULA: FormatosCodigo = ["PDF417", "QRCode"];
-
-/** Lo que trae pegado un bidón de aceite o la caja de un filtro. */
-export const FORMATOS_PRODUCTO: FormatosCodigo = [
-  "EAN13",
-  "EAN8",
-  "UPCA",
-  "UPCE",
-  "Code128",
-  "Code39",
-  "ITF",
-  "QRCode",
-  "DataMatrix",
-];
+export {
+  FORMATOS_CEDULA,
+  FORMATOS_PRODUCTO,
+  type FormatoCodigo,
+  type FormatosCodigo,
+} from "./codigo-formatos.ts";
 
 let preparado = false;
 let binarioWasm: ArrayBuffer | null = null;

@@ -5,6 +5,8 @@ import { unstable_rethrow } from "next/navigation";
 
 import { vehiculoEspecialSchema, vehiculoSchema } from "@/lib/schemas/vehiculo";
 import { normalizarTelefono } from "@/lib/telefono";
+import { hoyEnZona } from "@/lib/fechas";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import type { Database } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
@@ -82,6 +84,7 @@ export async function crearVehiculo(
              motorizacion:motorizacion_id(nombre)`,
           )
           .eq("patente_norm", d.patente)
+          .eq("taller_id", tallerId)
           .maybeSingle();
 
         if (existente) {
@@ -126,6 +129,7 @@ export async function crearVehiculo(
               .from("vehiculo_cliente")
               .select("cliente_id")
               .eq("vehiculo_id", existente.id)
+              .eq("taller_id", tallerId)
               .is("hasta", null)
               .maybeSingle();
             resolvedClienteId = vc?.cliente_id;
@@ -212,13 +216,19 @@ async function resolverOCrearCliente(
 
   // 2. Buscar por nombre y apellido
   if (nom) {
-    const { data: porNombre } = await supabase
+    let query = supabase
       .from("cliente")
       .select("id")
       .eq("taller_id", tallerId)
-      .ilike("nombre", nom)
-      .ilike("apellido", ape || "%")
-      .maybeSingle();
+      .ilike("nombre", nom);
+
+    if (ape) {
+      query = query.ilike("apellido", ape);
+    } else {
+      query = query.or("apellido.eq.'',apellido.is.null");
+    }
+
+    const { data: porNombre } = await query.maybeSingle();
 
     if (porNombre) return porNombre.id;
   }
@@ -252,12 +262,15 @@ export async function vincularVehiculoACliente(
   try {
     const supabase = await crearClienteServidor();
     const tallerId = sesion.perfil.taller_id;
+    const { zonaHoraria } = await obtenerAjustesTaller();
+    const hoy = hoyEnZona(zonaHoraria);
 
     // Cerrar dueño anterior si existía
     await supabase
       .from("vehiculo_cliente")
-      .update({ hasta: new Date().toISOString() })
+      .update({ hasta: hoy })
       .eq("vehiculo_id", vehiculoId)
+      .eq("taller_id", tallerId)
       .is("hasta", null);
 
     // Insertar nuevo vínculo
@@ -265,7 +278,7 @@ export async function vincularVehiculoACliente(
       taller_id: tallerId,
       vehiculo_id: vehiculoId,
       cliente_id: clienteId,
-      desde: new Date().toISOString(),
+      desde: hoy,
     });
 
     if (error) return { error: "No se pudo vincular el vehículo" };
@@ -290,11 +303,14 @@ export async function cambiarDuenoVehiculo(
   try {
     const supabase = await crearClienteServidor();
     const tallerId = sesion.perfil.taller_id;
+    const { zonaHoraria } = await obtenerAjustesTaller();
+    const hoy = hoyEnZona(zonaHoraria);
 
     const { error: errorCerrar } = await supabase
       .from("vehiculo_cliente")
-      .update({ hasta: new Date().toISOString() })
+      .update({ hasta: hoy })
       .eq("vehiculo_id", vehiculoId)
+      .eq("taller_id", tallerId)
       .is("hasta", null);
 
     if (errorCerrar) {
@@ -306,6 +322,7 @@ export async function cambiarDuenoVehiculo(
       taller_id: tallerId,
       vehiculo_id: vehiculoId,
       cliente_id: nuevoClienteId,
+      desde: hoy,
     });
 
     if (errorAbrir) {

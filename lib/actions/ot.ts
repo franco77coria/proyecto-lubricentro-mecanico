@@ -87,6 +87,7 @@ export async function crearOrdenTrabajo(datos: DatosCrearOT): Promise<{ otId?: s
         .from("checklist_plantilla_item")
         .select("id, etiqueta, orden")
         .eq("plantilla_id", plantilla.id)
+        .eq("taller_id", tallerId)
         .eq("activo", true)
         .order("orden", { ascending: true });
 
@@ -204,6 +205,16 @@ export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ 
   try {
     const supabase = await crearClienteServidor();
 
+    // Verificar que la orden de trabajo pertenezca al taller
+    const { data: otExiste } = await supabase
+      .from("orden_trabajo")
+      .select("id")
+      .eq("id", otId)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .maybeSingle();
+
+    if (!otExiste) return { error: "Orden de trabajo no encontrada en este taller." };
+
     // El costo sale del ledger, no del cliente. Es la diferencia entre un
     // reporte de rentabilidad real y uno donde el margen es igual al precio de
     // venta porque el costo llegaba siempre en 0.
@@ -263,16 +274,14 @@ export async function agregarItemOT(otId: string, item: DatosItemOT): Promise<{ 
 export async function actualizarItemOT(
   otId: string,
   itemId: string,
-  item: {
-    tipo: "mano_obra" | "repuesto" | "servicio" | "insumo" | "tercero";
-    descripcion: string;
-    cantidad: number;
-    precioUnitario: number;
-    productoId?: string | null;
-  },
+  item: DatosItemOT,
 ): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  const parseado = itemOTSchema.safeParse(item);
+  if (!parseado.success) return { error: parseado.error.issues[0].message };
+  const d = parseado.data;
 
   try {
     const supabase = await crearClienteServidor();
@@ -294,24 +303,24 @@ export async function actualizarItemOT(
 
     if (!previo) return { error: "No se encontró el ítem." };
 
-    const nuevoProductoId = item.productoId || null;
+    const nuevoProductoId = d.productoId || null;
     const cambioElProducto = previo.producto_id !== nuevoProductoId;
 
     // El tipo se declara entero con el costo opcional en vez de armarlo con un
     // spread condicional: con un spread, TypeScript infiere un union y deja de
     // validar la fila contra la tabla.
     const campos: {
-      tipo: typeof item.tipo;
+      tipo: typeof d.tipo;
       descripcion: string;
       cantidad: number;
       precio_unitario: number;
       producto_id: string | null;
       costo_unitario?: number;
     } = {
-      tipo: item.tipo,
-      descripcion: item.descripcion.trim(),
-      cantidad: item.cantidad,
-      precio_unitario: item.precioUnitario,
+      tipo: d.tipo,
+      descripcion: d.descripcion.trim(),
+      cantidad: d.cantidad,
+      precio_unitario: d.precioUnitario,
       producto_id: nuevoProductoId,
     };
 
@@ -326,11 +335,12 @@ export async function actualizarItemOT(
       campos.costo_unitario = costoUnitario;
     }
 
-    const { error } = await supabase
+    const { data: actualizado, error } = await supabase
       .from("ot_item")
       .update(campos)
       .eq("id", itemId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       if (error.message?.includes("stock") || error.code === "P0001") {
@@ -339,9 +349,13 @@ export async function actualizarItemOT(
       return { error: "No se pudo actualizar el ítem." };
     }
 
+    if (!actualizado || actualizado.length === 0) {
+      return { error: "No se encontró el ítem en este taller." };
+    }
+
     revalidatePath(`/ot/${otId}`);
     revalidatePath(`/presupuestos/${otId}`);
-    if (item.productoId) revalidatePath("/stock");
+    if (d.productoId) revalidatePath("/stock");
     return { ok: true };
   } catch (err) {
     unstable_rethrow(err);
@@ -356,15 +370,21 @@ export async function eliminarItemOT(otId: string, itemId: string): Promise<{ ok
   try {
     const supabase = await crearClienteServidor();
 
-    const { error } = await supabase
+    const { data: eliminados, error } = await supabase
       .from("ot_item")
       .delete()
       .eq("id", itemId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("ot_id", otId)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       console.error("[eliminarItemOT]", error.code);
       return { error: "No se pudo eliminar el ítem." };
+    }
+
+    if (!eliminados || eliminados.length === 0) {
+      return { error: "No se encontró el ítem en esta orden." };
     }
 
     revalidatePath(`/ot/${otId}`);

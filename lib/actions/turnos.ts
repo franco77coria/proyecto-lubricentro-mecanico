@@ -48,12 +48,14 @@ const turnoSchema = z.object({
 export type DatosNuevoTurno = z.infer<typeof turnoSchema>;
 
 export async function listarTurnos(desde: Date, hasta: Date): Promise<Turno[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await crearClienteServidor()) as any;
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return [];
+
+  const supabase = await crearClienteServidor();
   const { data, error } = await supabase
     .from("turno")
     .select(`
-      *,
+      id, taller_id, cliente_id, vehiculo_id, fecha_hora, motivo, notas, estado, creado_por, creado_en, actualizado_en,
       cliente (nombre, telefono),
       vehiculo (
         patente,
@@ -66,6 +68,7 @@ export async function listarTurnos(desde: Date, hasta: Date): Promise<Turno[]> {
         )
       )
     `)
+    .eq("taller_id", sesion.perfil.taller_id)
     .gte("fecha_hora", desde.toISOString())
     .lte("fecha_hora", hasta.toISOString())
     .order("fecha_hora", { ascending: true });
@@ -85,8 +88,7 @@ export async function crearTurno(datos: DatosNuevoTurno): Promise<{ id?: string;
   if (!validado.success) return { error: "Datos inválidos" };
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = (await crearClienteServidor()) as any;
+    const supabase = await crearClienteServidor();
     const { data, error } = await supabase
       .from("turno")
       .insert({
@@ -114,15 +116,18 @@ export async function crearTurno(datos: DatosNuevoTurno): Promise<{ id?: string;
 }
 
 export async function cambiarEstadoTurno(id: string, estado: EstadoTurno): Promise<{ success: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { success: false, error: "No autorizado" };
+
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = (await crearClienteServidor()) as any;
+    const supabase = await crearClienteServidor();
     
-    // 1. Obtener estado actual
+    // 1. Obtener estado actual garantizando tenant
     const { data: turnoActual, error: errorFetch } = await supabase
       .from("turno")
       .select("estado")
       .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
       .single();
       
     if (errorFetch || !turnoActual) {
@@ -145,14 +150,15 @@ export async function cambiarEstadoTurno(id: string, estado: EstadoTurno): Promi
     }
     
     // 3. Actualizar (dejando que el trigger actualice actualizado_en)
-    const { error } = await supabase
+    const { data: actualizado, error } = await supabase
       .from("turno")
       .update({ estado })
       .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
       .select("id")
       .single();
       
-    if (error) throw error;
+    if (error || !actualizado) throw error || new Error("No se pudo actualizar el turno");
     
     revalidatePath("/turnos");
     return { success: true };

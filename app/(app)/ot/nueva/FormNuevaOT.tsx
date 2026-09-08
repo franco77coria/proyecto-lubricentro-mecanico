@@ -5,12 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-import { LectorCodigo } from "@/components/campos/LectorCodigo";
+import dynamic from "next/dynamic";
+
+const LectorCodigo = dynamic(
+  () => import("@/components/campos/LectorCodigo").then((mod) => mod.LectorCodigo),
+  { ssr: false },
+);
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
 import { useIsla } from "@/components/isla/IslaContext";
 import { interpretarCedula } from "@/lib/cedula";
-import { FORMATOS_CEDULA } from "@/lib/codigo";
+import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
 import { resolverDesdeCedula, type OpcionCatalogo } from "@/lib/actions/catalogo";
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
 import { crearVehiculo } from "@/lib/actions/vehiculos";

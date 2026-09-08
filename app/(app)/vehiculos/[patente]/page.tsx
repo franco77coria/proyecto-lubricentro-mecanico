@@ -51,6 +51,7 @@ export default async function HistorialVehiculo({
        marca:marca_id(nombre), modelo:modelo_id(nombre)`,
     )
     .eq("patente_norm", norm)
+    .eq("taller_id", sesion.perfil.taller_id)
     .maybeSingle();
 
   if (!vehiculo) notFound();
@@ -66,11 +67,13 @@ export default async function HistorialVehiculo({
           usuario:usuario_id ( user_id, nombre, rol )
         )
       `)
+      .eq("taller_id", sesion.perfil.taller_id)
       .eq("vehiculo_id", vehiculo.id)
       .order("fecha_ingreso", { ascending: false }),
     supabase
       .from("vehiculo_cliente")
       .select("desde, hasta, cliente:cliente_id(id, nombre, apellido, telefono)")
+      .eq("taller_id", sesion.perfil.taller_id)
       .eq("vehiculo_id", vehiculo.id)
       .order("desde", { ascending: false }),
     supabase

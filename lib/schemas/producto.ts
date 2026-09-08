@@ -38,3 +38,16 @@ export const productoSchema = z.object({
 });
 
 export type DatosProducto = z.infer<typeof productoSchema>;
+
+export const editarProductoSchema = z.object({
+  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
+  marca: z.string().trim().optional(),
+  categoria: z.string().trim().optional(),
+  precioVenta: z.coerce.number().min(0, "El precio de venta no puede ser negativo").optional(),
+  stockMin: z.coerce.number().min(0, "El stock mínimo no puede ser negativo").optional(),
+  sku: z.string().trim().optional(),
+  codigoBarras: z.string().trim().optional(),
+});
+
+export type DatosEditarProducto = z.infer<typeof editarProductoSchema>;
+

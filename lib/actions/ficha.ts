@@ -94,13 +94,26 @@ export async function cargarAceiteDeFicha(
 
   try {
     const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    // Verificar que la OT pertenezca al taller
+    const { data: otExistente } = await supabase
+      .from("orden_trabajo")
+      .select("id")
+      .eq("id", otId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!otExistente) {
+      return { error: "Orden de trabajo no encontrada o no pertenece a tu taller." };
+    }
 
     // Se traen los aceites del taller y se compara normalizado: hacerlo en SQL
     // pediría un ilike por cada forma de escribir la viscosidad.
     const { data: candidatos } = await supabase
       .from("producto")
       .select("id, nombre, precio_venta, unidad")
-      .eq("taller_id", sesion.perfil.taller_id)
+      .eq("taller_id", tallerId)
       .eq("activo", true)
       .limit(500);
 

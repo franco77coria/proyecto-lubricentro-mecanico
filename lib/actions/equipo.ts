@@ -171,8 +171,16 @@ export async function cancelarInvitacion(id: string): Promise<ResultadoEquipo> {
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase.from("invitacion").delete().eq("id", id);
-    if (error) return { error: "No se pudo cancelar" };
+    const { data: eliminados, error } = await supabase
+      .from("invitacion")
+      .delete()
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
+
+    if (error || !eliminados || eliminados.length === 0) {
+      return { error: "No se pudo cancelar o no pertenece al taller" };
+    }
 
     revalidatePath("/config");
     return { ok: true };
@@ -211,19 +219,24 @@ export async function cambiarRolMiembro(
       }
     }
 
-    // El filtro por taller va explícito además de la política de RLS. RLS ya
-    // lo impide, pero el signOut de abajo corre con el cliente admin, que la
-    // saltea: si el id no se validó acá, un dueño podría desloguear a alguien
-    // de otro taller.
-    const { error } = await supabase
+    // El filtro por taller va explícito además de la política de RLS.
+    // Usamos .select('user_id') para confirmar que efectivamente se actualizó
+    // una fila de NUESTRO taller. Si retorna 0 filas, NO ejecutamos el signOut
+    // administrativo (prevención de desconexión cruzada de cuentas).
+    const { data: filasActualizadas, error } = await supabase
       .from("perfil")
       .update({ rol, activo })
       .eq("user_id", userId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("user_id");
 
     if (error) {
       console.error("[cambiarRolMiembro]", error.code);
       return { error: "No se pudo actualizar" };
+    }
+
+    if (!filasActualizadas || filasActualizadas.length === 0) {
+      return { error: "No se encontró el miembro en este taller" };
     }
 
     // Suspender tiene que sacar a la persona AHORA.

@@ -55,7 +55,8 @@ export async function registrarPulsoActividad(datos: { ruta: string; segundosAct
           pantallas_visitadas: Array.from(pantallas),
           actualizado_en: new Date().toISOString(),
         })
-        .eq("id", actual.id);
+        .eq("id", actual.id)
+        .eq("taller_id", tallerId);
     } else {
       await supabase.from("registro_actividad_usuario").insert({
         taller_id: tallerId,

@@ -688,9 +688,22 @@ export async function aplicarHallazgosANotas(
   try {
     const supabase = await crearClienteServidor();
 
+    // Verificar que la OT pertenezca al taller
+    const { data: otExistente } = await supabase
+      .from("orden_trabajo")
+      .select("id")
+      .eq("id", otId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!otExistente) {
+      return { error: "Orden de trabajo no encontrada o no pertenece a tu taller." };
+    }
+
     const { count } = await supabase
       .from("ot_nota")
       .select("*", { count: "exact", head: true })
+      .eq("taller_id", tallerId)
       .eq("ot_id", otId)
       .eq("tipo", "anomalia");
 

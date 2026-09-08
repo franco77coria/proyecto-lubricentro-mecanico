@@ -3,12 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
-import { productoSchema, type DatosProducto } from "@/lib/schemas/producto";
+import {
+  productoSchema,
+  editarProductoSchema,
+  type DatosProducto,
+  type DatosEditarProducto,
+} from "@/lib/schemas/producto";
+import type { Database } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export async function crearProducto(datos: DatosProducto): Promise<{ productoId?: string; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Solo mostrador o dueño pueden crear productos." };
+  }
 
   const parseado = productoSchema.safeParse(datos);
   if (!parseado.success) return { error: parseado.error.issues[0].message };
@@ -77,6 +86,9 @@ export async function registrarMovimientoStock(
 ): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Los movimientos manuales de stock están reservados a mostrador y dueño." };
+  }
 
   if (cantidad === 0) return { error: "La cantidad debe ser distinta de cero." };
 
@@ -107,41 +119,43 @@ export async function registrarMovimientoStock(
 
 export async function editarProducto(
   productoId: string,
-  datos: {
-    nombre?: string;
-    marca?: string;
-    categoria?: string;
-    precioVenta?: number;
-    stockMin?: number;
-    sku?: string;
-    codigoBarras?: string;
-  },
+  datos: DatosEditarProducto,
 ): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Solo mostrador o dueño pueden editar productos." };
+  }
+
+  const validado = editarProductoSchema.safeParse(datos);
+  if (!validado.success) {
+    return { error: validado.error.issues[0].message };
+  }
+
+  const d = validado.data;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = (await crearClienteServidor()) as any;
+    const supabase = await crearClienteServidor();
 
-    const updatePayload: Record<string, unknown> = {};
-    if (datos.nombre !== undefined) updatePayload.nombre = datos.nombre;
-    if (datos.marca !== undefined) updatePayload.marca = datos.marca || null;
-    if (datos.categoria !== undefined) updatePayload.categoria = datos.categoria || null;
-    if (datos.precioVenta !== undefined) updatePayload.precio_venta = datos.precioVenta;
-    if (datos.stockMin !== undefined) updatePayload.stock_min = datos.stockMin;
-    if (datos.sku !== undefined) updatePayload.sku = datos.sku || null;
-    if (datos.codigoBarras !== undefined) updatePayload.codigo_barras = datos.codigoBarras || null;
+    const updatePayload: Database["public"]["Tables"]["producto"]["Update"] = {};
+    if (d.nombre !== undefined) updatePayload.nombre = d.nombre;
+    if (d.marca !== undefined) updatePayload.marca = d.marca || null;
+    if (d.categoria !== undefined) updatePayload.categoria = d.categoria || null;
+    if (d.precioVenta !== undefined) updatePayload.precio_venta = d.precioVenta;
+    if (d.stockMin !== undefined) updatePayload.stock_min = d.stockMin;
+    if (d.sku !== undefined) updatePayload.sku = d.sku || null;
+    if (d.codigoBarras !== undefined) updatePayload.codigo_barras = d.codigoBarras || null;
 
     if (Object.keys(updatePayload).length === 0) {
       return { error: "No se enviaron campos para actualizar." };
     }
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("producto")
       .update(updatePayload)
       .eq("id", productoId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       if (error.code === "23505") {
@@ -149,6 +163,10 @@ export async function editarProducto(
       }
       console.error("[editarProducto]", error);
       return { error: "No se pudo actualizar el producto." };
+    }
+
+    if (!updated || updated.length === 0) {
+      return { error: "Producto no encontrado en este taller." };
     }
 
     revalidatePath("/stock");
@@ -162,15 +180,19 @@ export async function editarProducto(
 export async function eliminarProducto(productoId: string): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "Solo mostrador o dueño pueden eliminar productos." };
+  }
 
   try {
     const supabase = await crearClienteServidor();
 
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from("producto")
       .delete()
       .eq("id", productoId)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       // Foreign key violation — the product is referenced by an OT item or stock movement
@@ -179,6 +201,10 @@ export async function eliminarProducto(productoId: string): Promise<{ ok?: boole
       }
       console.error("[eliminarProducto]", error);
       return { error: "No se pudo eliminar el producto." };
+    }
+
+    if (!deleted || deleted.length === 0) {
+      return { error: "Producto no encontrado en este taller." };
     }
 
     revalidatePath("/stock");

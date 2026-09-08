@@ -45,8 +45,21 @@ export async function ingresarStock(datos: {
 
   try {
     const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    const { data: prodExistente } = await supabase
+      .from("producto")
+      .select("id")
+      .eq("id", parseado.data.productoId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!prodExistente) {
+      return { error: "El producto no existe o no pertenece a tu taller" };
+    }
+
     const { error } = await supabase.from("movimiento_stock").insert({
-      taller_id: sesion.perfil.taller_id,
+      taller_id: tallerId,
       producto_id: parseado.data.productoId,
       tipo: "compra",
       cantidad: parseado.data.cantidad,
@@ -65,6 +78,7 @@ export async function ingresarStock(datos: {
       .from("producto")
       .select("stock")
       .eq("id", parseado.data.productoId)
+      .eq("taller_id", tallerId)
       .single();
 
     revalidatePath("/stock");
@@ -105,11 +119,13 @@ export async function ajustarStock(datos: {
 
   try {
     const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
 
     const { data: prod } = await supabase
       .from("producto")
       .select("stock")
       .eq("id", parseado.data.productoId)
+      .eq("taller_id", tallerId)
       .maybeSingle();
 
     if (!prod) return { error: "El producto no existe" };
@@ -118,7 +134,7 @@ export async function ajustarStock(datos: {
     if (diferencia === 0) return { stockNuevo: Number(prod.stock) };
 
     const { error } = await supabase.from("movimiento_stock").insert({
-      taller_id: sesion.perfil.taller_id,
+      taller_id: tallerId,
       producto_id: parseado.data.productoId,
       tipo: "ajuste",
       cantidad: diferencia,
@@ -152,10 +168,14 @@ export interface MovimientoHistorial {
 /** Últimos movimientos de un producto, para explicar por qué el stock es el
  *  que es. Un número suelto sin historial no se puede auditar. */
 export async function historialProducto(productoId: string): Promise<MovimientoHistorial[]> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return [];
+
   const supabase = await crearClienteServidor();
   const { data } = await supabase
     .from("movimiento_stock")
     .select("id, tipo, cantidad, motivo, creado_en")
+    .eq("taller_id", sesion.perfil.taller_id)
     .eq("producto_id", productoId)
     .order("creado_en", { ascending: false })
     .limit(20);

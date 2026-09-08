@@ -147,6 +147,9 @@ export async function agregarItemChecklist(
 ): Promise<ResultadoConfig> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida" };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "No tenés permiso para modificar el checklist" };
+  }
 
   const limpia = etiqueta.trim();
   if (limpia.length < 2) return { error: "El nombre del ítem es muy corto" };
@@ -154,17 +157,31 @@ export async function agregarItemChecklist(
 
   try {
     const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    // Verificar que la plantilla pertenezca al taller
+    const { data: plantilla } = await supabase
+      .from("checklist_plantilla")
+      .select("id")
+      .eq("id", plantillaId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!plantilla) {
+      return { error: "Plantilla no encontrada" };
+    }
 
     const { data: ultimo } = await supabase
       .from("checklist_plantilla_item")
       .select("orden")
+      .eq("taller_id", tallerId)
       .eq("plantilla_id", plantillaId)
       .order("orden", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     const { error } = await supabase.from("checklist_plantilla_item").insert({
-      taller_id: sesion.perfil.taller_id,
+      taller_id: tallerId,
       plantilla_id: plantillaId,
       etiqueta: limpia,
       categoria: categoria?.trim() || null,
@@ -194,15 +211,21 @@ export async function agregarItemChecklist(
 export async function quitarItemChecklist(itemId: string): Promise<ResultadoConfig> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida" };
+  if (sesion.perfil.rol === "mecanico") {
+    return { error: "No tenés permiso para modificar el checklist" };
+  }
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("checklist_plantilla_item")
       .update({ activo: false })
-      .eq("id", itemId);
+      .eq("id", itemId)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id")
+      .maybeSingle();
 
-    if (error) return { error: "No se pudo quitar el ítem" };
+    if (error || !updated) return { error: "No se pudo quitar el ítem" };
 
     revalidatePath("/config");
     return { ok: true };

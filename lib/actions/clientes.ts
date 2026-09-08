@@ -73,12 +73,20 @@ export async function actualizarCliente(id: string, datos: unknown): Promise<Res
 
   try {
     const supabase = await crearClienteServidor();
-    // RLS acota al propio taller: no hace falta filtrar por taller_id acá.
-    const { error } = await supabase.from("cliente").update(armarFila(parseado.data)).eq("id", id);
+    const { data: actualizado, error } = await supabase
+      .from("cliente")
+      .update(armarFila(parseado.data))
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       console.error("[actualizarCliente]", error.code);
       return { error: "No se pudieron guardar los cambios" };
+    }
+
+    if (!actualizado || actualizado.length === 0) {
+      return { error: "Cliente no encontrado en este taller" };
     }
 
     revalidatePath("/clientes");
@@ -115,13 +123,18 @@ export async function cambiarDuenoVehiculo(
       .from("vehiculo_cliente")
       .select("id, cliente_id")
       .eq("vehiculo_id", vehiculoId)
+      .eq("taller_id", sesion.perfil.taller_id)
       .is("hasta", null)
       .maybeSingle();
 
     if (vigente?.cliente_id === clienteId) return { ok: true };
 
     if (vigente) {
-      await supabase.from("vehiculo_cliente").update({ hasta: hoy }).eq("id", vigente.id);
+      await supabase
+        .from("vehiculo_cliente")
+        .update({ hasta: hoy })
+        .eq("id", vigente.id)
+        .eq("taller_id", sesion.perfil.taller_id);
     }
 
     const { error } = await supabase.from("vehiculo_cliente").insert({
@@ -170,7 +183,7 @@ export async function actualizarVehiculo(id: string, datos: unknown): Promise<Re
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase
+    const { data: actualizado, error } = await supabase
       .from("vehiculo")
       .update({
         anio: d.anio ?? null,
@@ -182,11 +195,17 @@ export async function actualizarVehiculo(id: string, datos: unknown): Promise<Re
         km_actualizado_en: d.km != null ? new Date().toISOString() : null,
         combustible: d.combustible || null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
 
     if (error) {
       console.error("[actualizarVehiculo]", error.code);
       return { error: "No se pudieron guardar los cambios" };
+    }
+
+    if (!actualizado || actualizado.length === 0) {
+      return { error: "Vehículo no encontrado en este taller" };
     }
 
     revalidatePath("/vehiculos");
@@ -204,12 +223,14 @@ export async function obtenerClienteDetalle(clienteId: string) {
   try {
     const supabase = await crearClienteServidor();
 
+    const tallerId = sesion.perfil.taller_id;
     const [{ data: cliente }, { data: vehiculosCliente }, { data: ordenes }] = await Promise.all([
       supabase
         .from("cliente")
-        .select("*")
+        .select("id, taller_id, nombre, apellido, telefono, email, documento, notas, archivado, creado_en")
         .eq("id", clienteId)
-        .single(),
+        .eq("taller_id", tallerId)
+        .maybeSingle(),
       supabase
         .from("vehiculo_cliente")
         .select(`
@@ -221,6 +242,7 @@ export async function obtenerClienteDetalle(clienteId: string) {
           )
         `)
         .eq("cliente_id", clienteId)
+        .eq("taller_id", tallerId)
         .order("desde", { ascending: false }),
       supabase
         .from("orden_trabajo")
@@ -234,6 +256,7 @@ export async function obtenerClienteDetalle(clienteId: string) {
           vehiculo:vehiculo_id ( patente, marca:marca_id(nombre), modelo:modelo_id(nombre) )
         `)
         .eq("cliente_id", clienteId)
+        .eq("taller_id", tallerId)
         .order("fecha_ingreso", { ascending: false }),
     ]);
 

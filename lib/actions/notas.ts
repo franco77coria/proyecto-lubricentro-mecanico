@@ -87,8 +87,17 @@ export async function quitarNota(notaId: string, otId: string): Promise<Resultad
 
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase.from("ot_nota").delete().eq("id", notaId);
-    if (error) return { error: "No se pudo borrar" };
+    const { data: borrados, error } = await supabase
+      .from("ot_nota")
+      .delete()
+      .eq("id", notaId)
+      .eq("ot_id", otId)
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id");
+
+    if (error || !borrados || borrados.length === 0) {
+      return { error: "No se pudo borrar o la nota no pertenece a esta orden" };
+    }
 
     revalidatePath(`/ot/${otId}`);
     return { ok: true };

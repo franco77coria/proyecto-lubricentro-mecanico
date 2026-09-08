@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
-import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS } from "@/lib/storage";
+import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS, esPathValido } from "@/lib/storage";
 
 export type TipoFoto = "cedula" | "estado_ingreso" | "dano" | "comprobante";
 
@@ -29,10 +29,8 @@ export async function registrarFoto(
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida" };
 
-  // El path tiene que caer dentro de la carpeta del taller. Sin este chequeo,
-  // un cliente modificado podría registrar contra la OT propia un archivo
-  // guardado en la carpeta de otro taller.
-  if (!path.startsWith(`${sesion.perfil.taller_id}/`)) {
+  // El path tiene que caer estrictamente dentro de la carpeta del taller y sin path traversal.
+  if (!esPathValido(path, sesion.perfil.taller_id)) {
     return { error: "Ruta de archivo inválida" };
   }
 
@@ -74,13 +72,21 @@ export async function borrarFoto(fotoId: string, otId: string): Promise<Resultad
       .from("ot_foto")
       .select("path")
       .eq("id", fotoId)
+      .eq("taller_id", sesion.perfil.taller_id)
       .maybeSingle();
 
-    // RLS ya limita a las del propio taller: si no aparece, no es de acá.
     if (!foto) return { error: "La foto no existe" };
 
-    await supabase.storage.from(BUCKET_FOTOS).remove([foto.path]);
-    const { error } = await supabase.from("ot_foto").delete().eq("id", fotoId);
+    if (esPathValido(foto.path, sesion.perfil.taller_id)) {
+      await supabase.storage.from(BUCKET_FOTOS).remove([foto.path]);
+    }
+
+    const { error } = await supabase
+      .from("ot_foto")
+      .delete()
+      .eq("id", fotoId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
     if (error) return { error: "No se pudo borrar la foto" };
 
     revalidatePath(`/ot/${otId}`);
@@ -104,7 +110,7 @@ export async function guardarFirma(
 ): Promise<ResultadoFoto> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida" };
-  if (!path.startsWith(`${sesion.perfil.taller_id}/`)) return { error: "Ruta de archivo inválida" };
+  if (!esPathValido(path, sesion.perfil.taller_id)) return { error: "Ruta de archivo inválida" };
 
   try {
     const supabase = await crearClienteServidor();

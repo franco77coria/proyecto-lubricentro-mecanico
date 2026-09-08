@@ -2009,6 +2009,70 @@ export type Database = {
           },
         ]
       }
+      turno: {
+        Row: {
+          actualizado_en: string
+          cliente_id: string | null
+          creado_en: string
+          creado_por: string
+          estado: Database["public"]["Enums"]["estado_turno"]
+          fecha_hora: string
+          id: string
+          motivo: string
+          notas: string | null
+          taller_id: string
+          vehiculo_id: string | null
+        }
+        Insert: {
+          actualizado_en?: string
+          cliente_id?: string | null
+          creado_en?: string
+          creado_por: string
+          estado?: Database["public"]["Enums"]["estado_turno"]
+          fecha_hora: string
+          id?: string
+          motivo: string
+          notas?: string | null
+          taller_id: string
+          vehiculo_id?: string | null
+        }
+        Update: {
+          actualizado_en?: string
+          cliente_id?: string | null
+          creado_en?: string
+          creado_por?: string
+          estado?: Database["public"]["Enums"]["estado_turno"]
+          fecha_hora?: string
+          id?: string
+          motivo?: string
+          notas?: string | null
+          taller_id?: string
+          vehiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turno_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turno_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turno_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2174,6 +2238,12 @@ export type Database = {
         | "contactado"
         | "cumplido"
         | "descartado"
+      estado_turno:
+        | "pendiente"
+        | "confirmado"
+        | "ingresado"
+        | "cancelado"
+        | "no_asistio"
       metodo_pago:
         | "efectivo"
         | "transferencia"

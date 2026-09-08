@@ -74,6 +74,7 @@ export default async function PaginaTablero() {
       .from("orden_trabajo")
       .select("total, estado")
       .eq("taller_id", tallerId)
+      .in("estado", ["entregado", "cerrado"])
       .gte("fecha_ingreso", inicioMes.toISOString()),
     supabase
       .from("orden_trabajo")

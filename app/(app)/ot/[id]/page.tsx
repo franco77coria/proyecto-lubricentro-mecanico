@@ -74,9 +74,9 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
 
   // 3. Obtener ítems, checklist, notas, pagos y logs de estado
   const [{ data: items }, { data: checklist }, { data: notas }, { data: pagos }, { data: logsEstado }] = await Promise.all([
-    supabase.from("ot_item").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
-    supabase.from("ot_checklist").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
-    supabase.from("ot_nota").select("*").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("ot_item").select("id, tipo, descripcion, producto_id, cantidad, precio_unitario, subtotal, orden").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("ot_checklist").select("id, item_id, etiqueta_snapshot, orden, estado, nota, actualizado_por, actualizado_en").eq("ot_id", ot.id).order("orden", { ascending: true }),
+    supabase.from("ot_nota").select("id, tipo, texto, precio_estimado, orden, creado_en, visible_cliente, responde_a_id, creado_por").eq("ot_id", ot.id).order("orden", { ascending: true }),
     supabase.from("pago").select("id, metodo, monto, fecha").eq("ot_id", ot.id).order("fecha", { ascending: true }),
     supabase
       .from("ot_estado_log")

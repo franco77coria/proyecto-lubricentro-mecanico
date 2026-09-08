@@ -43,13 +43,13 @@ export async function analizarComprobanteCompraAction(
       return { error: "La imagen no llegó en un formato que se pueda leer." };
     }
 
-    // Comprobante ya guardado. RLS limita `compra_foto` al propio taller, así
-    // que si no aparece es que no es de acá.
+    // Comprobante ya guardado. Filtrar explícitamente por taller_id para defensa en profundidad
     const supabase = await crearClienteServidor();
     const { data: foto } = await supabase
       .from("compra_foto")
       .select("path")
       .eq("id", fotoIdODataUri)
+      .eq("taller_id", sesion.perfil.taller_id)
       .maybeSingle();
 
     if (!foto) return { error: "No se encontró el comprobante en el sistema." };

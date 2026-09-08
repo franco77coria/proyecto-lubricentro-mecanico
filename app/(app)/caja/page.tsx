@@ -53,7 +53,7 @@ export default async function PaginaCaja() {
   // 3. Obtener cierres de caja recientes
   const { data: cierres } = await supabase
     .from("cierre_caja")
-    .select("*")
+    .select("id, fecha, notas, total")
     .eq("taller_id", tallerId)
     .order("fecha", { ascending: false })
     .limit(7);

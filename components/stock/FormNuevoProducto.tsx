@@ -3,9 +3,14 @@
 import { Plus, ScanBarcode } from "lucide-react";
 import { useState, useTransition } from "react";
 
-import { LectorCodigo } from "@/components/campos/LectorCodigo";
+import dynamic from "next/dynamic";
+
+const LectorCodigo = dynamic(
+  () => import("@/components/campos/LectorCodigo").then((mod) => mod.LectorCodigo),
+  { ssr: false },
+);
 import { Sheet } from "@/components/sheet/Sheet";
-import { FORMATOS_PRODUCTO } from "@/lib/codigo";
+import { FORMATOS_PRODUCTO } from "@/lib/codigo-formatos";
 import { crearProducto } from "@/lib/actions/stock";
 
 export function FormNuevoProducto() {

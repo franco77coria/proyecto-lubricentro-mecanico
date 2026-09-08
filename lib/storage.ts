@@ -12,3 +12,17 @@ export const BUCKET_FOTOS = "ot-fotos";
  *  auto de un cliente, no material público. Una hora alcanza para mirar la
  *  ficha y no deja links útiles dando vueltas. */
 export const VIGENCIA_URL_SEGUNDOS = 60 * 60;
+
+/**
+ * Valida que una ruta de Storage pertenezca estrictamente al taller del usuario
+ * y no contenga secuencias de escape de directorio (path traversal).
+ */
+export function esPathValido(path: string, tallerId: string): boolean {
+  if (!path || typeof path !== "string") return false;
+  if (path.includes("..") || path.includes("\\") || path.startsWith("/") || path.endsWith("/")) {
+    return false;
+  }
+  const partes = path.split("/");
+  if (partes.length < 2 || partes[0] !== tallerId) return false;
+  return partes.every((p) => /^[a-zA-Z0-9_.-]+$/.test(p));
+}

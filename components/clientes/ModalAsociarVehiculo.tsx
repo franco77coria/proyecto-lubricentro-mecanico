@@ -4,8 +4,13 @@ import { useState, useTransition } from "react";
 import { Plus, Search, ScanLine } from "lucide-react";
 import { Sheet } from "@/components/sheet/Sheet";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
-import { LectorCodigo } from "@/components/campos/LectorCodigo";
-import { FORMATOS_CEDULA } from "@/lib/codigo";
+import dynamic from "next/dynamic";
+
+const LectorCodigo = dynamic(
+  () => import("@/components/campos/LectorCodigo").then((mod) => mod.LectorCodigo),
+  { ssr: false },
+);
+import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
 import { interpretarCedula } from "@/lib/cedula";
 import { vincularVehiculoACliente, crearVehiculo } from "@/lib/actions/vehiculos";
 import { useIsla } from "@/components/isla/IslaContext";

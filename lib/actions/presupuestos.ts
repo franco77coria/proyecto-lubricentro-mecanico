@@ -39,6 +39,16 @@ export async function crearPresupuestoCompleto(datos: DatosPresupuesto): Promise
   try {
     const supabase = await crearClienteServidor();
 
+    // Validar que el vehículo pertenezca al taller
+    const { data: vehiculoExiste } = await supabase
+      .from("vehiculo")
+      .select("id")
+      .eq("id", vehiculoId)
+      .eq("taller_id", tallerId)
+      .maybeSingle();
+
+    if (!vehiculoExiste) return { error: "Vehículo no válido para este taller." };
+
     // 1. Insertar OT en estado 'presupuesto'
     const { data: ot, error } = await supabase
       .from("orden_trabajo")
@@ -168,7 +178,7 @@ export async function obtenerPresupuesto(id: string) {
     const { data, error } = await supabase
       .from("orden_trabajo")
       .select(`
-        *,
+        id, taller_id, numero, estado, total, total_mano_obra, total_repuestos, fecha_ingreso, creado_en, observaciones, tipo, km_ingreso,
         vehiculo:vehiculo_id (
           id, patente, anio, color, combustible, km_actual,
           marca:marca_id(nombre),
@@ -176,9 +186,9 @@ export async function obtenerPresupuesto(id: string) {
           motorizacion:motorizacion_id(nombre)
         ),
         cliente:cliente_id (id, nombre, apellido, telefono),
-        items:ot_item(*),
-        checklists:ot_checklist(*),
-        notas:ot_nota(*)
+        items:ot_item(id, tipo, descripcion, producto_id, cantidad, precio_unitario, subtotal, orden),
+        checklists:ot_checklist(id, item_id, etiqueta_snapshot, orden, estado, nota),
+        notas:ot_nota(id, tipo, texto, precio_estimado, orden, creado_en)
       `)
       .eq("id", id)
       .eq("taller_id", sesion.perfil.taller_id)
@@ -196,14 +206,20 @@ export async function obtenerPresupuesto(id: string) {
   }
 }
 
+const actualizarPresupuestoSchema = z.object({
+  observaciones: z.string().max(2000).optional(),
+  tipo: z.enum(["lubricentro", "mecanica", "mixto"]).optional(),
+});
+
 export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 
   try {
     const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
 
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("orden_trabajo")
       // NO se toca `aprobado_cliente_en`: esa columna es la constancia de que
       // el CLIENTE autorizó el trabajo desde el portal público, y la escribe
@@ -212,9 +228,11 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
       // cliente; escribirla acá convertía la constancia en un campo más.
       .update({ estado: "aprobado" })
       .eq("id", id)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", tallerId)
+      .select("id")
+      .maybeSingle();
 
-    if (error) {
+    if (error || !updated) {
       console.error("[convertirPresupuestoAOT]", error);
       return { error: "No se pudo convertir el presupuesto a orden de trabajo." };
     }
@@ -223,10 +241,10 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
     const { count } = await supabase
       .from("ot_checklist")
       .select("*", { count: "exact", head: true })
+      .eq("taller_id", tallerId)
       .eq("ot_id", id);
 
     if (!count || count === 0) {
-      const tallerId = sesion.perfil.taller_id;
       const { data: plantilla } = await supabase
         .from("checklist_plantilla")
         .select("id")
@@ -238,6 +256,7 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
         const { data: itemsPlantilla } = await supabase
           .from("checklist_plantilla_item")
           .select("id, etiqueta, orden")
+          .eq("taller_id", tallerId)
           .eq("plantilla_id", plantilla.id)
           .eq("activo", true)
           .order("orden", { ascending: true });
@@ -274,18 +293,25 @@ export async function actualizarPresupuesto(
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 
+  const parseado = actualizarPresupuestoSchema.safeParse(datos);
+  if (!parseado.success) {
+    return { error: "Datos inválidos para actualizar el presupuesto." };
+  }
+
   try {
     const supabase = await crearClienteServidor();
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("orden_trabajo")
       .update({
-        observaciones: datos.observaciones || null,
-        tipo: datos.tipo || undefined,
+        observaciones: parseado.data.observaciones || null,
+        tipo: parseado.data.tipo || undefined,
       })
       .eq("id", id)
-      .eq("taller_id", sesion.perfil.taller_id);
+      .eq("taller_id", sesion.perfil.taller_id)
+      .select("id")
+      .maybeSingle();
 
-    if (error) return { error: "No se pudo actualizar el presupuesto." };
+    if (error || !updated) return { error: "No se pudo actualizar el presupuesto." };
 
     revalidatePath(`/presupuestos/${id}`);
     revalidatePath(`/ot/${id}`);

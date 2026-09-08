@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 
-import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS } from "@/lib/storage";
+import { BUCKET_FOTOS, VIGENCIA_URL_SEGUNDOS, esPathValido } from "@/lib/storage";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export interface FotoCompraConUrl {
@@ -35,7 +35,7 @@ export async function obtenerTallerIdActual(): Promise<string | null> {
  * que ya fue subida al bucket de Storage.
  *
  * El aislamiento de tenant se garantiza validando que el path empiece con el taller_id
- * de la sesión activa del usuario.
+ * de la sesión activa del usuario y no contenga path traversal.
  */
 export async function registrarFotoCompra(
   compraId: string,
@@ -49,8 +49,8 @@ export async function registrarFotoCompra(
     return { error: "Sin permisos para gestionar comprobantes de compras" };
   }
 
-  // Validación de seguridad de tenant: el path debe pertenecer al taller
-  if (!path.startsWith(`${sesion.perfil.taller_id}/`)) {
+  // Validación de seguridad de tenant y path traversal
+  if (!esPathValido(path, sesion.perfil.taller_id)) {
     return { error: "Ruta de archivo inválida" };
   }
 

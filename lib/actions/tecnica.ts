@@ -40,9 +40,9 @@ export async function obtenerFichaPorMotorizacion(motorizacionId: string): Promi
   const supabase = await crearClienteServidor();
   const { data, error } = await supabase
     .from("ficha_tecnica")
-    .select("*")
+    .select("motorizacion_id, aceite_litros, aceite_norma, aceite_viscosidad, filtro_aceite, filtro_aire, filtro_combustible, filtro_habitaculo, service_km, notas, verificada, estado")
     .eq("motorizacion_id", motorizacionId)
-    .single();
+    .maybeSingle();
     
   if (error || !data) return null;
   return data;

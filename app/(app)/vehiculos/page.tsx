@@ -80,6 +80,7 @@ export default async function PaginaVehiculos({
             usuario:usuario_id ( user_id, nombre, rol )
           )
         `)
+        .eq("taller_id", sesion.perfil.taller_id)
         .in("vehiculo_id", vehiculoIds)
         .order("fecha_ingreso", { ascending: false })
     : { data: [] };
