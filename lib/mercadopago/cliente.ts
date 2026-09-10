@@ -40,6 +40,16 @@ export interface DetallePreapproval {
   };
 }
 
+export interface DetallePago {
+  id: number | string;
+  status: string;
+  status_detail?: string;
+  external_reference?: string;
+  transaction_amount?: number;
+  date_approved?: string;
+  payer?: { email?: string; id?: string };
+}
+
 /**
  * Obtiene el access token de Mercado Pago configurado en las variables de entorno.
  */
@@ -125,6 +135,97 @@ export async function crearSuscripcionPreapproval(
     init_point: data.init_point,
     status: data.status,
   };
+}
+
+/**
+ * Crea una preferencia de Checkout Pro para el pago de 1 mes puntual.
+ *
+ * Permite que el dueño del taller pague con:
+ * - Dinero en cuenta de Mercado Pago
+ * - Mercado Crédito (cuotas)
+ * - Tarjetas de débito y crédito
+ */
+export async function crearPreferenciaCheckoutPro(
+  params: CrearSuscripcionParams
+): Promise<ResultadoPreapproval> {
+  const token = obtenerAccessToken();
+  const monto = params.montoARS ?? obtenerPrecioPlanMensual();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  let backUrl = params.backUrl || `${appUrl}/suscripcion?status=success`;
+
+  if (!backUrl.startsWith("https://")) {
+    const ruta = backUrl.startsWith("http://")
+      ? backUrl.replace(/^http:\/\/[^/]+/, "")
+      : "/suscripcion?status=success";
+    backUrl = `https://tallerpro.app${ruta.startsWith("/") ? ruta : `/${ruta}`}`;
+  }
+
+  const res = await fetch(`${MP_BASE_URL}/checkout/preferences`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      items: [
+        {
+          id: "plan-taller-pro-mes",
+          title: `Plan Taller Pro (1 Mes) — ${params.nombreTaller}`,
+          description: "Acceso mensual completo al sistema para lubricentro y taller mecánico",
+          quantity: 1,
+          currency_id: "ARS",
+          unit_price: monto,
+        },
+      ],
+      payer: {
+        email: params.emailDueno.trim().toLowerCase(),
+      },
+      external_reference: params.tallerId,
+      back_urls: {
+        success: backUrl,
+        failure: backUrl.replace("status=success", "status=failure"),
+        pending: backUrl.replace("status=success", "status=pending"),
+      },
+      auto_return: "approved",
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("[MercadoPago Preference Error]", res.status, errText);
+    throw new Error(`Error creando preferencia de pago en Mercado Pago: HTTP ${res.status}`);
+  }
+
+  const data = (await res.json()) as { id: string; init_point: string };
+  return {
+    id: data.id,
+    init_point: data.init_point,
+    status: "pending",
+  };
+}
+
+/**
+ * Consulta un pago puntual por ID en la API de Mercado Pago.
+ */
+export async function obtenerDetallePago(paymentId: string | number): Promise<DetallePago | null> {
+  const token = obtenerAccessToken();
+
+  const res = await fetch(`${MP_BASE_URL}/v1/payments/${paymentId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const errText = await res.text();
+    console.error("[MercadoPago Obtener Pago Error]", res.status, errText);
+    throw new Error(`Error consultando pago en Mercado Pago: HTTP ${res.status}`);
+  }
+
+  return (await res.json()) as DetallePago;
 }
 
 /**

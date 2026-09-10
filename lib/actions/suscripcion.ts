@@ -6,8 +6,10 @@ import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import {
   crearSuscripcionPreapproval,
+  crearPreferenciaCheckoutPro,
   cancelarPreapproval,
   obtenerDetallePreapproval,
+  obtenerDetallePago,
   obtenerPrecioPlanMensual,
 } from "@/lib/mercadopago/cliente";
 import { calcularEstadoSuscripcion, type EstadoSuscripcionCalculado } from "@/lib/suscripcion";
@@ -28,12 +30,15 @@ export interface ResultadoEstadoSuscripcion {
 }
 
 /**
- * Inicia el proceso de suscripción mensual con Mercado Pago.
+ * Inicia el proceso de suscripción o pago puntual con Mercado Pago.
  *
- * Exclusivo para el dueño del taller. Genera el enlace de Preapproval
- * y lo devuelve al cliente para redirigir al checkout seguro de Mercado Pago.
+ * Exclusivo para el dueño del taller:
+ * - modo 'un_mes': Genera preferencia de Checkout Pro (permite Dinero en Cuenta, Mercado Crédito, Débito y Crédito).
+ * - modo 'recurrente': Genera suscripción mensual por débito automático.
  */
-export async function iniciarSuscripcionAction(): Promise<ResultadoIniciarSuscripcion> {
+export async function iniciarSuscripcionAction(
+  modo: "recurrente" | "un_mes" = "recurrente"
+): Promise<ResultadoIniciarSuscripcion> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida. Volvé a ingresar." };
   if (sesion.perfil.rol !== "dueno") {
@@ -55,16 +60,25 @@ export async function iniciarSuscripcionAction(): Promise<ResultadoIniciarSuscri
     const emailDueno = sesion.user.email || "taller@ejemplo.com";
     const monto = obtenerPrecioPlanMensual();
 
-    // Crear la preferencia de suscripción recurrente en Mercado Pago
-    const resultado = await crearSuscripcionPreapproval({
-      tallerId,
-      emailDueno,
-      nombreTaller: taller.nombre,
-      montoARS: monto,
-    });
+    // Si es pago de 1 mes puntual, usamos Checkout Pro (como en Cuánto Sale)
+    const resultado =
+      modo === "un_mes"
+        ? await crearPreferenciaCheckoutPro({
+            tallerId,
+            emailDueno,
+            nombreTaller: taller.nombre,
+            montoARS: monto,
+          })
+        : await crearSuscripcionPreapproval({
+            tallerId,
+            emailDueno,
+            nombreTaller: taller.nombre,
+            montoARS: monto,
+          });
 
-    // Guardar el ID de preapproval en el taller como referencia pendiente
-    await supabase
+    // Guardar el ID de referencia en el taller
+    const admin = crearClienteAdmin();
+    await admin
       .from("taller")
       .update({
         mp_preapproval_id: resultado.id,
@@ -173,8 +187,20 @@ export async function cancelarSuscripcionAction(): Promise<{ ok?: boolean; error
  * Se ejecuta al cargar `/suscripcion?status=success` o con `preapproval_id`,
  * garantizando la activación inmediata tanto en producción como en entornos locales/demo.
  */
+export interface SincronizarRetornoParams {
+  preapprovalId?: string;
+  paymentId?: string;
+  status?: string;
+}
+
+/**
+ * Sincroniza el estado de la suscripción al volver del checkout de Mercado Pago.
+ *
+ * Soporta tanto el retorno de Checkout Pro (payment_id aprobado) como
+ * el de Preapproval (preapproval_id autorizado).
+ */
 export async function sincronizarSuscripcionRetornoAction(
-  preapprovalIdParam?: string
+  params?: SincronizarRetornoParams
 ): Promise<{ ok: boolean; activada?: boolean }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { ok: false };
@@ -185,44 +211,76 @@ export async function sincronizarSuscripcionRetornoAction(
 
     const { data: taller } = await admin
       .from("taller")
-      .select("mp_preapproval_id, estado_suscripcion")
+      .select("mp_preapproval_id, estado_suscripcion, suscripcion_fin")
       .eq("id", tallerId)
       .single();
 
-    const preapprovalId = preapprovalIdParam || taller?.mp_preapproval_id;
-    if (!preapprovalId) return { ok: true, activada: false };
+    // 1. Caso Checkout Pro (pago puntual de 1 mes)
+    if (params?.paymentId) {
+      const pago = await obtenerDetallePago(params.paymentId);
+      if (pago && pago.status === "approved") {
+        const actualFin = taller?.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : 0;
+        const baseTime = actualFin > Date.now() ? actualFin : Date.now();
+        const fechaFin = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const detalle = await obtenerDetallePreapproval(preapprovalId);
-    if (!detalle) return { ok: true, activada: false };
+        await admin
+          .from("taller")
+          .update({
+            estado_suscripcion: "activa",
+            suscripcion_fin: fechaFin,
+            mp_subscription_status: "approved",
+            mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
+          })
+          .eq("id", tallerId);
 
-    if (detalle.status === "authorized") {
-      const fechaFin = detalle.next_payment_date
-        ? new Date(detalle.next_payment_date).toISOString()
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        await admin.from("taller_suscripcion_evento").insert({
+          taller_id: tallerId,
+          tipo: "pago_puntual_checkout_pro",
+          mp_id: String(pago.id),
+          estado: pago.status,
+          monto: pago.transaction_amount || null,
+          payload: JSON.parse(JSON.stringify(pago)),
+        });
 
-      await admin
-        .from("taller")
-        .update({
-          estado_suscripcion: "activa",
-          suscripcion_fin: fechaFin,
-          mp_preapproval_id: detalle.id,
-          mp_subscription_status: detalle.status,
-          mp_payer_id: detalle.payer_id ? String(detalle.payer_id) : null,
-        })
-        .eq("id", tallerId);
+        revalidatePath("/suscripcion");
+        revalidatePath("/", "layout");
+        return { ok: true, activada: true };
+      }
+    }
 
-      await admin.from("taller_suscripcion_evento").insert({
-        taller_id: tallerId,
-        tipo: "retorno_checkout_sincronizado",
-        mp_id: detalle.id,
-        estado: detalle.status,
-        monto: detalle.auto_recurring?.transaction_amount || null,
-        payload: JSON.parse(JSON.stringify(detalle)),
-      });
+    // 2. Caso Preapproval (suscripción mensual por débito automático)
+    const preapprovalId = params?.preapprovalId || taller?.mp_preapproval_id;
+    if (preapprovalId) {
+      const detalle = await obtenerDetallePreapproval(preapprovalId);
+      if (detalle && detalle.status === "authorized") {
+        const fechaFin = detalle.next_payment_date
+          ? new Date(detalle.next_payment_date).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      revalidatePath("/suscripcion");
-      revalidatePath("/", "layout");
-      return { ok: true, activada: true };
+        await admin
+          .from("taller")
+          .update({
+            estado_suscripcion: "activa",
+            suscripcion_fin: fechaFin,
+            mp_preapproval_id: detalle.id,
+            mp_subscription_status: detalle.status,
+            mp_payer_id: detalle.payer_id ? String(detalle.payer_id) : null,
+          })
+          .eq("id", tallerId);
+
+        await admin.from("taller_suscripcion_evento").insert({
+          taller_id: tallerId,
+          tipo: "retorno_checkout_sincronizado",
+          mp_id: detalle.id,
+          estado: detalle.status,
+          monto: detalle.auto_recurring?.transaction_amount || null,
+          payload: JSON.parse(JSON.stringify(detalle)),
+        });
+
+        revalidatePath("/suscripcion");
+        revalidatePath("/", "layout");
+        return { ok: true, activada: true };
+      }
     }
 
     return { ok: true, activada: false };

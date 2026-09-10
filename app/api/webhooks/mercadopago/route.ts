@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import {
   obtenerDetallePreapproval,
+  obtenerDetallePago,
   validarFirmaWebhookMP,
 } from "@/lib/mercadopago/cliente";
 
@@ -120,6 +121,46 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(`[Webhook MercadoPago] Taller ${tallerId} actualizado a estado: ${nuevoEstadoSuscripcion} (${preapproval.status})`);
+    }
+
+    // 3. Procesar eventos de pago puntual (Checkout Pro — como en Cuánto Sale)
+    if (type === "payment") {
+      const pago = await obtenerDetallePago(dataId);
+      if (pago && pago.status === "approved" && pago.external_reference) {
+        const tallerId = pago.external_reference;
+        const admin = crearClienteAdmin();
+
+        const { data: taller } = await admin
+          .from("taller")
+          .select("suscripcion_fin")
+          .eq("id", tallerId)
+          .single();
+
+        const actualFin = taller?.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : 0;
+        const baseTime = actualFin > Date.now() ? actualFin : Date.now();
+        const nuevaFin = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        await admin
+          .from("taller")
+          .update({
+            estado_suscripcion: "activa",
+            suscripcion_fin: nuevaFin,
+            mp_subscription_status: "approved",
+            mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
+          })
+          .eq("id", tallerId);
+
+        await admin.from("taller_suscripcion_evento").insert({
+          taller_id: tallerId,
+          mp_id: String(pago.id),
+          tipo: "payment_approved",
+          estado: pago.status,
+          monto: pago.transaction_amount || null,
+          payload: JSON.parse(JSON.stringify(pago)),
+        });
+
+        console.log(`[Webhook MercadoPago] Pago aprobado registrado para taller ${tallerId}, nueva vigencia: ${nuevaFin}`);
+      }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });

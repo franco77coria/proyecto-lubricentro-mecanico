@@ -8,16 +8,30 @@ import { PanelSuscripcion } from "@/components/suscripcion/PanelSuscripcion";
 export const dynamic = "force-dynamic";
 
 interface PaginaSuscripcionProps {
-  searchParams: Promise<{ status?: string; preapproval_id?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    collection_status?: string;
+    payment_id?: string;
+    preapproval_id?: string;
+    preference_id?: string;
+  }>;
 }
 
 export default async function PaginaSuscripcion({ searchParams }: PaginaSuscripcionProps) {
   const params = await searchParams;
   let exitoReciente = false;
 
-  if (params.status === "success" || params.preapproval_id) {
-    const sinc = await sincronizarSuscripcionRetornoAction(params.preapproval_id);
-    if (sinc.activada || params.status === "success") {
+  const paymentId = params.payment_id;
+  const preapprovalId = params.preapproval_id;
+  const status = params.status || params.collection_status;
+
+  if (status === "approved" || status === "success" || paymentId || preapprovalId) {
+    const sinc = await sincronizarSuscripcionRetornoAction({
+      paymentId,
+      preapprovalId,
+      status,
+    });
+    if (sinc.activada || status === "approved" || status === "success") {
       exitoReciente = true;
     }
   }

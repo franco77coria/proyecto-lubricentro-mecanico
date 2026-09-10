@@ -33,20 +33,20 @@ export function PanelSuscripcion({
   suscripcionFin,
   exitoReciente,
 }: PanelSuscripcionProps) {
-  const [cargando, setCargando] = useState(false);
+  const [modoCargando, setModoCargando] = useState<"recurrente" | "un_mes" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const { estado, enTrial, trialVencido, diasRestantesTrial, tieneAcceso } = estadoCalculado;
 
-  async function handleSuscribir() {
-    setCargando(true);
+  async function handleSuscribir(modo: "recurrente" | "un_mes") {
+    setModoCargando(modo);
     setErrorMsg(null);
 
     try {
-      const res = await iniciarSuscripcionAction();
+      const res = await iniciarSuscripcionAction(modo);
       if (res.error) {
         setErrorMsg(res.error);
-        setCargando(false);
+        setModoCargando(null);
         return;
       }
 
@@ -54,17 +54,19 @@ export function PanelSuscripcion({
         window.location.href = res.initPoint;
       } else {
         setErrorMsg("No se recibió la URL de pago de Mercado Pago.");
-        setCargando(false);
+        setModoCargando(null);
       }
     } catch {
       setErrorMsg("Ocurrió un error al conectar con Mercado Pago.");
-      setCargando(false);
+      setModoCargando(null);
     }
   }
 
+  const [cargandoCancelar, setCargandoCancelar] = useState(false);
+
   async function handleCancelar() {
     if (!confirm("¿Seguro que deseás cancelar la suscripción mensual de este taller?")) return;
-    setCargando(true);
+    setCargandoCancelar(true);
     setErrorMsg(null);
 
     try {
@@ -77,7 +79,7 @@ export function PanelSuscripcion({
     } catch {
       setErrorMsg("Error al cancelar la suscripción.");
     } finally {
-      setCargando(false);
+      setCargandoCancelar(false);
     }
   }
 
@@ -205,32 +207,65 @@ export function PanelSuscripcion({
         <div className="pt-2 space-y-3">
           {esDueno ? (
             estado !== "activa" ? (
-              <button
-                type="button"
-                onClick={handleSuscribir}
-                disabled={cargando}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-black text-accent-foreground shadow-xl hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {cargando ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                    <span>Conectando con Mercado Pago...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="h-5 w-5" aria-hidden />
-                    <span>Suscribirme con Mercado Pago</span>
-                  </>
-                )}
-              </button>
+              <div className="space-y-3">
+                {/* Opción 1: Dinero en cuenta y todos los medios (Checkout Pro - estilo Cuánto Sale) */}
+                <button
+                  type="button"
+                  onClick={() => handleSuscribir("un_mes")}
+                  disabled={Boolean(modoCargando) || cargandoCancelar}
+                  className="w-full inline-flex items-center justify-between gap-3 rounded-2xl bg-accent px-5 py-4 text-sm font-black text-accent-foreground shadow-xl hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    {modoCargando === "un_mes" ? (
+                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    ) : (
+                      <CreditCard className="h-5 w-5" aria-hidden />
+                    )}
+                    <div className="text-left">
+                      <span className="block text-sm font-extrabold">Pagar 1 mes puntual</span>
+                      <span className="block text-xs font-semibold opacity-90">
+                        {formatearMoneda(precioARS, "ARS", "es")} ARS
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold bg-black/20 dark:bg-white/20 px-3 py-1.5 rounded-xl text-right">
+                    Dinero en cuenta / Débito / Crédito
+                  </span>
+                </button>
+
+                {/* Opción 2: Suscripción automática mensual (Débito automático) */}
+                <button
+                  type="button"
+                  onClick={() => handleSuscribir("recurrente")}
+                  disabled={Boolean(modoCargando) || cargandoCancelar}
+                  className="w-full inline-flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card hover:bg-muted/50 px-5 py-3.5 text-xs font-bold text-foreground shadow-sm hover:border-accent/40 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    {modoCargando === "recurrente" ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-accent" aria-hidden />
+                    ) : (
+                      <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+                    )}
+                    <div className="text-left">
+                      <span className="block font-bold">Débito automático mensual</span>
+                      <span className="block text-caption text-muted-foreground">
+                        Suscripción recurrente con tarjeta
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    Sin vencimientos
+                  </span>
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
                 onClick={handleCancelar}
-                disabled={cargando}
+                disabled={cargandoCancelar}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 px-5 py-3 text-xs font-bold text-destructive hover:bg-destructive/20 active:scale-98 transition-all disabled:opacity-50 cursor-pointer"
               >
-                {cargando ? "Cancelando..." : "Cancelar Débito Automático"}
+                {cargandoCancelar ? "Cancelando..." : "Cancelar Débito Automático"}
               </button>
             )
           ) : (
@@ -241,7 +276,7 @@ export function PanelSuscripcion({
 
           <div className="flex items-center justify-center gap-2 text-caption text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-accent" aria-hidden />
-            <span>Pago seguro procesado mediante Mercado Pago con tarjeta de débito o crédito</span>
+            <span>Pago seguro procesado mediante Mercado Pago</span>
           </div>
         </div>
       </div>
