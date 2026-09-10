@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Car, Plus, RotateCcw, ScanLine, Trash2, User } from "lucide-react";
+import { ArrowLeft, Car, Plus, RotateCcw, ScanLine, Trash2, User, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -14,7 +14,7 @@ const LectorCodigo = dynamic(
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
 import { useIsla } from "@/components/isla/IslaContext";
-import { interpretarCedula } from "@/lib/cedula";
+import { interpretarCedula, desglosarTitular } from "@/lib/cedula";
 import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
 import { resolverDesdeCedula, type OpcionCatalogo } from "@/lib/actions/catalogo";
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
@@ -44,6 +44,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
+  const [clienteDocumento, setClienteDocumento] = useState("");
   const [anomaliaTexto, setAnomaliaTexto] = useState("");
   const [anomalias, setAnomalias] = useState<string[]>([]);
   const [observaciones, setObservaciones] = useState("");
@@ -73,6 +74,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (d.clienteNombre) setClienteNombre(d.clienteNombre);
         if (d.clienteApellido) setClienteApellido(d.clienteApellido);
         if (d.clienteTelefono) setClienteTelefono(d.clienteTelefono);
+        if (d.clienteDocumento) setClienteDocumento(d.clienteDocumento);
         if (d.anomalias) setAnomalias(d.anomalias);
         if (d.observaciones) setObservaciones(d.observaciones);
       }
@@ -95,12 +97,13 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         clienteNombre,
         clienteApellido,
         clienteTelefono,
+        clienteDocumento,
         anomalias,
         observaciones,
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
     }
-  }, [patente, vehiculo, km, anio, vin, tipo, clienteNombre, clienteApellido, clienteTelefono, anomalias, observaciones]);
+  }, [patente, vehiculo, km, anio, vin, tipo, clienteNombre, clienteApellido, clienteTelefono, clienteDocumento, anomalias, observaciones]);
 
   // Hay borrador si hay algo cargado. Antes esto era un estado que un efecto
   // encendía, lo que obligaba a un render extra por cada tecla escrita.
@@ -120,6 +123,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     setClienteNombre("");
     setClienteApellido("");
     setClienteTelefono("");
+    setClienteDocumento("");
     setAnomalias([]);
     setObservaciones("");
     setCedulaResumen(null);
@@ -139,13 +143,12 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     if (datos.anio && !anio) setAnio(String(datos.anio));
 
     if (datos.titular && !clienteNombre.trim()) {
-      const partes = datos.titular.trim().split(/\s+/);
-      if (partes.length >= 2) {
-        setClienteApellido(partes[0]);
-        setClienteNombre(partes.slice(1).join(" "));
-      } else {
-        setClienteNombre(datos.titular);
-      }
+      const desglose = desglosarTitular(datos.titular);
+      setClienteApellido(desglose.apellido);
+      setClienteNombre(desglose.nombre);
+    }
+    if (datos.dni && !clienteDocumento) {
+      setClienteDocumento(datos.dni);
     }
 
     startTransition(async () => {
@@ -217,6 +220,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
+      if (clienteDocumento) formDataVehiculo.append("clienteDocumento", clienteDocumento);
 
       const resVehiculo = await crearVehiculo({}, formDataVehiculo);
 
@@ -339,14 +343,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
               if (d.patente) setPatente(d.patente);
               if (d.anio) setAnio(String(d.anio));
               if (d.vin) setVin(d.vin);
-              if (d.titularNombre && !clienteNombre) {
-                const partes = d.titularNombre.split(/\s+/);
-                if (partes.length >= 2) {
-                  setClienteApellido(partes[0]);
-                  setClienteNombre(partes.slice(1).join(" "));
-                } else {
-                  setClienteNombre(d.titularNombre);
-                }
+              if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
+              if (d.titularNombre) {
+                const desglose = desglosarTitular(d.titularNombre);
+                setClienteApellido(desglose.apellido);
+                setClienteNombre(desglose.nombre);
               }
               if (d.marca || d.modelo) {
                 const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
@@ -362,9 +363,10 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
                   }
                 });
               }
+              const titularBadge = d.titularNombre ? ` · Titular: ${d.titularNombre}` : "";
               notificar({
                 tipo: "exito",
-                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})`,
+                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${titularBadge}`,
               });
             }}
           />
@@ -428,13 +430,25 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             <h2 className="text-sm font-bold text-foreground">Cliente / Titular</h2>
           </div>
 
+          {clienteNombre && (
+            <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent/5 p-2.5 text-xs text-foreground animate-in fade-in">
+              <span className="flex items-center gap-1.5 font-semibold truncate">
+                <Sparkles className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>Titular de orden: <strong>{[clienteNombre, clienteApellido].filter(Boolean).join(" ")}</strong>{clienteDocumento ? ` (DNI ${clienteDocumento})` : ""}</span>
+              </span>
+              <span className="text-[10px] uppercase font-bold text-accent shrink-0 ml-2">Auto-asignado</span>
+            </div>
+          )}
+
           <SelectorCliente
             clienteNombre={clienteNombre}
             clienteApellido={clienteApellido}
             clienteTelefono={clienteTelefono}
+            clienteDocumento={clienteDocumento}
             onCambioNombre={setClienteNombre}
             onCambioApellido={setClienteApellido}
             onCambioTelefono={setClienteTelefono}
+            onCambioDocumento={setClienteDocumento}
             onSeleccionarVehiculo={(v) => {
               if (v.patente) setPatente(v.patente);
               if (v.anio) setAnio(String(v.anio));

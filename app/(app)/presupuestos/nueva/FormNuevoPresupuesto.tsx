@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Car, FileText, Plus, RotateCcw, Trash2, Wrench } from "lucide-react";
+import { ArrowLeft, Car, FileText, Plus, RotateCcw, Trash2, Wrench, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
@@ -14,6 +14,7 @@ import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/p
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { obtenerFichaPorMotorizacion, type FichaTecnica } from "@/lib/actions/tecnica";
 import { useFormato } from "@/lib/i18n/I18nContext";
+import { desglosarTitular } from "@/lib/cedula";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 const DRAFT_KEY = "draft_nuevo_presupuesto";
@@ -43,6 +44,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
+  const [clienteDocumento, setClienteDocumento] = useState("");
 
   // Items y Notas
   const [descargo, setDescargo] = useState("");
@@ -73,7 +75,9 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (d.vehiculo) setVehiculo(d.vehiculo);
         if (d.anio) setAnio(d.anio);
         if (d.clienteNombre) setClienteNombre(d.clienteNombre);
+        if (d.clienteApellido) setClienteApellido(d.clienteApellido);
         if (d.clienteTelefono) setClienteTelefono(d.clienteTelefono);
+        if (d.clienteDocumento) setClienteDocumento(d.clienteDocumento);
         if (d.descargo) setDescargo(d.descargo);
         if (d.items?.length) setItems(d.items);
       }
@@ -91,13 +95,15 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         vehiculo,
         anio,
         clienteNombre,
+        clienteApellido,
         clienteTelefono,
+        clienteDocumento,
         descargo,
         items,
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
     }
-  }, [patente, vehiculo, anio, clienteNombre, clienteTelefono, descargo, items]);
+  }, [patente, vehiculo, anio, clienteNombre, clienteApellido, clienteTelefono, clienteDocumento, descargo, items]);
 
   // Derivado, no un estado que un efecto enciende: así no hay un render de
   // más por cada tecla.
@@ -113,8 +119,12 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
     setPatente("");
     setVehiculo(VEHICULO_VACIO);
     setAnio("");
+    setVin("");
+    setCombustible("");
     setClienteNombre("");
+    setClienteApellido("");
     setClienteTelefono("");
+    setClienteDocumento("");
     setDescargo("");
     setItems([{ id: "init-1", tipo: "mano_obra", descripcion: "", cantidad: 1, precioUnitario: 0 }]);
     notificar({ tipo: "alerta", mensaje: "Borrador limpiado." });
@@ -184,6 +194,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
+      if (clienteDocumento) formDataVehiculo.append("clienteDocumento", clienteDocumento);
 
       const resVehiculo = await crearVehiculo({}, formDataVehiculo);
       const vehiculoId = resVehiculo.creado?.id || resVehiculo.duplicado?.id;
@@ -288,14 +299,11 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
             if (d.anio) setAnio(String(d.anio));
             if (d.vin) setVin(d.vin);
             if (d.combustible) setCombustible(d.combustible);
-            if (d.titularNombre && !clienteNombre) {
-              const partes = d.titularNombre.split(/\s+/);
-              if (partes.length >= 2) {
-                setClienteApellido(partes[0]);
-                setClienteNombre(partes.slice(1).join(" "));
-              } else {
-                setClienteNombre(d.titularNombre);
-              }
+            if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
+            if (d.titularNombre) {
+              const desglose = desglosarTitular(d.titularNombre);
+              setClienteApellido(desglose.apellido);
+              setClienteNombre(desglose.nombre);
             }
             if (d.marca || d.modelo) {
               startTransition(async () => {
@@ -309,9 +317,10 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
                 }
               });
             }
+            const titularBadge = d.titularNombre ? ` · Titular: ${d.titularNombre}` : "";
             notificar({
               tipo: "exito",
-              mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})`,
+              mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${titularBadge}`,
             });
           }}
         />
@@ -334,13 +343,24 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
           </div>
 
           <div className="sm:col-span-2 pt-2 border-t border-border/50">
+            {clienteNombre && (
+              <div className="mb-2 flex items-center justify-between rounded-xl border border-accent/30 bg-accent/5 p-2 text-xs text-foreground animate-in fade-in">
+                <span className="flex items-center gap-1.5 font-semibold truncate">
+                  <Sparkles className="h-3.5 w-3.5 text-accent shrink-0" />
+                  <span>Titular detectado: <strong>{[clienteNombre, clienteApellido].filter(Boolean).join(" ")}</strong>{clienteDocumento ? ` (DNI ${clienteDocumento})` : ""}</span>
+                </span>
+                <span className="text-[10px] uppercase font-bold text-accent shrink-0 ml-1">Auto-asignado</span>
+              </div>
+            )}
             <SelectorCliente
               clienteNombre={clienteNombre}
               clienteApellido={clienteApellido}
               clienteTelefono={clienteTelefono}
+              clienteDocumento={clienteDocumento}
               onCambioNombre={setClienteNombre}
               onCambioApellido={setClienteApellido}
               onCambioTelefono={setClienteTelefono}
+              onCambioDocumento={setClienteDocumento}
               onSeleccionarVehiculo={(v) => {
                 if (v.patente) setPatente(v.patente);
                 if (v.anio) setAnio(String(v.anio));

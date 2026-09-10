@@ -6,7 +6,6 @@ import {
   TriangleAlert,
   Camera,
   Loader2,
-  Sparkles,
   Copy,
   CheckCheck,
   X,

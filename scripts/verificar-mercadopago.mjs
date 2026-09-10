@@ -19,7 +19,7 @@ try {
       process.env[m[1]] ??= raw.replace(/^["']|["']$/g, "").trim();
     }
   }
-} catch (e) {
+} catch {
   console.warn("Aviso: no se encontró .env.local");
 }
 

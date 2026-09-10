@@ -1,6 +1,6 @@
 import test, { describe } from "node:test";
 import assert from "node:assert/strict";
-import { interpretarCedula, resumirCedula } from "./cedula.ts";
+import { interpretarCedula, resumirCedula, desglosarTitular } from "./cedula.ts";
 
 describe("interpretarCedula", () => {
   test("interpreta cédula Mercosur separada por comas", () => {
@@ -47,5 +47,30 @@ describe("resumirCedula", () => {
       crudo: "...",
     });
     assert.equal(res, "AB123CD · TOYOTA · COROLLA · 2022");
+  });
+});
+
+describe("desglosarTitular", () => {
+  test("desglosa titular con coma (formato DNRPA clásico)", () => {
+    const res = desglosarTitular("CORIA, FRANCO EZEQUIEL");
+    assert.equal(res.apellido, "Coria");
+    assert.equal(res.nombre, "Franco Ezequiel");
+  });
+
+  test("desglosa titular sin comas de 3 palabras", () => {
+    const res = desglosarTitular("GONZALEZ JUAN CARLOS");
+    assert.equal(res.apellido, "Gonzalez");
+    assert.equal(res.nombre, "Juan Carlos");
+  });
+
+  test("desglosa titular de 2 palabras", () => {
+    const res = desglosarTitular("PEREZ JUAN");
+    assert.equal(res.apellido, "Perez");
+    assert.equal(res.nombre, "Juan");
+  });
+
+  test("maneja titular vacío o nulo", () => {
+    assert.deepEqual(desglosarTitular(null), { nombre: "", apellido: "" });
+    assert.deepEqual(desglosarTitular(""), { nombre: "", apellido: "" });
   });
 });

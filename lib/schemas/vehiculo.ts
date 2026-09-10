@@ -32,6 +32,7 @@ export const vehiculoSchema = z.object({
   clienteNombre: z.string().trim().max(60).optional(),
   clienteApellido: z.string().trim().max(60).optional(),
   clienteTelefono: z.string().trim().max(30).optional(),
+  clienteDocumento: z.string().trim().max(20).optional(),
 });
 
 /** Variante que se saltea la validación de formato, para chapas atípicas. */

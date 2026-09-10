@@ -127,3 +127,48 @@ export function resumirCedula(d: DatosCedula): string {
   if (d.titular) partes.push(d.titular);
   return partes.join(" · ");
 }
+
+/**
+ * Desglosa y capitaliza el titular de una cédula (ej: "CORIA, FRANCO EZEQUIEL" o "CORIA FRANCO EZEQUIEL")
+ * en apellido ("Coria") y nombre ("Franco Ezequiel").
+ */
+export function desglosarTitular(titular?: string | null): { nombre: string; apellido: string } {
+  if (!titular?.trim()) return { nombre: "", apellido: "" };
+  const limpio = titular.trim().replace(/\s+/g, " ");
+
+  // 1. Formato con coma: "CORIA, FRANCO EZEQUIEL" o "DE LA VEGA, CARLOS"
+  if (limpio.includes(",")) {
+    const [ape, ...rest] = limpio.split(",");
+    const nom = rest.join(" ").trim();
+    return {
+      apellido: capitalizarTexto(ape.trim()),
+      nombre: capitalizarTexto(nom),
+    };
+  }
+
+  // 2. Formato sin comas
+  const partes = limpio.split(" ");
+  if (partes.length === 1) {
+    return { nombre: capitalizarTexto(partes[0]), apellido: "" };
+  }
+  if (partes.length === 2) {
+    // Ej: "CORIA FRANCO" -> Apellido: "Coria", Nombre: "Franco"
+    return { apellido: capitalizarTexto(partes[0]), nombre: capitalizarTexto(partes[1]) };
+  }
+
+  // 3 o más palabras (ej: "CORIA FRANCO EZEQUIEL"): en Argentina el primer token es el apellido
+  return {
+    apellido: capitalizarTexto(partes[0]),
+    nombre: capitalizarTexto(partes.slice(1).join(" ")),
+  };
+}
+
+function capitalizarTexto(str: string): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((palabra) => (palabra.length > 0 ? palabra[0].toUpperCase() + palabra.slice(1) : ""))
+    .join(" ");
+}
+

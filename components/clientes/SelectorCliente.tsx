@@ -4,14 +4,17 @@ import { useState, useEffect, useTransition } from "react";
 import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2 } from "lucide-react";
 import { buscarClientesOmni, type ClienteOmniResultado } from "@/lib/actions/clientes";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { FormCliente } from "./FormCliente";
 
 export interface SelectorClienteProps {
   clienteNombre: string;
   clienteApellido: string;
   clienteTelefono: string;
+  clienteDocumento?: string;
   onCambioNombre: (val: string) => void;
   onCambioApellido: (val: string) => void;
   onCambioTelefono: (val: string) => void;
+  onCambioDocumento?: (val: string) => void;
   onSeleccionarVehiculo?: (vehiculo: {
     id: string;
     patente: string;
@@ -25,9 +28,11 @@ export function SelectorCliente({
   clienteNombre,
   clienteApellido,
   clienteTelefono,
+  clienteDocumento = "",
   onCambioNombre,
   onCambioApellido,
   onCambioTelefono,
+  onCambioDocumento,
   onSeleccionarVehiculo,
 }: SelectorClienteProps) {
   const [termino, setTermino] = useState("");
@@ -72,6 +77,7 @@ export function SelectorCliente({
     onCambioNombre(c.nombre);
     onCambioApellido(c.apellido || "");
     onCambioTelefono(c.telefono || "");
+    if (c.documento) onCambioDocumento?.(c.documento);
     setResultados([]);
     setTermino("");
   }
@@ -81,6 +87,7 @@ export function SelectorCliente({
     onCambioNombre("");
     onCambioApellido("");
     onCambioTelefono("");
+    onCambioDocumento?.("");
     setTermino("");
     setResultados([]);
   }
@@ -90,9 +97,28 @@ export function SelectorCliente({
       {/* 1. Buscador Rápido de Clientes Registrados */}
       {!clienteSeleccionado && (
         <div className="relative">
-          <label htmlFor="buscar-cliente" className="block text-caption font-semibold text-muted-foreground mb-1">
-            Buscar cliente existente (por Nombre, Teléfono o Patente)
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="buscar-cliente" className="block text-caption font-semibold text-muted-foreground">
+              Buscar cliente existente (por Nombre, Teléfono o Patente)
+            </label>
+            <FormCliente
+              onClienteCreado={(c) => {
+                onCambioNombre(c.nombre);
+                onCambioApellido(c.apellido);
+                if (c.telefono) onCambioTelefono(c.telefono);
+                if (c.documento) onCambioDocumento?.(c.documento);
+              }}
+              botonTrigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  <span>+ Crear nuevo</span>
+                </button>
+              }
+            />
+          </div>
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" aria-hidden />
             <input
@@ -215,9 +241,11 @@ export function SelectorCliente({
       ) : (
         /* 3. Formulario Manual (cuando es cliente nuevo) */
         <div className="space-y-3 pt-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-            <UserPlus className="h-3.5 w-3.5 text-accent" />
-            <span>O cargá los datos manualmente si es nuevo:</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+              <UserPlus className="h-3.5 w-3.5 text-accent" />
+              <span>O cargá los datos manualmente si es nuevo:</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -249,21 +277,37 @@ export function SelectorCliente({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="cliente-tel-in" className="text-caption text-muted-foreground">
-              Teléfono (WhatsApp)
-            </label>
-            <input
-              id="cliente-tel-in"
-              type="tel"
-              placeholder="Ej: 11 4455 6677"
-              value={clienteTelefono}
-              onChange={(e) => onCambioTelefono(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="cliente-tel-in" className="text-caption text-muted-foreground">
+                Teléfono (WhatsApp)
+              </label>
+              <input
+                id="cliente-tel-in"
+                type="tel"
+                placeholder="Ej: 11 4455 6677"
+                value={clienteTelefono}
+                onChange={(e) => onCambioTelefono(e.target.value)}
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="cliente-doc-in" className="text-caption text-muted-foreground">
+                DNI o CUIT (opcional)
+              </label>
+              <input
+                id="cliente-doc-in"
+                type="text"
+                placeholder="Ej: 38123456"
+                value={clienteDocumento}
+                onChange={(e) => onCambioDocumento?.(e.target.value)}
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+

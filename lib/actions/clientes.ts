@@ -16,10 +16,10 @@ export interface ResultadoCliente {
 }
 
 const clienteSchema = z.object({
-  nombre: z.string().trim().min(2, { message: "El nombre es obligatorio" }).max(60),
+  nombre: z.string().trim().min(2, { message: "El nombre es obligatorio (mínimo 2 letras)" }).max(60),
   apellido: z.string().trim().max(60).optional(),
   telefono: z.string().trim().max(30).optional(),
-  email: z.string().trim().max(120).optional(),
+  email: z.string().trim().email({ message: "El correo electrónico no es válido." }).optional().or(z.literal("")),
   documento: z.string().trim().max(20).optional(),
   notas: z.string().trim().max(500).optional(),
 });
@@ -42,6 +42,10 @@ export async function crearCliente(datos: unknown): Promise<ResultadoCliente> {
 
   const parseado = clienteSchema.safeParse(datos);
   if (!parseado.success) return { error: parseado.error.issues[0].message };
+
+  if (parseado.data.telefono?.trim() && !normalizarTelefono(parseado.data.telefono)) {
+    return { error: "El teléfono no es válido. Ingresá un número con código de área (ej: 11 4455-6677)." };
+  }
 
   try {
     const supabase = await crearClienteServidor();
@@ -70,6 +74,10 @@ export async function actualizarCliente(id: string, datos: unknown): Promise<Res
 
   const parseado = clienteSchema.safeParse(datos);
   if (!parseado.success) return { error: parseado.error.issues[0].message };
+
+  if (parseado.data.telefono?.trim() && !normalizarTelefono(parseado.data.telefono)) {
+    return { error: "El teléfono no es válido. Ingresá un número con código de área (ej: 11 4455-6677)." };
+  }
 
   try {
     const supabase = await crearClienteServidor();

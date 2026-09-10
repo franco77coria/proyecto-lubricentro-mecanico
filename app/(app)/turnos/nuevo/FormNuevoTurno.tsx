@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Car, Clock } from "lucide-react";
+import { ArrowLeft, CalendarDays, Car, Clock, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -12,6 +12,7 @@ import { useIsla } from "@/components/isla/IslaContext";
 import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { crearTurno, type DatosNuevoTurno } from "@/lib/actions/turnos";
+import { desglosarTitular } from "@/lib/cedula";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 
@@ -37,6 +38,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
+  const [clienteDocumento, setClienteDocumento] = useState("");
   const [buscandoPatente, setBuscandoPatente] = useState(false);
 
   // Auto-fill on patente blur
@@ -102,6 +104,7 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
         if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
         if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
+        if (clienteDocumento) formDataVehiculo.append("clienteDocumento", clienteDocumento);
 
         const resVehiculo = await crearVehiculo({}, formDataVehiculo);
         vehiculoId = resVehiculo.creado?.id || resVehiculo.duplicado?.id;
@@ -283,14 +286,11 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
               if (d.anio) setAnio(String(d.anio));
               if (d.vin) setVin(d.vin);
               if (d.combustible) setCombustible(d.combustible);
-              if (d.titularNombre && !clienteNombre) {
-                const partes = d.titularNombre.split(/\s+/);
-                if (partes.length >= 2) {
-                  setClienteApellido(partes[0]);
-                  setClienteNombre(partes.slice(1).join(" "));
-                } else {
-                  setClienteNombre(d.titularNombre);
-                }
+              if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
+              if (d.titularNombre) {
+                const desglose = desglosarTitular(d.titularNombre);
+                setClienteApellido(desglose.apellido);
+                setClienteNombre(desglose.nombre);
               }
               if (d.marca || d.modelo) {
                 startTransition(async () => {
@@ -304,9 +304,10 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
                   }
                 });
               }
+              const titularBadge = d.titularNombre ? ` · Titular: ${d.titularNombre}` : "";
               notificar({
                 tipo: "exito",
-                mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})`,
+                mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${titularBadge}`,
               });
             }}
           />
@@ -332,13 +333,24 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
               </div>
 
               <div className="pt-2 border-t border-border/50">
+                {clienteNombre && (
+                  <div className="mb-2 flex items-center justify-between rounded-xl border border-accent/30 bg-accent/5 p-2 text-xs text-foreground animate-in fade-in">
+                    <span className="flex items-center gap-1.5 font-semibold truncate">
+                      <Sparkles className="h-3.5 w-3.5 text-accent shrink-0" />
+                      <span>Titular detectado: <strong>{[clienteNombre, clienteApellido].filter(Boolean).join(" ")}</strong>{clienteDocumento ? ` (DNI ${clienteDocumento})` : ""}</span>
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-accent shrink-0 ml-1">Auto-asignado</span>
+                  </div>
+                )}
                 <SelectorCliente
                   clienteNombre={clienteNombre}
                   clienteApellido={clienteApellido}
                   clienteTelefono={clienteTelefono}
+                  clienteDocumento={clienteDocumento}
                   onCambioNombre={setClienteNombre}
                   onCambioApellido={setClienteApellido}
                   onCambioTelefono={setClienteTelefono}
+                  onCambioDocumento={setClienteDocumento}
                   onSeleccionarVehiculo={(v) => {
                     if (v.patente) setPatente(v.patente);
                     if (v.anio) setAnio(String(v.anio));

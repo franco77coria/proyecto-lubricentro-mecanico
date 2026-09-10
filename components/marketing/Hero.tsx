@@ -1,11 +1,10 @@
 "use client";
 
-import { ArrowRight, ShieldCheck, Wrench, Droplets, CheckCircle2, Sparkles, Activity } from "lucide-react";
+import { ArrowRight, ShieldCheck, Droplets } from "lucide-react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import Link from "next/link";
 import { useRef } from "react";
 import { InteractiveHeroMockup } from "./InteractiveHeroMockup";
-import { PlacaPatente } from "@/components/ui/PlacaPatente";
 
 const EASE = [0.23, 1, 0.32, 1] as const;
 

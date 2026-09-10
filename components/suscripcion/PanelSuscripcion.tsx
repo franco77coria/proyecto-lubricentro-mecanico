@@ -63,7 +63,7 @@ export function PanelSuscripcion({
       }
 
       if (res.initPoint) {
-        window.location.href = res.initPoint;
+        window.location.assign(res.initPoint);
       } else {
         setErrorMsg("No se recibió la URL de pago de Mercado Pago.");
         setPlanCargando(null);

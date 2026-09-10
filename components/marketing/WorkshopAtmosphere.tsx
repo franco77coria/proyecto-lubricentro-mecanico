@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useTransform, useSpring } from "motion/react";
 
@@ -28,10 +28,12 @@ const SCENES = [
   },
 ] as const;
 
+const emptySubscribe = () => () => {};
+
 export function WorkshopAtmosphere() {
   const reduceMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const { scrollYProgress } = useScroll();
@@ -49,9 +51,9 @@ export function WorkshopAtmosphere() {
   const scene1Scale = useTransform(smoothProgress, [0, 0.35], [1.02, 1.1]);
   const scene1Y = useTransform(smoothProgress, [0, 0.35], ["0%", "-5%"]);
 
-  // Escena 2 (Fosa y Cárter: 28% a 68%)
-  const scene2Opacity = useTransform(smoothProgress, [0.28, 0.42, 0.58, 0.72], [0, 0.8, 0.8, 0]);
-  const scene2Scale = useTransform(smoothProgress, [0.28, 0.7], [1.08, 1.01]);
+  // Escena 2 (Fosa y Chasis Técnico: 25% a 70%)
+  const scene2Opacity = useTransform(smoothProgress, [0.28, 0.42, 0.58, 0.7], [0, 0.8, 0.8, 0]);
+  const scene2Scale = useTransform(smoothProgress, [0.28, 0.7], [1.04, 1.12]);
   const scene2Y = useTransform(smoothProgress, [0.28, 0.7], ["4%", "-4%"]);
 
   // Escena 3 (Diagnóstico y Motor: 60% a 95%)
@@ -63,7 +65,6 @@ export function WorkshopAtmosphere() {
 
   // Paralaje de mouse sutil (tilt 3D)
   useEffect(() => {
-    setMounted(true);
     if (reduceMotion) return;
 
     const handleMouseMove = (e: MouseEvent) => {

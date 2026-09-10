@@ -45,6 +45,7 @@ export async function crearVehiculo(
     clienteNombre: formData.get("clienteNombre") ?? "",
     clienteApellido: formData.get("clienteApellido") ?? "",
     clienteTelefono: formData.get("clienteTelefono") ?? "",
+    clienteDocumento: formData.get("clienteDocumento") ?? "",
   });
 
   if (!parseado.success) return { error: parseado.error.issues[0].message };
@@ -112,13 +113,14 @@ export async function crearVehiculo(
               .eq("taller_id", tallerId);
           }
 
-          // Resolver cliente (deduplicar si se pasó un nombre o teléfono)
+          // Resolver cliente (deduplicar si se pasó un nombre, teléfono o documento)
           let resolvedClienteId: string | undefined = undefined;
-          if (d.clienteNombre?.trim() || d.clienteTelefono?.trim()) {
+          if (d.clienteNombre?.trim() || d.clienteTelefono?.trim() || d.clienteDocumento?.trim()) {
             resolvedClienteId = await resolverOCrearCliente(supabase, tallerId, {
               nombre: d.clienteNombre || "",
               apellido: d.clienteApellido || "",
               telefono: d.clienteTelefono || "",
+              documento: d.clienteDocumento || "",
             });
 
             if (resolvedClienteId) {
@@ -159,11 +161,12 @@ export async function crearVehiculo(
 
     // Si es un auto nuevo y se pasaron datos de cliente, resolver o crear sin duplicar
     let nuevoClienteId: string | undefined = undefined;
-    if (d.clienteNombre?.trim() || d.clienteTelefono?.trim()) {
+    if (d.clienteNombre?.trim() || d.clienteTelefono?.trim() || d.clienteDocumento?.trim()) {
       nuevoClienteId = await resolverOCrearCliente(supabase, tallerId, {
         nombre: d.clienteNombre || "",
         apellido: d.clienteApellido || "",
         telefono: d.clienteTelefono || "",
+        documento: d.clienteDocumento || "",
       });
 
       if (nuevoClienteId) {
@@ -196,13 +199,26 @@ export async function crearVehiculo(
 async function resolverOCrearCliente(
   supabase: Awaited<ReturnType<typeof crearClienteServidor>>,
   tallerId: string,
-  datos: { nombre: string; apellido: string; telefono: string },
+  datos: { nombre: string; apellido: string; telefono: string; documento?: string },
 ): Promise<string | undefined> {
   const telNorm = datos.telefono ? normalizarTelefono(datos.telefono) : null;
   const nom = datos.nombre.trim();
   const ape = datos.apellido.trim();
+  const doc = datos.documento?.trim();
 
-  // 1. Buscar por teléfono si está presente
+  // 1. Buscar por documento si está presente (máxima precisión)
+  if (doc) {
+    const { data: porDoc } = await supabase
+      .from("cliente")
+      .select("id")
+      .eq("taller_id", tallerId)
+      .eq("documento", doc)
+      .maybeSingle();
+
+    if (porDoc) return porDoc.id;
+  }
+
+  // 2. Buscar por teléfono si está presente
   if (telNorm) {
     const { data: porTel } = await supabase
       .from("cliente")
@@ -214,7 +230,7 @@ async function resolverOCrearCliente(
     if (porTel) return porTel.id;
   }
 
-  // 2. Buscar por nombre y apellido
+  // 3. Buscar por nombre y apellido
   if (nom) {
     let query = supabase
       .from("cliente")
@@ -233,7 +249,7 @@ async function resolverOCrearCliente(
     if (porNombre) return porNombre.id;
   }
 
-  // 3. Si no existe y tiene al menos nombre, crearlo
+  // 4. Si no existe y tiene al menos nombre, crearlo
   if (nom) {
     const { data: nuevoCliente } = await supabase
       .from("cliente")
@@ -242,6 +258,7 @@ async function resolverOCrearCliente(
         nombre: nom,
         apellido: ape,
         telefono: telNorm,
+        documento: doc || null,
       })
       .select("id")
       .single();
