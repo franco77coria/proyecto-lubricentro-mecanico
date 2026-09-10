@@ -108,7 +108,7 @@ export function PatenteInput({
           {escaneando ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Leyendo con Gemini 3.0...</span>
+              <span>Leyendo cédula con IA...</span>
             </>
           ) : (
             <>

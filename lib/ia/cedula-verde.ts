@@ -1,4 +1,4 @@
-import { MODELO_IA, obtenerCliente } from "./cliente.ts";
+import { MODELO_GEMINI, MODELO_IA, obtenerCliente } from "./cliente.ts";
 import { extraerJSON, prepararImagen, type EntradaImagen } from "./vision.ts";
 import { normalizarPatente } from "../patente.ts";
 
@@ -140,7 +140,7 @@ export async function procesarOCRCedulaVerde(
 
   if (geminiKey) {
     try {
-      const modelo = process.env.GEMINI_MODELO || "gemini-3.6-flash";
+      const modelo = MODELO_GEMINI;
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${geminiKey}`;
       const payload = {
         contents: [
@@ -164,13 +164,18 @@ export async function procesarOCRCedulaVerde(
         },
       };
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let res: Response | null = null;
+      for (let intento = 0; intento < 2; intento++) {
+        res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.status !== 429 && res.status !== 503) break;
+        await new Promise((resolve) => setTimeout(resolve, 1500 * (intento + 1)));
+      }
 
-      if (res.ok) {
+      if (res && res.ok) {
         const json = await res.json();
         const textoRespuesta =
           json.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -183,7 +188,7 @@ export async function procesarOCRCedulaVerde(
             proveedor: "gemini",
           };
         }
-      } else {
+      } else if (res) {
         const errText = await res.text();
         console.warn("[Gemini Cédula Verde] HTTP", res.status, errText);
       }

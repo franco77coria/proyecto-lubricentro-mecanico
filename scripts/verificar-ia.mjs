@@ -33,7 +33,7 @@ const apiKey =
   process.env.GOOGLE_AI_API_KEY ||
   process.env.GOOGLE_API_KEY;
 
-const modelo = process.env.GEMINI_MODELO || "gemini-3.6-flash";
+const modelo = process.env.GEMINI_MODELO || "gemini-3.5-flash";
 
 async function main() {
   console.log("=== AUDITORÍA Y VERIFICACIÓN INTEGRAL DE IA (GEMINI FLASH) ===");
@@ -89,18 +89,23 @@ async function main() {
   ]
 }`;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        systemInstruction: { parts: [{ text: system }] },
-        generationConfig: { response_mime_type: "application/json", temperature: 0.1 },
-      }),
-    });
+    let res;
+    for (let intento = 1; intento <= 3; intento++) {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          systemInstruction: { parts: [{ text: system }] },
+          generationConfig: { response_mime_type: "application/json", temperature: 0.1 },
+        }),
+      });
+      if (res.status !== 503 && res.status !== 429) break;
+      await new Promise((r) => setTimeout(r, 2000 * intento));
+    }
 
-    if (!res.ok) {
-      fail(`HTTP ${res.status} en diagnóstico`);
+    if (!res || !res.ok) {
+      fail(`HTTP ${res?.status} en diagnóstico`);
     } else {
       const json = await res.json();
       const texto = json.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -153,7 +158,7 @@ async function main() {
   // 5. Prueba: Visión Multimodal con Imagen
   console.log("\n[5] Prueba: Visión Multimodal para Cédula Verde y Carrocería");
   try {
-    const imgBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR42mP8z8AARhhGAQkNAEAAAAD//1P3AWMAAAAASUVORK5CYII=";
+    const imgBase64 = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAL0lEQVR4nO3OIQEAAAgDsGd6/wC0ghiYifll2v0UAQEBAQEBAQEBAQEBAQGB78ABnwOseVmpxCsAAAAASUVORK5CYII=";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
     
     let res;

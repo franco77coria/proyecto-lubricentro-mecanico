@@ -1,4 +1,4 @@
-import { MODELO_IA, obtenerCliente } from "./cliente.ts";
+import { MODELO_GEMINI, MODELO_IA, obtenerCliente } from "./cliente.ts";
 
 /**
  * Estado general de la carrocería del vehículo detectado por la IA.
@@ -411,7 +411,7 @@ async function analizarConGemini(
     return { error: "No está configurada la clave de Gemini (GEMINI_API_KEY)." };
   }
 
-  const modelo = process.env.GEMINI_MODELO || "gemini-3.6-flash";
+  const modelo = MODELO_GEMINI;
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
 
   const infoVehiculo = opciones?.vehiculoInfo
@@ -438,16 +438,21 @@ async function analizarConGemini(
     },
   };
 
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  let res: Response | null = null;
+  for (let intento = 0; intento < 2; intento++) {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.status !== 429 && res.status !== 503) break;
+    await new Promise((resolve) => setTimeout(resolve, 1500 * (intento + 1)));
+  }
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error(`[analizarConGemini] HTTP ${res.status}:`, errorText);
-    return { error: `Error en la API de Gemini (${res.status}).` };
+  if (!res || !res.ok) {
+    const errorText = await res?.text();
+    console.error(`[analizarConGemini] HTTP ${res?.status}:`, errorText);
+    return { error: `Error en la API de Gemini (${res?.status ?? "desconocido"}).` };
   }
 
   const data = (await res.json()) as {

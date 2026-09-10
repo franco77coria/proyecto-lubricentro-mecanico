@@ -41,8 +41,10 @@ export function ListaAvisos({
     iso ? fecha(`${iso}T12:00:00`, { day: "2-digit", month: "short" }) : null;
   const router = useRouter();
   const { notificar } = useIsla();
-  const [avisos, setAvisos] = useState(iniciales);
-  const [, iniciar] = useTransition();
+  const [descartadosIds, setDescartadosIds] = useState<string[]>([]);
+  const [pendiente, iniciar] = useTransition();
+
+  const avisos = iniciales.filter((x) => !descartadosIds.includes(x.id));
 
   function contactar(a: RecordatorioAContactar) {
     const link = armarLinkRecordatorio({
@@ -66,19 +68,25 @@ export function ListaAvisos({
     // click directo, el usuario ve el bloqueo y no un "listo" mentiroso.
     window.open(link, "_blank", "noopener");
 
-    setAvisos((prev) => prev.filter((x) => x.id !== a.id));
+    setDescartadosIds((curr) => [...curr, a.id]);
     iniciar(async () => {
       const res = await marcarContactado(a.id);
-      if (res.error) notificar({ tipo: "error", mensaje: res.error });
+      if (res?.error) {
+        setDescartadosIds((curr) => curr.filter((id) => id !== a.id));
+        notificar({ tipo: "error", mensaje: res.error });
+      }
       router.refresh();
     });
   }
 
   function descartar(a: RecordatorioAContactar) {
-    setAvisos((prev) => prev.filter((x) => x.id !== a.id));
+    setDescartadosIds((curr) => [...curr, a.id]);
     iniciar(async () => {
       const res = await descartarRecordatorio(a.id);
-      if (res.error) notificar({ tipo: "error", mensaje: res.error });
+      if (res?.error) {
+        setDescartadosIds((curr) => curr.filter((id) => id !== a.id));
+        notificar({ tipo: "error", mensaje: res.error });
+      }
       router.refresh();
     });
   }
@@ -130,7 +138,7 @@ export function ListaAvisos({
             <button
               type="button"
               onClick={() => contactar(a)}
-              disabled={!a.telefono}
+              disabled={!a.telefono || pendiente}
               aria-label={`Avisar por WhatsApp a ${a.clienteNombre ?? a.patente}`}
               title="Abrir WhatsApp con aviso redactado"
               className="grid min-h-12 min-w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 active:scale-95 transition-all disabled:opacity-30"
@@ -140,9 +148,10 @@ export function ListaAvisos({
             <button
               type="button"
               onClick={() => descartar(a)}
+              disabled={pendiente}
               aria-label={`Descartar el aviso de ${a.patente}`}
               title="Descartar aviso"
-              className="grid min-h-12 min-w-12 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
+              className="grid min-h-12 min-w-12 place-items-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all disabled:opacity-30"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>

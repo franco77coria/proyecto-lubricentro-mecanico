@@ -2,9 +2,11 @@
 
 import { Plus, Trash2, Droplets, Wrench, CheckCircle, Package } from "lucide-react";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { agregarItemOT, eliminarItemOT } from "@/lib/actions/ot";
 import { useFormato } from "@/lib/i18n/I18nContext";
+import { useIsla } from "@/components/isla/IslaContext";
 
 interface ItemTabla {
   id: string;
@@ -45,11 +47,20 @@ export function ItemsEditor({
   servicios?: OpcionServicio[];
   productos?: OpcionProducto[];
 }) {
+  const router = useRouter();
+  const { notificar } = useIsla();
   const { money } = useFormato();
   const [items, setItems] = useState(initialItems);
+  const [prevInitial, setPrevInitial] = useState(initialItems);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Sincronizar estado local cuando cambian los ítems recibidos del servidor
+  if (initialItems !== prevInitial) {
+    setPrevInitial(initialItems);
+    setItems(initialItems);
+  }
 
   const [tipo, setTipo] = useState<TipoItem>("repuesto");
   const [descripcion, setDescripcion] = useState("");
@@ -128,6 +139,7 @@ export function ItemsEditor({
 
       if (res.error) {
         setErrorMsg(res.error);
+        notificar({ tipo: "error", mensaje: res.error });
       } else {
         setDescripcion("");
         setPrecio("");
@@ -135,14 +147,24 @@ export function ItemsEditor({
         setProductoId("");
         setServicioId("");
         setMostrarForm(false);
+        notificar({ tipo: "exito", mensaje: "Ítem cargado a la orden." });
+        router.refresh();
       }
     });
   };
 
   const handleEliminar = (itemId: string) => {
+    const itemsPrevios = [...items];
     setItems((prev) => prev.filter((it) => it.id !== itemId));
     startTransition(async () => {
-      await eliminarItemOT(otId, itemId);
+      const res = await eliminarItemOT(otId, itemId);
+      if (res.error) {
+        setItems(itemsPrevios);
+        notificar({ tipo: "error", mensaje: res.error });
+      } else {
+        notificar({ tipo: "exito", mensaje: "Ítem eliminado correctamente." });
+        router.refresh();
+      }
     });
   };
 

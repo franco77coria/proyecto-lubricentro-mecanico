@@ -17,22 +17,30 @@ export interface ResultadoCliente {
 
 const clienteSchema = z.object({
   nombre: z.string().trim().min(2, { message: "El nombre es obligatorio (mínimo 2 letras)" }).max(60),
-  apellido: z.string().trim().max(60).optional(),
-  telefono: z.string().trim().max(30).optional(),
-  email: z.string().trim().email({ message: "El correo electrónico no es válido." }).optional().or(z.literal("")),
-  documento: z.string().trim().max(20).optional(),
-  notas: z.string().trim().max(500).optional(),
+  apellido: z.string().trim().max(60).optional().nullable(),
+  telefono: z.string().trim().max(30).optional().nullable(),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((val) => (val ? val.trim() : null))
+    .refine((val) => !val || z.string().email().safeParse(val).success, {
+      message: "El correo electrónico no es válido.",
+    }),
+  documento: z.string().trim().max(20).optional().nullable(),
+  notas: z.string().trim().max(500).optional().nullable(),
 });
 
 function armarFila(d: z.infer<typeof clienteSchema>) {
   return {
-    nombre: d.nombre,
-    apellido: d.apellido ?? "",
+    nombre: d.nombre.trim(),
+    apellido: d.apellido?.trim() || "",
     // A E.164 siempre: de eso depende que el link de WhatsApp arme.
-    telefono: d.telefono ? normalizarTelefono(d.telefono) : null,
-    email: d.email || null,
-    documento: d.documento || null,
-    notas: d.notas || null,
+    telefono: d.telefono?.trim() ? normalizarTelefono(d.telefono) : null,
+    email: d.email ? d.email.trim() : null,
+    documento: d.documento?.trim() || null,
+    notas: d.notas?.trim() || null,
   };
 }
 
@@ -56,8 +64,11 @@ export async function crearCliente(datos: unknown): Promise<ResultadoCliente> {
       .single();
 
     if (error) {
-      console.error("[crearCliente]", error.code);
-      return { error: "No se pudo guardar el cliente" };
+      console.error("[crearCliente]", error.code, error.message);
+      if (error.code === "23505") {
+        return { error: "Ya existe un cliente con esos datos." };
+      }
+      return { error: "No se pudo guardar el cliente en el sistema." };
     }
 
     revalidatePath("/clientes");
@@ -99,6 +110,31 @@ export async function actualizarCliente(id: string, datos: unknown): Promise<Res
 
     revalidatePath("/clientes");
     revalidatePath(`/clientes/${id}`);
+    return { ok: true };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { error: "No se pudo conectar" };
+  }
+}
+
+export async function archivarCliente(id: string): Promise<ResultadoCliente> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida" };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("cliente")
+      .update({ archivado: true })
+      .eq("id", id)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[archivarCliente]", error.code);
+      return { error: "No se pudo eliminar o archivar el cliente" };
+    }
+
+    revalidatePath("/clientes");
     return { ok: true };
   } catch (error) {
     unstable_rethrow(error);

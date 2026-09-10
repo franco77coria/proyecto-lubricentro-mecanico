@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Loader2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { cambiarEstadoOT } from "@/lib/actions/ot";
@@ -33,10 +33,30 @@ export function MoverOT({
   const router = useRouter();
   const { notificar } = useIsla();
   const [pendiente, iniciar] = useTransition();
-  const [optimista, setOptimista] = useState<EstadoDb | null>(null);
+  const [optimista, setOptimista] = useState<{ destino: EstadoDb; base: EstadoDb } | null>(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
 
-  const actual = optimista ?? estado;
+  // Cerrar menú al hacer clic afuera o presionar Escape
+  useEffect(() => {
+    if (!menuAbierto) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (contenedorRef.current && !contenedorRef.current.contains(e.target as Node)) {
+        setMenuAbierto(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuAbierto(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuAbierto]);
+
+  const actual = optimista && optimista.base === estado ? optimista.destino : estado;
   const i = COLUMNAS_KANBAN.indexOf(actual);
   const anterior = i > 0 ? COLUMNAS_KANBAN[i - 1] : null;
   const siguiente = i >= 0 && i < COLUMNAS_KANBAN.length - 1 ? COLUMNAS_KANBAN[i + 1] : null;
@@ -49,14 +69,13 @@ export function MoverOT({
     const etiqueta = aEtiquetaAccion(destino);
     if (!etiqueta) return;
 
-    const previo = actual;
-    setOptimista(destino);
+    setOptimista({ destino, base: estado });
     setMenuAbierto(false);
 
     iniciar(async () => {
       const res = await cambiarEstadoOT(otId, etiqueta);
       if (res.error) {
-        setOptimista(previo);
+        setOptimista(null);
         notificar({ tipo: "error", mensaje: res.error });
         return;
       }
@@ -66,7 +85,7 @@ export function MoverOT({
   }
 
   return (
-    <div className="relative flex items-center gap-1.5">
+    <div ref={contenedorRef} className="relative flex items-center gap-1.5">
       {/* Botón Retroceder (Mínimo 48px de contacto) */}
       <button
         type="button"
@@ -82,8 +101,9 @@ export function MoverOT({
       <button
         type="button"
         onClick={() => setMenuAbierto((v) => !v)}
+        disabled={pendiente}
         aria-label="Cambio rápido de estado"
-        className="min-h-12 px-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[11px] font-black uppercase tracking-wider text-white/80 hover:bg-white/[0.08] hover:text-white transition-colors"
+        className="min-h-12 px-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[11px] font-black uppercase tracking-wider text-white/80 hover:bg-white/[0.08] hover:text-white transition-colors disabled:opacity-40"
       >
         {etiquetaEstado(actual).slice(0, 8)}
       </button>

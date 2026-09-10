@@ -227,8 +227,8 @@ export function FormCliente({
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Campo etiqueta="Nombre" value={f.nombre} onChange={set("nombre")} required placeholder="Ej: Juan" />
-            <Campo etiqueta="Apellido" value={f.apellido} onChange={set("apellido")} placeholder="Ej: Pérez" />
+            <Campo etiqueta="Nombre" value={f.nombre} onChange={set("nombre")} required placeholder="Ej: Juan" disabled={pendiente || escaneandoCedula} />
+            <Campo etiqueta="Apellido" value={f.apellido} onChange={set("apellido")} placeholder="Ej: Pérez" disabled={pendiente || escaneandoCedula} />
           </div>
 
           <Campo
@@ -238,14 +238,15 @@ export function FormCliente({
             placeholder="11 5555-4444"
             value={f.telefono}
             onChange={set("telefono")}
+            disabled={pendiente || escaneandoCedula}
           />
           <p className="text-caption text-muted-foreground -mt-2">
             El link de seguimiento se envía a este número por WhatsApp.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Campo etiqueta="DNI o CUIT" value={f.documento} onChange={set("documento")} placeholder="Ej: 38123456" />
-            <Campo etiqueta="Email" type="email" value={f.email} onChange={set("email")} placeholder="ejemplo@correo.com" />
+            <Campo etiqueta="DNI o CUIT" value={f.documento} onChange={set("documento")} placeholder="Ej: 38123456" disabled={pendiente || escaneandoCedula} />
+            <Campo etiqueta="Email" type="email" value={f.email} onChange={set("email")} placeholder="ejemplo@correo.com" disabled={pendiente || escaneandoCedula} />
           </div>
 
           <label className="block space-y-1.5">
@@ -256,7 +257,8 @@ export function FormCliente({
               onChange={set("notas")}
               maxLength={500}
               placeholder="Ej: paga por transferencia, cliente de flota..."
-              className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors"
+              disabled={pendiente || escaneandoCedula}
+              className="w-full resize-none rounded-xl border border-border bg-card px-3.5 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors disabled:opacity-50"
             />
           </label>
 
@@ -297,7 +299,7 @@ function Campo({
     <label className="block space-y-1.5">
       <span className="text-caption font-semibold text-muted-foreground">{etiqueta}</span>
       <input
-        className="min-h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none focus:border-accent transition-colors"
+        className="min-h-11 w-full rounded-xl border border-border bg-card px-3.5 text-sm text-foreground outline-none focus:border-accent transition-colors disabled:opacity-50"
         {...props}
       />
     </label>

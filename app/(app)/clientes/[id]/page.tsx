@@ -6,6 +6,8 @@ import { obtenerVehiculosParaAsignar } from "@/lib/actions/vehiculos";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { SiluetaVehiculo } from "@/components/ui/SiluetaVehiculo";
 import { ModalAsociarVehiculo } from "@/components/clientes/ModalAsociarVehiculo";
+import { FormCliente } from "@/components/clientes/FormCliente";
+import { DialogEliminarCliente } from "@/components/clientes/DialogEliminarCliente";
 import { ESTADO_TONO, etiquetaEstado } from "@/lib/estados-ot";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
@@ -102,17 +104,24 @@ export default async function PaginaDetalleCliente({
               </div>
             </div>
 
-            {cliente.telefono && (
-              <a
-                href={`https://wa.me/${cliente.telefono.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-500 active:scale-95 transition-all"
-              >
-                <Phone className="h-4 w-4" />
-                <span>WhatsApp</span>
-              </a>
-            )}
+            <div className="flex items-center gap-2">
+              <FormCliente cliente={cliente} />
+              <DialogEliminarCliente
+                clienteId={id}
+                clienteNombre={[cliente.nombre, cliente.apellido].filter(Boolean).join(" ")}
+              />
+              {cliente.telefono && (
+                <a
+                  href={`https://wa.me/${cliente.telefono.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-500 active:scale-95 transition-all"
+                >
+                  <Phone className="h-4 w-4" />
+                  <span>WhatsApp</span>
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/60 text-sm">

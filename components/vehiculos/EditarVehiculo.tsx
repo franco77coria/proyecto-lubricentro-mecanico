@@ -54,7 +54,24 @@ export function EditarVehiculo({
     km: vehiculo.km_actual?.toString() ?? "",
     combustible: vehiculo.combustible ?? "",
   });
+  const [prevVehiculo, setPrevVehiculo] = useState(vehiculo);
+  if (vehiculo !== prevVehiculo) {
+    setPrevVehiculo(vehiculo);
+    setF({
+      anio: vehiculo.anio?.toString() ?? "",
+      color: vehiculo.color ?? "",
+      vin: vehiculo.vin ?? "",
+      km: vehiculo.km_actual?.toString() ?? "",
+      combustible: vehiculo.combustible ?? "",
+    });
+  }
+
   const [nuevoDueno, setNuevoDueno] = useState(duenoActualId ?? "");
+  const [prevDueno, setPrevDueno] = useState(duenoActualId);
+  if (duenoActualId !== prevDueno) {
+    setPrevDueno(duenoActualId);
+    setNuevoDueno(duenoActualId ?? "");
+  }
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
@@ -119,8 +136,8 @@ export function EditarVehiculo({
       >
         <form onSubmit={guardarDatos} className="space-y-4 p-5">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Campo etiqueta="Año" type="number" min="1900" max="2100" value={f.anio} onChange={set("anio")} />
-            <Campo etiqueta="Color" value={f.color} onChange={set("color")} />
+            <Campo etiqueta="Año" type="number" min="1900" max="2100" value={f.anio} onChange={set("anio")} disabled={pendiente} />
+            <Campo etiqueta="Color" value={f.color} onChange={set("color")} disabled={pendiente} />
           </div>
           <Campo
             etiqueta="Kilómetros"
@@ -129,13 +146,15 @@ export function EditarVehiculo({
             inputMode="numeric"
             value={f.km}
             onChange={set("km")}
+            disabled={pendiente}
           />
           <label className="block space-y-1.5">
             <span className="text-caption font-semibold text-muted-foreground">Combustible</span>
             <select
               value={f.combustible}
               onChange={set("combustible")}
-              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base font-medium text-foreground outline-none focus:border-accent"
+              disabled={pendiente}
+              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base font-medium text-foreground outline-none focus:border-accent disabled:opacity-50"
             >
               {COMBUSTIBLES.map((c) => (
                 <option key={c.v} value={c.v}>
@@ -144,7 +163,7 @@ export function EditarVehiculo({
               ))}
             </select>
           </label>
-          <Campo etiqueta="Número de Chasis / VIN" value={f.vin} onChange={set("vin")} />
+          <Campo etiqueta="Número de Chasis / VIN" value={f.vin} onChange={set("vin")} disabled={pendiente} />
 
           {error && (
             <p role="alert" className="text-caption text-destructive font-bold">
@@ -173,7 +192,8 @@ export function EditarVehiculo({
             <select
               value={nuevoDueno}
               onChange={(e) => setNuevoDueno(e.target.value)}
-              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base font-semibold text-foreground outline-none focus:border-accent"
+              disabled={pendiente}
+              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base font-semibold text-foreground outline-none focus:border-accent disabled:opacity-50"
             >
               <option value="">Seleccioná un cliente…</option>
               {clientes.map((c) => (
@@ -215,7 +235,7 @@ function Campo({
     <label className="block space-y-1.5">
       <span className="text-caption font-semibold text-muted-foreground">{etiqueta}</span>
       <input
-        className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base text-foreground outline-none focus:border-accent"
+        className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base text-foreground outline-none focus:border-accent disabled:opacity-50"
         {...props}
       />
     </label>

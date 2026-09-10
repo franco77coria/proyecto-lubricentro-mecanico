@@ -20,7 +20,7 @@ import Anthropic from "@anthropic-ai/sdk";
  * Si se cambia, se cambia una vez.
  */
 export const MODELO_IA = "claude-opus-5";
-export const MODELO_GEMINI = process.env.GEMINI_MODELO || "gemini-3.6-flash";
+export const MODELO_GEMINI = process.env.GEMINI_MODELO || "gemini-3.5-flash";
 
 /**
  * La feature es OPCIONAL y tiene que poder no estar.
@@ -105,15 +105,20 @@ export async function generarTextoGemini(opciones: {
   }
 
   try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    let res: Response | null = null;
+    for (let intento = 0; intento < 2; intento++) {
+      res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.status !== 429 && res.status !== 503) break;
+      await new Promise((resolve) => setTimeout(resolve, 1500 * (intento + 1)));
+    }
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error(`[generarTextoGemini] HTTP ${res.status}:`, err);
+    if (!res || !res.ok) {
+      const err = await res?.text();
+      console.error(`[generarTextoGemini] HTTP ${res?.status}:`, err);
       return null;
     }
 
@@ -181,15 +186,20 @@ export async function generarVisionGemini(opciones: {
   }
 
   try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    let res: Response | null = null;
+    for (let intento = 0; intento < 2; intento++) {
+      res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.status !== 429 && res.status !== 503) break;
+      await new Promise((resolve) => setTimeout(resolve, 1500 * (intento + 1)));
+    }
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error(`[generarVisionGemini] HTTP ${res.status}:`, err);
+    if (!res || !res.ok) {
+      const err = await res?.text();
+      console.error(`[generarVisionGemini] HTTP ${res?.status}:`, err);
       return null;
     }
 

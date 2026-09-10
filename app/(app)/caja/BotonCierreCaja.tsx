@@ -2,11 +2,13 @@
 
 import { Lock } from "lucide-react";
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { realizarCierreCaja } from "@/lib/actions/caja";
 
 export function BotonCierreCaja() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { notificar } = useIsla();
 
@@ -19,6 +21,7 @@ export function BotonCierreCaja() {
         notificar({ tipo: "error", mensaje: res.error });
       } else {
         notificar({ tipo: "exito", mensaje: "Cierre de caja registrado exitosamente" });
+        router.refresh();
       }
     });
   };
