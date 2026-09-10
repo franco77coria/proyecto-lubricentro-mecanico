@@ -41,7 +41,7 @@ export function Hero() {
 
   // Planos de profundidad paralaje independientes (Nate's Layering Standard)
   const opacity = useTransform(scrollYProgress, [0, 0.85], [1, 0]);
-  const yContent = useTransform(scrollYProgress, [0, 1], ["0%", "-14%"]);
+  const yContent = useTransform(scrollYProgress, [0, 1], ["0px", "-45px"]);
   const yChipTop = useTransform(scrollYProgress, [0, 1], ["0px", "-50px"]);
   const yChipBottom = useTransform(scrollYProgress, [0, 1], ["0px", "40px"]);
   const bayLighting = useTransform(scrollYProgress, [0, 0.8], [1, 0.3]);

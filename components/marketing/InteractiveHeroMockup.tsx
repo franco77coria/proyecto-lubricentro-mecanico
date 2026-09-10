@@ -186,7 +186,7 @@ export function InteractiveHeroMockup() {
                         key={st.id}
                         type="button"
                         onClick={() => cambiarEstado(st.id)}
-                        className={`min-h-11 px-2 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all ${
+                        className={`min-h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-bold transition-all ${
                           isCurrent
                             ? st.id === "listo"
                               ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.25)]"
@@ -197,7 +197,7 @@ export function InteractiveHeroMockup() {
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5 shrink-0" />
-                        <span>{st.label}</span>
+                        <span className="truncate">{st.label}</span>
                       </button>
                     );
                   })}

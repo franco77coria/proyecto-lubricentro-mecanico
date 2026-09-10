@@ -128,7 +128,7 @@ export function WorkshopAtmosphere() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center filter brightness-[0.72] contrast-[1.12]"
+            className="object-cover object-[center_32%] sm:object-center filter brightness-[0.72] contrast-[1.12]"
           />
         </motion.div>
 
@@ -142,7 +142,7 @@ export function WorkshopAtmosphere() {
             alt={SCENES[1].alt}
             fill
             sizes="100vw"
-            className="object-cover object-center filter brightness-[0.7] contrast-[1.15]"
+            className="object-cover object-[center_38%] sm:object-center filter brightness-[0.7] contrast-[1.15]"
           />
         </motion.div>
 
@@ -156,7 +156,7 @@ export function WorkshopAtmosphere() {
             alt={SCENES[2].alt}
             fill
             sizes="100vw"
-            className="object-cover object-center filter brightness-[0.68] contrast-[1.18]"
+            className="object-cover object-[center_45%] sm:object-center filter brightness-[0.68] contrast-[1.18]"
           />
         </motion.div>
       </motion.div>
@@ -181,8 +181,8 @@ export function WorkshopAtmosphere() {
       )}
 
       {/* ── PLANO 3: Scrims & Viñeteado Cinemático para Contraste Impecable de Textos ── */}
-      {/* Gradiente vertical para asegurar legibilidad total de tipografía */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#060608]/75 via-[#060608]/50 to-[#060608]/95 pointer-events-none" />
+      {/* Gradiente vertical calibrado para mobile y desktop */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#060608]/85 via-[#060608]/60 to-[#060608]/95 sm:from-[#060608]/75 sm:via-[#060608]/50 sm:to-[#060608]/95 pointer-events-none" />
 
       {/* Gradiente lateral izquierdo para anclar la columna de lectura en desktop */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/90 via-[#060608]/55 to-[#060608]/30 sm:to-transparent pointer-events-none" />
