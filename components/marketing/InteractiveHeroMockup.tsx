@@ -90,29 +90,29 @@ export function InteractiveHeroMockup() {
   return (
     <div className="relative w-full max-w-xl mx-auto">
       {/* Resplandor ambiental de fondo */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/10 to-transparent rounded-[2.5rem] blur-2xl -z-10 opacity-70" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 via-amber-500/10 to-transparent rounded-[2rem] sm:rounded-[2.5rem] blur-2xl -z-10 opacity-70 pointer-events-none" />
 
       {/* Outer Shell (Doppelrand / Double-Bezel Hardware Architecture) */}
-      <div className="rounded-[2rem] bg-white/[0.04] p-1.5 sm:p-2 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+      <div className="rounded-[1.5rem] sm:rounded-[2rem] bg-white/[0.04] p-1 sm:p-2 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
         {/* Inner Core */}
-        <div className="rounded-[calc(2rem-0.375rem)] bg-[#101014]/95 border border-white/[0.06] p-4 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+        <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2rem-0.375rem)] bg-[#101014]/95 border border-white/[0.06] p-3.5 sm:p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
           {/* Header de la terminal */}
-          <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5 sm:pb-3 mb-3 sm:mb-4 gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="flex h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider sm:tracking-widest text-emerald-400 font-bold truncate">
                 Elevador 02 · Fosa Activa
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-white/70 border border-white/[0.06]">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[9.5px] sm:text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-white/70 border border-white/[0.06]">
                 OT #2026-084
               </span>
             </div>
           </div>
 
           {/* Selector de Vehículos en Taller */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-4 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.05] mb-3 sm:mb-4 overflow-x-auto scrollbar-none overscroll-x-contain">
             {VEHICULOS_DEMO.map((v) => {
               const active = v.id === seleccionado;
               const est = estados[v.id] || v.estado;
@@ -121,15 +121,15 @@ export function InteractiveHeroMockup() {
                   key={v.id}
                   type="button"
                   onClick={() => setSeleccionado(v.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
                     active
-                      ? "bg-accent text-accent-foreground shadow-sm shadow-orange-500/30"
+                      ? "bg-accent text-accent-foreground shadow-sm shadow-orange-500/30 font-bold"
                       : "text-white/60 hover:text-white hover:bg-white/[0.04]"
                   }`}
                 >
                   <span>{v.patente}</span>
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${
+                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                       est === "listo"
                         ? "bg-emerald-400"
                         : est === "en_fosa"
@@ -150,28 +150,30 @@ export function InteractiveHeroMockup() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm sm:text-base md:text-lg font-black text-white tracking-tight leading-snug truncate">
                     {vehiculo.modelo}
                   </h3>
-                  <p className="text-xs text-white/60 mt-0.5 flex items-center gap-2">
-                    <span>{vehiculo.motor}</span>
-                    <span>·</span>
-                    <span className="font-mono text-white/80">{vehiculo.km}</span>
+                  <p className="text-[11px] sm:text-xs text-white/60 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span className="truncate">{vehiculo.motor}</span>
+                    <span className="text-white/30">·</span>
+                    <span className="font-mono text-white/80 shrink-0">{vehiculo.km}</span>
                   </p>
                 </div>
-                <PlacaPatente patente={vehiculo.patente} size="sm" />
+                <div className="shrink-0 mt-0.5">
+                  <PlacaPatente patente={vehiculo.patente} size="sm" />
+                </div>
               </div>
 
               {/* Control Táctil de Estado (1 toque para el mecánico en fosa) */}
               <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-white/50 mb-2">
+                <p className="text-[9.5px] sm:text-[10px] uppercase font-bold tracking-wider text-white/50 mb-1.5 sm:mb-2">
                   Estado en Taller (1 toque para actualizar):
                 </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {(
                     [
                       { id: "recibido", label: "Recibido", color: "blue", icon: Clock },
@@ -186,7 +188,7 @@ export function InteractiveHeroMockup() {
                         key={st.id}
                         type="button"
                         onClick={() => cambiarEstado(st.id)}
-                        className={`min-h-11 px-1.5 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-bold transition-all ${
+                        className={`min-h-10 sm:min-h-11 px-1 sm:px-2 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 text-[10.5px] sm:text-xs font-bold transition-all ${
                           isCurrent
                             ? st.id === "listo"
                               ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.25)]"
@@ -196,7 +198,7 @@ export function InteractiveHeroMockup() {
                             : "bg-white/[0.03] text-white/50 border border-white/[0.05] hover:bg-white/[0.06] hover:text-white"
                         }`}
                       >
-                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
                         <span className="truncate">{st.label}</span>
                       </button>
                     );
@@ -205,23 +207,25 @@ export function InteractiveHeroMockup() {
               </div>
 
               {/* Especificaciones Rápidas de Servicio (Datos críticos para el mecánico) */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-orange-400/90 mb-1">
-                    <Droplets className="h-3.5 w-3.5" />
-                    <span>Cárter &amp; Viscosidad</span>
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-2.5 sm:p-3 min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-orange-400/90 mb-1">
+                    <Droplets className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                    <span className="truncate">Cárter &amp; Viscosidad</span>
                   </div>
-                  <p className="font-bold text-white text-sm">{vehiculo.litros} Litros</p>
-                  <p className="text-[11px] text-white/60 truncate">{vehiculo.aceite}</p>
+                  <p className="font-bold text-white text-xs sm:text-sm">{vehiculo.litros} Litros</p>
+                  <p className="text-[10.5px] sm:text-[11px] text-white/60 truncate">{vehiculo.aceite}</p>
                 </div>
 
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/50 mb-1">
-                    <Wrench className="h-3.5 w-3.5" />
-                    <span>Filtros &amp; Repuestos</span>
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-2.5 sm:p-3 min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-white/50 mb-1">
+                    <Wrench className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                    <span className="truncate">Filtros &amp; Repuestos</span>
                   </div>
-                  <p className="font-bold text-white text-sm truncate">{vehiculo.filtro}</p>
-                  <p className="text-[11px] text-emerald-400 font-medium">Stock disponible: 8 un.</p>
+                  <p className="font-bold text-white text-xs sm:text-sm truncate" title={vehiculo.filtro}>
+                    {vehiculo.filtro}
+                  </p>
+                  <p className="text-[10.5px] sm:text-[11px] text-emerald-400 font-medium truncate">Stock disponible: 8 un.</p>
                 </div>
               </div>
 
@@ -229,21 +233,21 @@ export function InteractiveHeroMockup() {
               {vehiculo.alertas && (
                 <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 flex items-start gap-2 text-xs text-amber-200">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-                  <p className="leading-snug">{vehiculo.alertas}</p>
+                  <p className="leading-snug text-[11px] sm:text-xs">{vehiculo.alertas}</p>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
 
           {/* Footer de la maqueta: Disparo instantáneo de WhatsApp */}
-          <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs">
-            <span className="text-white/60 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              Notificación WhatsApp al cliente:
+          <div className="mt-3.5 sm:mt-4 pt-2.5 sm:pt-3 border-t border-white/[0.08] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[11px] sm:text-xs">
+            <span className="text-white/60 flex items-center gap-1.5 truncate">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+              <span className="truncate">Aviso WhatsApp al cliente:</span>
             </span>
-            <span className="font-bold text-accent hover:underline cursor-pointer flex items-center gap-1">
-              Enlace de Seguimiento listo
-              <ArrowUpRight className="h-3 w-3" />
+            <span className="font-bold text-accent hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto shrink-0">
+              <span>Enlace de Seguimiento listo</span>
+              <ArrowUpRight className="h-3 w-3 shrink-0" />
             </span>
           </div>
         </div>

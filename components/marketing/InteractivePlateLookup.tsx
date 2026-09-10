@@ -129,17 +129,17 @@ export function InteractivePlateLookup() {
         </div>
 
         {/* Maqueta Interactiva de Búsqueda y Ficha */}
-        <div className="relative rounded-[2rem] bg-white/[0.04] p-2 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-          <div className="rounded-[calc(2rem-0.375rem)] bg-[#101014]/95 border border-white/[0.06] p-5 sm:p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+        <div className="relative rounded-[1.5rem] sm:rounded-[2rem] bg-white/[0.04] p-1.5 sm:p-2 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+          <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2rem-0.375rem)] bg-[#101014]/95 border border-white/[0.06] p-4 sm:p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
             {/* Input con Icono de Búsqueda */}
-            <div className="relative flex items-center mb-6">
+            <div className="relative flex items-center mb-5 sm:mb-6">
               <Search className="absolute left-4 h-5 w-5 text-white/40" />
               <input
                 type="text"
                 value={patenteInput}
                 onChange={(e) => handleBuscar(e.target.value)}
                 placeholder="Ingresá una patente (ej: AE789CD)..."
-                className="w-full min-h-12 pl-12 pr-4 rounded-xl bg-white/[0.05] border border-white/10 text-white font-mono font-bold text-base uppercase tracking-wider placeholder:text-white/30 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                className="w-full min-h-12 pl-12 pr-4 rounded-xl bg-white/[0.05] border border-white/10 text-white font-mono font-bold text-sm sm:text-base uppercase tracking-wider placeholder:text-white/30 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
 
@@ -151,23 +151,26 @@ export function InteractivePlateLookup() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-5"
+                className="space-y-4 sm:space-y-5"
               >
                 {/* Cabecera del Vehículo Encontrado */}
-                <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-b border-white/[0.08] pb-4">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-[11px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                         <CheckCircle className="h-3 w-3" /> Ficha Homologada
                       </span>
                       <span className="text-xs text-white/40">{datos.anio}</span>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-black text-white mt-1">
+                    <h3 className="text-base sm:text-lg md:text-xl font-black text-white mt-1">
                       {datos.marca} {datos.modelo}
                     </h3>
                     <p className="text-xs text-white/60 font-mono mt-0.5">{datos.motor}</p>
                   </div>
-                  <PlacaPatente patente={patenteActiva} size="md" />
+                  <div className="self-start sm:self-center shrink-0">
+                    <PlacaPatente patente={patenteActiva} size="sm" className="sm:hidden" />
+                    <PlacaPatente patente={patenteActiva} size="md" className="hidden sm:block" />
+                  </div>
                 </div>
 
                 {/* Especificación de Lubricación (El dolor del lubricentro) */}

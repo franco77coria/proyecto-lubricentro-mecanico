@@ -46,16 +46,16 @@ export function Hero() {
   const bayLighting = useTransform(scrollYProgress, [0, 0.8], [1, 0.3]);
 
   return (
-    <section ref={ref} className="relative w-full min-h-[100svh] flex items-center pt-24 pb-16 overflow-hidden">
+    <section ref={ref} className="relative w-full min-h-[100svh] flex items-center pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden">
       {/* ── PLANO 0 & 1: Iluminación de Bahía de Servicio y Guías de Elevador ── */}
       <motion.div
         style={reduceMotion ? undefined : { opacity: bayLighting }}
-        className="absolute inset-0 pointer-events-none -z-10"
+        className="absolute inset-0 pointer-events-none -z-10 overflow-hidden"
         aria-hidden
       >
         {/* Haz de luz de reflector de fosa apuntando al elevador */}
-        <div className="absolute top-1/4 right-[15%] w-[500px] h-[500px] rounded-full bg-radial from-orange-500/15 via-orange-500/5 to-transparent blur-3xl" />
-        <div className="absolute top-1/3 right-[30%] w-[350px] h-[350px] rounded-full bg-radial from-cyan-500/10 to-transparent blur-2xl" />
+        <div className="absolute top-1/4 right-[15%] w-[320px] sm:w-[500px] h-[320px] sm:h-[500px] rounded-full bg-radial from-orange-500/15 via-orange-500/5 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 right-[30%] w-[240px] sm:w-[350px] h-[240px] sm:h-[350px] rounded-full bg-radial from-cyan-500/10 to-transparent blur-2xl" />
 
         {/* Columnas estructurales de elevador hidráulico en perspectiva sutil */}
         <div className="absolute right-[5%] top-12 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent hidden lg:block" />
@@ -64,20 +64,20 @@ export function Hero() {
 
       <motion.div
         style={reduceMotion ? undefined : { opacity, y: yContent }}
-        className="w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 relative z-10"
+        className="w-full max-w-7xl mx-auto px-3.5 sm:px-8 lg:px-12 py-6 sm:py-12 relative z-10"
       >
-        <div className="grid gap-12 lg:grid-cols-[1.05fr_1.1fr] lg:items-center xl:gap-16">
+        <div className="grid gap-10 lg:grid-cols-[1.05fr_1.1fr] lg:items-center xl:gap-16">
           {/* ── Columna Izquierda: Copywriting & Propuesta de Valor ── */}
           <div className="max-w-2xl">
             <Fade delay={0.08}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3.5 py-1.5 text-xs font-semibold text-orange-400 backdrop-blur-md shadow-[0_2px_10px_rgba(249,115,22,0.15)]">
-                <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                <span className="tracking-wide uppercase font-bold">Software de Fosa &amp; Taller Mecánico</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-orange-400 backdrop-blur-md shadow-[0_2px_10px_rgba(249,115,22,0.15)]">
+                <span className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" />
+                <span className="tracking-wide uppercase font-bold truncate">Software de Fosa &amp; Taller Mecánico</span>
               </div>
             </Fade>
 
             <Fade delay={0.16}>
-              <h1 className="t-hero mt-6 text-balance text-white font-black tracking-tight">
+              <h1 className="t-hero mt-4 sm:mt-6 text-balance text-white font-black tracking-tight">
                 El control de tu taller, <br className="hidden sm:inline" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/95 to-orange-400">
                   sin cuaderno de papel.
@@ -86,47 +86,47 @@ export function Hero() {
             </Fade>
 
             <Fade delay={0.24}>
-              <p className="mt-6 text-base sm:text-lg lg:text-xl leading-relaxed text-white/70">
+              <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-xl leading-relaxed text-white/70">
                 Diseñado para la fosa real argentina: órdenes de trabajo en 1 toque, fichas de cárter por
                 patente (<strong className="text-white">Hilux, Amarok, Ranger, Fluence</strong>), stock de aceite sincronizado y avisos de WhatsApp con fotos para que el cliente no llame todo el día.
               </p>
             </Fade>
 
             {/* CTA Principal Button-in-Button */}
-            <Fade delay={0.32} className="mt-9 flex flex-wrap items-center gap-5 sm:gap-7">
+            <Fade delay={0.32} className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-7">
               <Link
                 href="/login"
-                className="group relative inline-flex min-h-14 items-center gap-4 rounded-full bg-accent pl-8 pr-3.5 font-bold text-accent-foreground shadow-[0_10px_35px_rgba(249,115,22,0.4)] transition-all hover:bg-orange-500 hover:shadow-[0_15px_45px_rgba(249,115,22,0.5)] active:scale-[0.98]"
+                className="group relative inline-flex min-h-12 sm:min-h-14 items-center justify-center sm:justify-start gap-3 sm:gap-4 rounded-full bg-accent px-6 sm:pl-8 sm:pr-3.5 font-bold text-accent-foreground shadow-[0_10px_35px_rgba(249,115,22,0.4)] transition-all hover:bg-orange-500 hover:shadow-[0_15px_45px_rgba(249,115,22,0.5)] active:scale-[0.98] text-center text-xs sm:text-sm"
               >
                 <span>Empezar prueba gratis de 7 días</span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-white transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5">
+                <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-black/20 text-white transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5 shrink-0">
                   <ArrowRight className="h-4 w-4" />
                 </span>
               </Link>
 
               <Link
                 href="#patentes"
-                className="inline-flex min-h-12 items-center text-sm font-semibold text-white/80 transition-colors hover:text-white border-b border-white/20 hover:border-white pb-0.5"
+                className="inline-flex min-h-11 items-center justify-center sm:justify-start text-xs sm:text-sm font-semibold text-white/80 transition-colors hover:text-white border-b border-white/20 hover:border-white pb-0.5 text-center"
               >
                 Ver ficha de cárter por patente →
               </Link>
             </Fade>
 
             {/* Micro badges de confianza de taller */}
-            <Fade delay={0.4} className="mt-10 pt-6 border-t border-white/10 flex flex-wrap items-center gap-6 text-xs text-white/60">
+            <Fade delay={0.4} className="mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs text-white/60">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
                 <span>Datos protegidos por Postgres multi-taller</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
                 <span>IA Gemini 3.0 para Cédula Verde y Diagnóstico</span>
               </div>
             </Fade>
           </div>
 
           {/* ── Columna Derecha: PLANO 2 (Terminal de Fosa) & PLANO 3 (Micro-HUD Flotante) ── */}
-          <Fade delay={0.22} className="w-full relative">
+          <Fade delay={0.22} className="w-full relative min-w-0">
             {/* Micro-HUD Flotante Superior (Plano 3 - Paralaje rápido hacia arriba) */}
             <motion.div
               style={reduceMotion ? undefined : { y: yChipTop }}
@@ -152,8 +152,8 @@ export function Hero() {
             </motion.div>
 
             {/* Terminal Interactiva en Plano Dimensional con leve perspectiva 3D */}
-            <div className="relative transform-gpu lg:perspective-1000">
-              <div className="transition-transform duration-500 lg:rotate-y-[-2deg] lg:rotate-x-[1deg] hover:rotate-0">
+            <div className="relative transform-gpu lg:perspective-1000 w-full min-w-0">
+              <div className="transition-transform duration-500 lg:rotate-y-[-2deg] lg:rotate-x-[1deg] hover:rotate-0 w-full min-w-0">
                 <InteractiveHeroMockup />
               </div>
             </div>

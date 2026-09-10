@@ -19,8 +19,8 @@ export function CalculadoraFugas() {
 
   return (
     <section className="seccion">
-      <div className="relative rounded-[2.5rem] bg-white/[0.03] p-2 border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-        <div className="rounded-[calc(2.5rem-0.5rem)] bg-[#121216]/95 border border-white/[0.06] p-6 sm:p-12">
+      <div className="relative rounded-[1.5rem] sm:rounded-[2.5rem] bg-white/[0.03] p-1.5 sm:p-2 border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
+        <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2.5rem-0.5rem)] bg-[#121216]/95 border border-white/[0.06] p-4 sm:p-12">
           <div className="max-w-2xl">
             <p className="t-eyebrow">Calculadora de Rentabilidad</p>
             <h2 className="t-titulo mt-4 text-balance text-white">
@@ -32,11 +32,11 @@ export function CalculadoraFugas() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="mt-8 sm:mt-10 grid gap-8 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             {/* Controles de Entrada */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Slider 1: Autos por día */}
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="slider-autos" className="text-sm font-bold text-white">
                     Vehículos atendidos por día:
@@ -62,7 +62,7 @@ export function CalculadoraFugas() {
               </div>
 
               {/* Slider 2: Litros de aceite no registrados por semana */}
-              <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="slider-litros" className="text-sm font-bold text-white">
                     Litros o repuestos chicos olvidados por semana:

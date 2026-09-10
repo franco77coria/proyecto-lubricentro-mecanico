@@ -166,7 +166,7 @@ export function WorkshopAtmosphere() {
       {!reduceMotion && mounted && (
         <motion.div
           style={{ top: scanLaserY }}
-          className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-40 pointer-events-none"
+          className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-40 pointer-events-none overflow-hidden"
         >
           <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-48 h-3 bg-cyan-400/20 blur-md rounded-full" />
         </motion.div>

@@ -15,7 +15,7 @@ import {
 
 export default function MarketingPage() {
   return (
-    <div className="relative flex flex-col items-center overflow-x-clip">
+    <div className="relative flex flex-col items-center w-full max-w-full overflow-x-hidden">
       <WorkshopAtmosphere />
 
       {/* 1. Hero con Terminal Interactiva de Fosa */}

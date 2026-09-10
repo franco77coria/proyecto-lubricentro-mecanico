@@ -385,9 +385,9 @@ export function Seguimiento() {
 
         {/* Maqueta Interactiva del Live Tracker */}
         <Reveal delay={0.12}>
-          <div className="relative rounded-[2rem] border border-white/10 bg-[#121216]/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="relative rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 bg-[#121216]/90 p-4 sm:p-8 shadow-2xl backdrop-blur-2xl">
             {/* Header del Tracker */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-mono font-bold text-emerald-400">EN VIVO</span>
@@ -396,15 +396,18 @@ export function Seguimiento() {
             </div>
 
             {/* Vehículo y Patente */}
-            <div className="mt-6 flex items-center justify-between gap-4">
-              <div>
+            <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs uppercase tracking-wider text-white/50 font-semibold">
                   Vehículo en Fosa
                 </p>
-                <p className="text-lg font-black text-white mt-0.5">Toyota Hilux 2.8 D-4D</p>
+                <p className="text-base sm:text-lg font-black text-white mt-0.5">Toyota Hilux 2.8 D-4D</p>
                 <p className="text-xs text-white/60 mt-0.5">Service 50.000 km + 4 Filtros</p>
               </div>
-              <PlacaPatente patente="AE789CD" size="md" />
+              <div className="self-start sm:self-center shrink-0">
+                <PlacaPatente patente="AE789CD" size="sm" className="sm:hidden" />
+                <PlacaPatente patente="AE789CD" size="md" className="hidden sm:block" />
+              </div>
             </div>
 
             {/* Stepper tipo Mercado Libre */}
