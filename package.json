@@ -30,7 +30,8 @@
     "verify:storage": "node scripts/verificar-storage.mjs",
     "verify:flujo": "node scripts/verificar-flujo.mjs",
     "verify:equipo": "node scripts/verificar-equipo.mjs",
-    "verify": "npm run verify:db && npm run verify:tenant && npm run verify:storage && npm run verify:flujo && npm run verify:equipo",
+    "verify:mp": "node scripts/verificar-mercadopago.mjs",
+    "verify": "npm run verify:db && npm run verify:tenant && npm run verify:storage && npm run verify:flujo && npm run verify:equipo && npm run verify:mp",
     "mp:whoami": "mpcli whoami",
     "mp:plans": "mpcli subscription-plans search",
     "mp:subs": "mpcli subscriptions search"

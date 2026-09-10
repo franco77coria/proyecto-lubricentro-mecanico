@@ -51,13 +51,22 @@ export interface DetallePago {
 }
 
 /**
+ * Limpia espacios y comillas envolventes accidentales en variables de entorno.
+ */
+function limpiarEnv(valor?: string): string {
+  if (!valor) return "";
+  return valor.trim().replace(/^["']|["']$/g, "").trim();
+}
+
+/**
  * Obtiene el access token de Mercado Pago configurado en las variables de entorno.
  */
 function obtenerAccessToken(): string {
-  const token =
+  const token = limpiarEnv(
     process.env.MERCADOPAGO_ACCESS_TOKEN ||
     process.env.MERCADO_PAGO_ACCESS_TOKEN ||
-    process.env.MP_ACCESS_TOKEN;
+    process.env.MP_ACCESS_TOKEN
+  );
   if (!token) {
     throw new Error(
       "MERCADOPAGO_ACCESS_TOKEN (o MP_ACCESS_TOKEN) no está configurado. Configurá tus credenciales de Mercado Pago en .env.local o ejecuta `mpcli login`."
@@ -70,10 +79,11 @@ function obtenerAccessToken(): string {
  * Obtiene el monto mensual configurado para la suscripción en ARS (default: $29.900 ARS).
  */
 export function obtenerPrecioPlanMensual(): number {
-  const envVal =
+  const envVal = limpiarEnv(
     process.env.MP_PRECIO_PLAN_MENSUAL ||
     process.env.MP_AMOUNT ||
-    process.env.MERCADOPAGO_PRECIO_PLAN;
+    process.env.MERCADOPAGO_PRECIO_PLAN
+  );
   if (envVal) {
     const parsed = Number(envVal);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -312,7 +322,11 @@ export function validarFirmaWebhookMP(
     const manifest = `id:${dataId};request-id:${xRequestId || ""};ts:${ts};`;
     const hmac = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
 
-    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+    const bufHmac = Buffer.from(hmac);
+    const bufV1 = Buffer.from(v1);
+    if (bufHmac.length !== bufV1.length) return false;
+
+    return crypto.timingSafeEqual(bufHmac, bufV1);
   } catch (err) {
     console.error("[validarFirmaWebhookMP] Error:", err);
     return false;
