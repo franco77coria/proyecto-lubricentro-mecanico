@@ -51,7 +51,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div
           className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between gap-4 rounded-full pl-5 sm:pl-6 pr-2 transition-all duration-300 ${
             scrolled || menuAbierto
-              ? "border border-white/10 bg-[#0a0a0a]/85 py-2 backdrop-blur-xl"
+              ? "border border-black/[0.08] bg-white/85 py-2 backdrop-blur-xl shadow-lg shadow-black/[0.04]"
               : "border border-transparent bg-transparent py-3"
           }`}
         >
@@ -59,7 +59,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
           <Link
             href="/"
             onClick={cerrarMenu}
-            className="flex min-h-11 items-center text-[1.125rem] font-bold tracking-[-0.04em] text-white"
+            className="flex min-h-11 items-center text-[1.125rem] font-bold tracking-[-0.04em] text-zinc-950"
           >
             Fierros
           </Link>
@@ -74,7 +74,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
                   href={l.href}
                   aria-current={on ? "true" : undefined}
                   className={`inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-medium transition-colors ${
-                    on ? "text-white" : "text-white/60 hover:text-white"
+                    on ? "text-zinc-950 font-bold" : "text-zinc-600 hover:text-zinc-950"
                   }`}
                 >
                   {l.label}
@@ -88,7 +88,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
             {!isLoggedIn && (
               <Link
                 href="/login"
-                className="hidden min-h-11 items-center px-3 text-sm font-medium text-white/70 transition-colors hover:text-white sm:inline-flex"
+                className="hidden min-h-11 items-center px-3 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 sm:inline-flex"
               >
                 Ingresar
               </Link>
@@ -106,7 +106,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
               onClick={() => setMenuAbierto((v) => !v)}
               aria-expanded={menuAbierto}
               aria-label="Abrir menú de navegación"
-              className="flex md:hidden min-h-11 min-w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/15 active:scale-95 transition-colors"
+              className="flex md:hidden min-h-11 min-w-11 items-center justify-center rounded-full bg-black/5 text-zinc-900 hover:bg-black/10 active:scale-95 transition-colors"
             >
               {menuAbierto ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -122,7 +122,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed inset-x-4 top-20 z-40 md:hidden rounded-3xl border border-white/15 bg-[#0e0e11]/95 p-6 shadow-2xl backdrop-blur-2xl"
+            className="fixed inset-x-4 top-20 z-40 md:hidden rounded-3xl border border-black/10 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl"
           >
             <nav className="flex flex-col gap-2">
               {LINKS.map((l) => (
@@ -130,19 +130,19 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
                   key={l.href}
                   href={l.href}
                   onClick={cerrarMenu}
-                  className="flex min-h-12 items-center justify-between rounded-2xl px-4 text-base font-bold text-white hover:bg-white/10 active:bg-white/15 transition-colors"
+                  className="flex min-h-12 items-center justify-between rounded-2xl px-4 text-base font-bold text-zinc-900 hover:bg-black/5 active:bg-black/10 transition-colors"
                 >
                   <span>{l.label}</span>
                   <ArrowRight className="h-4 w-4 text-accent" />
                 </Link>
               ))}
 
-              <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
+              <div className="mt-4 pt-4 border-t border-black/10 flex flex-col gap-2">
                 {!isLoggedIn && (
                   <Link
                     href="/login"
                     onClick={cerrarMenu}
-                    className="flex min-h-12 items-center justify-center rounded-2xl bg-white/5 text-sm font-bold text-white hover:bg-white/10 transition-colors"
+                    className="flex min-h-12 items-center justify-center rounded-2xl bg-black/5 text-sm font-bold text-zinc-800 hover:bg-black/10 transition-colors"
                   >
                     Ingresar a mi cuenta
                   </Link>

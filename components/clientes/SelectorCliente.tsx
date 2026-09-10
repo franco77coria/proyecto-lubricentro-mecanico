@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
-import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2 } from "lucide-react";
+import { useState, useEffect, useTransition, useRef } from "react";
+import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2, Camera } from "lucide-react";
 import { buscarClientesOmni, type ClienteOmniResultado } from "@/lib/actions/clientes";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { FormCliente } from "./FormCliente";
+import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
+import { desglosarTitular } from "@/lib/cedula";
+import { useIsla } from "@/components/isla/IslaContext";
 
 export interface SelectorClienteProps {
   clienteNombre: string;
@@ -35,11 +38,50 @@ export function SelectorCliente({
   onCambioDocumento,
   onSeleccionarVehiculo,
 }: SelectorClienteProps) {
+  const { notificar } = useIsla();
+  const inputFotoRef = useRef<HTMLInputElement>(null);
+  const [escaneandoCedula, setEscaneandoCedula] = useState(false);
   const [termino, setTermino] = useState("");
   const [resultados, setResultados] = useState<ClienteOmniResultado[]>([]);
   const [cargando, setCargando] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteOmniResultado | null>(null);
   const [, startTransition] = useTransition();
+
+  async function procesarFotoCedula(file: File) {
+    setEscaneandoCedula(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const dataUri = await base64Promise;
+
+      const res = await escanearCedulaVerdeAction(dataUri);
+      if (res.error) {
+        notificar({ tipo: "error", mensaje: res.error });
+        return;
+      }
+
+      if (res.datos) {
+        const titularLimpio = desglosarTitular(res.datos.titularNombre);
+        if (titularLimpio.nombre) onCambioNombre(titularLimpio.nombre);
+        if (titularLimpio.apellido) onCambioApellido(titularLimpio.apellido);
+        if (res.datos.titularDocumento) onCambioDocumento?.(res.datos.titularDocumento);
+
+        notificar({
+          tipo: "exito",
+          mensaje: `✨ Cédula leída: ${[titularLimpio.nombre, titularLimpio.apellido].filter(Boolean).join(" ")}`,
+        });
+      }
+    } catch (err) {
+      console.warn("[SelectorCliente/OCR]", err);
+      notificar({ tipo: "error", mensaje: "No se pudo leer la cédula." });
+    } finally {
+      setEscaneandoCedula(false);
+    }
+  }
 
   function handleCambioTermino(val: string) {
     setTermino(val);
@@ -94,30 +136,72 @@ export function SelectorCliente({
 
   return (
     <div className="space-y-3">
+      {/* Input oculto para escanear cédula verde con la cámara */}
+      <input
+        ref={inputFotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) procesarFotoCedula(file);
+          e.target.value = "";
+        }}
+      />
+
       {/* 1. Buscador Rápido de Clientes Registrados */}
       {!clienteSeleccionado && (
         <div className="relative">
           <div className="flex items-center justify-between mb-1">
             <label htmlFor="buscar-cliente" className="block text-caption font-semibold text-muted-foreground">
-              Buscar cliente existente (por Nombre, Teléfono o Patente)
+              Buscar cliente (por Nombre, Teléfono o Patente)
             </label>
-            <FormCliente
-              onClienteCreado={(c) => {
-                onCambioNombre(c.nombre);
-                onCambioApellido(c.apellido);
-                if (c.telefono) onCambioTelefono(c.telefono);
-                if (c.documento) onCambioDocumento?.(c.documento);
-              }}
-              botonTrigger={
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95"
-                >
-                  <UserPlus className="h-3 w-3" />
-                  <span>+ Crear nuevo</span>
-                </button>
-              }
-            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => inputFotoRef.current?.click()}
+                disabled={escaneandoCedula}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95 disabled:opacity-60"
+                title="Escanear cédula verde con la cámara para autocompletar cliente"
+              >
+                {escaneandoCedula ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Camera className="h-3 w-3" />
+                )}
+                <span>{escaneandoCedula ? "Leyendo..." : "Escanear Cédula"}</span>
+              </button>
+
+              <FormCliente
+                onClienteCreado={(c) => {
+                  onCambioNombre(c.nombre);
+                  onCambioApellido(c.apellido);
+                  if (c.telefono) onCambioTelefono(c.telefono);
+                  if (c.documento) onCambioDocumento?.(c.documento);
+                  setClienteSeleccionado({
+                    id: c.id,
+                    nombre: c.nombre,
+                    apellido: c.apellido,
+                    telefono: c.telefono || null,
+                    documento: c.documento || null,
+                    vehiculos: [],
+                  });
+                  setResultados([]);
+                  setTermino("");
+                }}
+                botonTrigger={
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95 cursor-pointer"
+                  >
+                    <UserPlus className="h-3 w-3" />
+                    <span>+ Crear nuevo</span>
+                  </span>
+                }
+              />
+            </div>
           </div>
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" aria-hidden />

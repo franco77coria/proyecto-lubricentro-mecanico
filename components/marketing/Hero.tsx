@@ -54,12 +54,12 @@ export function Hero() {
         aria-hidden
       >
         {/* Haz de luz de reflector de fosa apuntando al elevador */}
-        <div className="absolute top-1/4 right-[15%] w-[320px] sm:w-[500px] h-[320px] sm:h-[500px] rounded-full bg-radial from-orange-500/15 via-orange-500/5 to-transparent blur-3xl" />
-        <div className="absolute top-1/3 right-[30%] w-[240px] sm:w-[350px] h-[240px] sm:h-[350px] rounded-full bg-radial from-cyan-500/10 to-transparent blur-2xl" />
+        <div className="absolute top-1/4 right-[15%] w-[320px] sm:w-[500px] h-[320px] sm:h-[500px] rounded-full bg-radial from-orange-500/10 via-orange-500/5 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 right-[30%] w-[240px] sm:w-[350px] h-[240px] sm:h-[350px] rounded-full bg-radial from-cyan-500/8 to-transparent blur-2xl" />
 
         {/* Columnas estructurales de elevador hidráulico en perspectiva sutil */}
-        <div className="absolute right-[5%] top-12 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent hidden lg:block" />
-        <div className="absolute right-[46%] top-12 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent hidden lg:block" />
+        <div className="absolute right-[5%] top-12 bottom-0 w-px bg-gradient-to-b from-black/10 via-black/5 to-transparent hidden lg:block" />
+        <div className="absolute right-[46%] top-12 bottom-0 w-px bg-gradient-to-b from-black/10 via-black/5 to-transparent hidden lg:block" />
       </motion.div>
 
       <motion.div
@@ -70,25 +70,25 @@ export function Hero() {
           {/* ── Columna Izquierda: Copywriting & Propuesta de Valor ── */}
           <div className="max-w-2xl">
             <Fade delay={0.08}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-orange-400 backdrop-blur-md shadow-[0_2px_10px_rgba(249,115,22,0.15)]">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-orange-600 backdrop-blur-md shadow-[0_2px_10px_rgba(249,115,22,0.1)]">
                 <span className="h-2 w-2 rounded-full bg-accent animate-pulse shrink-0" />
                 <span className="tracking-wide uppercase font-bold truncate">Software de Fosa &amp; Taller Mecánico</span>
               </div>
             </Fade>
 
             <Fade delay={0.16}>
-              <h1 className="t-hero mt-4 sm:mt-6 text-balance text-white font-black tracking-tight">
+              <h1 className="t-hero mt-4 sm:mt-6 text-balance text-zinc-950 font-black tracking-tight">
                 El control de tu taller, <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/95 to-orange-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-950 via-zinc-800 to-orange-600">
                   sin cuaderno de papel.
                 </span>
               </h1>
             </Fade>
 
             <Fade delay={0.24}>
-              <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-xl leading-relaxed text-white/70">
+              <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-xl leading-relaxed text-zinc-600">
                 Diseñado para la fosa real argentina: órdenes de trabajo en 1 toque, fichas de cárter por
-                patente (<strong className="text-white">Hilux, Amarok, Ranger, Fluence</strong>), stock de aceite sincronizado y avisos de WhatsApp con fotos para que el cliente no llame todo el día.
+                patente (<strong className="text-zinc-900">Hilux, Amarok, Ranger, Fluence</strong>), stock de aceite sincronizado y avisos de WhatsApp con fotos para que el cliente no llame todo el día.
               </p>
             </Fade>
 
@@ -96,7 +96,7 @@ export function Hero() {
             <Fade delay={0.32} className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-7">
               <Link
                 href="/login"
-                className="group relative inline-flex min-h-12 sm:min-h-14 items-center justify-center sm:justify-start gap-3 sm:gap-4 rounded-full bg-accent px-6 sm:pl-8 sm:pr-3.5 font-bold text-accent-foreground shadow-[0_10px_35px_rgba(249,115,22,0.4)] transition-all hover:bg-orange-500 hover:shadow-[0_15px_45px_rgba(249,115,22,0.5)] active:scale-[0.98] text-center text-xs sm:text-sm"
+                className="group relative inline-flex min-h-12 sm:min-h-14 items-center justify-center sm:justify-start gap-3 sm:gap-4 rounded-full bg-accent px-6 sm:pl-8 sm:pr-3.5 font-bold text-accent-foreground shadow-[0_10px_35px_rgba(249,115,22,0.3)] transition-all hover:bg-orange-500 hover:shadow-[0_15px_45px_rgba(249,115,22,0.4)] active:scale-[0.98] text-center text-xs sm:text-sm"
               >
                 <span>Empezar prueba gratis de 7 días</span>
                 <span className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-black/20 text-white transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-0.5 shrink-0">
@@ -106,20 +106,20 @@ export function Hero() {
 
               <Link
                 href="#patentes"
-                className="inline-flex min-h-11 items-center justify-center sm:justify-start text-xs sm:text-sm font-semibold text-white/80 transition-colors hover:text-white border-b border-white/20 hover:border-white pb-0.5 text-center"
+                className="inline-flex min-h-11 items-center justify-center sm:justify-start text-xs sm:text-sm font-semibold text-zinc-700 transition-colors hover:text-zinc-950 border-b border-zinc-300 hover:border-zinc-900 pb-0.5 text-center"
               >
                 Ver ficha de cárter por patente →
               </Link>
             </Fade>
 
             {/* Micro badges de confianza de taller */}
-            <Fade delay={0.4} className="mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs text-white/60">
+            <Fade delay={0.4} className="mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-black/10 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs text-zinc-500">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                 <span>Datos protegidos por Postgres multi-taller</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
                 <span>IA Gemini 3.0 para Cédula Verde y Diagnóstico</span>
               </div>
             </Fade>
@@ -130,24 +130,24 @@ export function Hero() {
             {/* Micro-HUD Flotante Superior (Plano 3 - Paralaje rápido hacia arriba) */}
             <motion.div
               style={reduceMotion ? undefined : { y: yChipTop }}
-              className="absolute -top-6 -right-2 sm:-right-4 z-20 hidden sm:flex items-center gap-2.5 rounded-2xl bg-[#141418]/90 border border-emerald-500/30 px-3.5 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-md"
+              className="absolute -top-6 -right-2 sm:-right-4 z-20 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 border border-emerald-500/30 px-3.5 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.08)] backdrop-blur-md"
             >
               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
               <div className="text-[11px] leading-tight">
-                <span className="font-bold text-white block">Cédula Verde Leída (IA)</span>
-                <span className="font-mono text-emerald-400 text-[10px]">LSJ 982 · Chasis OK</span>
+                <span className="font-bold text-zinc-900 block">Cédula Verde Leída (IA)</span>
+                <span className="font-mono text-emerald-600 font-semibold text-[10px]">LSJ 982 · Chasis OK</span>
               </div>
             </motion.div>
 
             {/* Micro-HUD Flotante Inferior (Plano 3 - Paralaje suave hacia abajo) */}
             <motion.div
               style={reduceMotion ? undefined : { y: yChipBottom }}
-              className="absolute -bottom-6 -left-2 sm:-left-4 z-20 hidden sm:flex items-center gap-2.5 rounded-2xl bg-[#141418]/90 border border-orange-500/30 px-3.5 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.6)] backdrop-blur-md"
+              className="absolute -bottom-6 -left-2 sm:-left-4 z-20 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 border border-orange-500/30 px-3.5 py-2 shadow-[0_10px_25px_rgba(0,0,0,0.08)] backdrop-blur-md"
             >
-              <Droplets className="h-4 w-4 text-orange-400 shrink-0" />
+              <Droplets className="h-4 w-4 text-orange-500 shrink-0" />
               <div className="text-[11px] leading-tight">
-                <span className="font-bold text-white block">Stock Sincronizado</span>
-                <span className="text-orange-400 text-[10px] font-semibold">-7.5L SAE 5W-30 en elevador</span>
+                <span className="font-bold text-zinc-900 block">Stock Sincronizado</span>
+                <span className="text-orange-600 text-[10px] font-semibold">-7.5L SAE 5W-30 en elevador</span>
               </div>
             </motion.div>
 

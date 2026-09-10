@@ -112,28 +112,27 @@
    ========================================================================== */
 
 .tema-marketing {
-  /* Oscuro, del mismo tono que el video de fondo: las superficies son
-     translúcidas para que el video se insinúe a través de las secciones en
-     vez de taparlo con paneles opacos. */
-  --background: #0a0a0a;
-  --card: rgba(255, 255, 255, 0.05);
-  --card-elevada: rgba(255, 255, 255, 0.09);
-  --foreground: #ffffff;
-  --muted: rgba(255, 255, 255, 0.12);
-  --muted-foreground: #a2a2a8;
-  --border: rgba(255, 255, 255, 0.12);
+  /* Clean Workshop Light (Taller Boutique & Porcelana Industrial):
+     Fondo claro luminoso, máxima legibilidad diurna, tarjetas de vidrio
+     esmerilado blanco con sombras multicapa suaves y acento naranja de fosa. */
+  --background: #f8fafc;
+  --card: rgba(255, 255, 255, 0.88);
+  --card-elevada: #ffffff;
+  --foreground: #09090b;
+  --muted: rgba(0, 0, 0, 0.05);
+  --muted-foreground: #52525b;
+  --border: rgba(0, 0, 0, 0.08);
 
-  --accent: #e2571f;
+  --accent: #f97316;
   --accent-foreground: #ffffff;
-  --ring: #e2571f;
+  --ring: #f97316;
 
-  /* En fondo oscuro una sombra no se ve: la elevación la da el borde claro. */
-  --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --sombra-media: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
-  --sombra-alta: 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  --sombra-sutil: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --sombra-media: 0 10px 25px -4px rgba(0, 0, 0, 0.07);
+  --sombra-alta: 0 20px 48px -12px rgba(0, 0, 0, 0.12);
 
-  --accent-suave: rgba(226, 87, 31, 0.14);
-  --accent-borde: rgba(226, 87, 31, 0.35);
+  --accent-suave: rgba(249, 115, 22, 0.08);
+  --accent-borde: rgba(249, 115, 22, 0.3);
 
   /* Radios grandes — es la firma más reconocible del sistema. */
   --radius-sm: 1rem;

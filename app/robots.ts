@@ -1,11 +1,13 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://fierros.app";
+
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/login"],
+        allow: ["/", "/login", "/seguimiento", "/seguimiento/*"],
         disallow: [
           "/tablero",
           "/ot",
@@ -35,5 +37,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

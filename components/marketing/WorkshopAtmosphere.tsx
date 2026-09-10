@@ -82,24 +82,24 @@ export function WorkshopAtmosphere() {
     <div
       ref={containerRef}
       aria-hidden
-      className="fixed inset-0 -z-10 bg-[#060608] overflow-hidden pointer-events-none select-none"
+      className="fixed inset-0 -z-10 bg-[#f8fafc] overflow-hidden pointer-events-none select-none"
     >
       {/* ── PLANO 0: Iluminación de Bahía & Grilla de Precisión Técnica ── */}
-      <div className="absolute inset-0 bg-radial-[circle_at_50%_15%,rgba(249,115,22,0.18)_0%,transparent_65%] pointer-events-none" />
-      <div className="absolute inset-0 bg-radial-[circle_at_15%_45%,rgba(14,165,233,0.12)_0%,transparent_60%] pointer-events-none" />
+      <div className="absolute inset-0 bg-radial-[circle_at_50%_15%,rgba(249,115,22,0.12)_0%,transparent_65%] pointer-events-none" />
+      <div className="absolute inset-0 bg-radial-[circle_at_15%_45%,rgba(14,165,233,0.08)_0%,transparent_60%] pointer-events-none" />
 
       {/* Grilla técnica sutil de ingeniería de taller */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+      <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="fosa-blueprint-grid" width="48" height="48" patternUnits="userSpaceOnUse">
               <path
                 d="M 48 0 L 0 0 0 48"
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.7)"
+                stroke="rgba(0, 0, 0, 0.15)"
                 strokeWidth="0.7"
               />
-              <circle cx="0" cy="0" r="1.2" fill="rgba(249, 115, 22, 0.9)" />
+              <circle cx="0" cy="0" r="1.2" fill="rgba(249, 115, 22, 0.7)" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#fosa-blueprint-grid)" />
@@ -129,7 +129,7 @@ export function WorkshopAtmosphere() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[center_32%] sm:object-center filter brightness-[0.72] contrast-[1.12]"
+            className="object-cover object-[center_32%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-30 mix-blend-multiply"
           />
         </motion.div>
 
@@ -143,7 +143,7 @@ export function WorkshopAtmosphere() {
             alt={SCENES[1].alt}
             fill
             sizes="100vw"
-            className="object-cover object-[center_38%] sm:object-center filter brightness-[0.7] contrast-[1.15]"
+            className="object-cover object-[center_38%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-25 mix-blend-multiply"
           />
         </motion.div>
 
@@ -157,7 +157,7 @@ export function WorkshopAtmosphere() {
             alt={SCENES[2].alt}
             fill
             sizes="100vw"
-            className="object-cover object-[center_45%] sm:object-center filter brightness-[0.68] contrast-[1.18]"
+            className="object-cover object-[center_45%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-25 mix-blend-multiply"
           />
         </motion.div>
       </motion.div>
@@ -166,30 +166,30 @@ export function WorkshopAtmosphere() {
       {!reduceMotion && mounted && (
         <motion.div
           style={{ top: scanLaserY }}
-          className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-40 pointer-events-none overflow-hidden"
+          className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-orange-500/40 to-transparent shadow-[0_0_12px_rgba(249,115,22,0.4)] opacity-40 pointer-events-none overflow-hidden"
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-48 h-3 bg-cyan-400/20 blur-md rounded-full" />
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-48 h-3 bg-orange-400/20 blur-md rounded-full" />
         </motion.div>
       )}
 
       {/* Micro-partículas lumínicas ambientales flotantes */}
       {!reduceMotion && mounted && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 rounded-full bg-orange-400/40 blur-[0.5px] animate-pulse" />
-          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-amber-400/30 blur-[1px] animate-ping" />
-          <div className="absolute bottom-1/3 left-1/3 w-1 h-1 rounded-full bg-cyan-400/50 blur-[0.5px] animate-pulse" />
+          <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 rounded-full bg-orange-500/30 blur-[0.5px] animate-pulse" />
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-amber-500/25 blur-[1px] animate-ping" />
+          <div className="absolute bottom-1/3 left-1/3 w-1 h-1 rounded-full bg-cyan-500/30 blur-[0.5px] animate-pulse" />
         </div>
       )}
 
       {/* ── PLANO 3: Scrims & Viñeteado Cinemático para Contraste Impecable de Textos ── */}
-      {/* Gradiente vertical calibrado para mobile y desktop */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#060608]/85 via-[#060608]/60 to-[#060608]/95 sm:from-[#060608]/75 sm:via-[#060608]/50 sm:to-[#060608]/95 pointer-events-none" />
+      {/* Gradiente vertical calibrado para mobile y desktop en modo claro */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#f8fafc]/92 via-[#f8fafc]/75 to-[#f8fafc]/98 sm:from-[#f8fafc]/88 sm:via-[#f8fafc]/65 sm:to-[#f8fafc]/98 pointer-events-none" />
 
       {/* Gradiente lateral izquierdo para anclar la columna de lectura en desktop */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/90 via-[#060608]/55 to-[#060608]/30 sm:to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#f8fafc]/95 via-[#f8fafc]/75 to-[#f8fafc]/40 sm:to-transparent pointer-events-none" />
 
-      {/* Viñeta perimetral de contraste */}
-      <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_35%,#060608_95%] pointer-events-none" />
+      {/* Viñeta perimetral de contraste suave */}
+      <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_45%,#f8fafc_95%] pointer-events-none" />
     </div>
   );
 }

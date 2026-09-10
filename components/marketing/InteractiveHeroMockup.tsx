@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Wrench, CheckCircle2, Clock, Droplets, AlertTriangle, ArrowUpRight } from "lucide-react";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
@@ -245,10 +246,13 @@ export function InteractiveHeroMockup() {
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
               <span className="truncate">Aviso WhatsApp al cliente:</span>
             </span>
-            <span className="font-bold text-accent hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto shrink-0">
+            <Link
+              href="/seguimiento"
+              className="font-bold text-accent hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto shrink-0 active:scale-95 transition-transform"
+            >
               <span>Enlace de Seguimiento listo</span>
               <ArrowUpRight className="h-3 w-3 shrink-0" />
-            </span>
+            </Link>
           </div>
         </div>
       </div>

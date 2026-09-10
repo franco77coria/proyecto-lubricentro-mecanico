@@ -45,6 +45,7 @@ const TEMPLATES: MensajeTemplate[] = [
 
 export function InteractiveWhatsAppPreview() {
   const [activoId, setActivoId] = useState("ingreso");
+  const [enviado, setEnviado] = useState(false);
   const template = TEMPLATES.find((t) => t.id === activoId) || TEMPLATES[0];
 
   return (
@@ -52,17 +53,17 @@ export function InteractiveWhatsAppPreview() {
       <div className="grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16">
         <div>
           <p className="t-eyebrow">Cero Teléfono Sonando</p>
-          <h2 className="t-titulo mt-6 text-balance text-white">
+          <h2 className="t-titulo mt-6 text-balance text-zinc-950 font-black">
             Avisos por WhatsApp en 1 clic. Tus clientes tranquilos, tu taller enfocado.
           </h2>
-          <p className="mt-6 text-base sm:text-lg leading-relaxed text-white/70">
+          <p className="mt-6 text-base sm:text-lg leading-relaxed text-zinc-600">
             Cada vez que cambia el estado de una orden o terminás un presupuesto, el sistema
             prepara el mensaje exacto con el link de seguimiento y fotos. Un clic y se envía por WhatsApp Web o desde el celular.
           </p>
 
           {/* Botones selectores de plantillas */}
           <div className="mt-8 space-y-2.5">
-            <p className="text-xs uppercase tracking-wider font-bold text-white/50 mb-3">
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-500 mb-3">
               Elegí una situación para ver el mensaje automático:
             </p>
             {TEMPLATES.map((t) => {
@@ -74,16 +75,16 @@ export function InteractiveWhatsAppPreview() {
                   onClick={() => setActivoId(t.id)}
                   className={`w-full text-left p-3.5 rounded-xl border flex items-center justify-between transition-all ${
                     isSel
-                      ? "bg-emerald-500/10 border-emerald-500/40 shadow-sm"
-                      : "bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] text-white/70 hover:text-white"
+                      ? "bg-emerald-50 border-emerald-400/80 shadow-xs"
+                      : "bg-white border-black/[0.08] hover:bg-zinc-50 text-zinc-700 hover:text-zinc-950 shadow-xs"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <MessageSquare
-                      className={`h-4 w-4 ${isSel ? "text-emerald-400" : "text-white/40"}`}
+                      className={`h-4 w-4 ${isSel ? "text-emerald-600" : "text-zinc-400"}`}
                     />
                     <span
-                      className={`text-sm font-bold ${isSel ? "text-white" : "text-white/80"}`}
+                      className={`text-sm font-bold ${isSel ? "text-emerald-950" : "text-zinc-800"}`}
                     >
                       {t.titulo}
                     </span>
@@ -91,8 +92,8 @@ export function InteractiveWhatsAppPreview() {
                   <span
                     className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md ${
                       isSel
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : "bg-white/[0.05] text-white/40"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-slate-100 text-zinc-500"
                     }`}
                   >
                     {t.badge}
@@ -151,11 +152,25 @@ export function InteractiveWhatsAppPreview() {
             {/* Input simulado */}
             <div className="bg-[#1f2c34] px-3 py-2 flex items-center gap-2">
               <div className="flex-1 bg-[#2a3942] rounded-full px-4 py-1.5 text-xs text-white/50">
-                Mensaje automático listo...
+                {enviado ? "✓ Enviado al celular del cliente" : "Mensaje automático listo..."}
               </div>
-              <div className="h-8 w-8 rounded-full bg-[#00a884] flex items-center justify-center text-black">
-                <Send className="h-3.5 w-3.5 fill-black" />
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEnviado(true);
+                  setTimeout(() => setEnviado(false), 2200);
+                }}
+                className={`h-8 w-8 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-sm ${
+                  enviado ? "bg-emerald-400 text-black scale-105" : "bg-[#00a884] text-black hover:brightness-110"
+                }`}
+                title="Probar simulación de envío"
+              >
+                {enviado ? (
+                  <CheckCheck className="h-4 w-4 stroke-[2.5]" />
+                ) : (
+                  <Send className="h-3.5 w-3.5 fill-black" />
+                )}
+              </button>
             </div>
           </div>
         </div>

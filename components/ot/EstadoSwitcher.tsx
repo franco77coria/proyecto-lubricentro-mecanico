@@ -74,8 +74,8 @@ export function EstadoSwitcher({ otId, estadoActual }: { otId: string; estadoAct
       </button>
 
       {desplegado && (
-        <div className="absolute right-0 top-14 z-50 w-60 rounded-2xl border border-white/10 bg-[#141417] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground border-b border-white/[0.06] mb-1">
+        <div className="absolute right-0 top-14 z-50 w-60 rounded-2xl border border-border bg-card p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60 mb-1">
             Cambiar estado de la orden:
           </div>
           {ESTADOS_OT.map((est) => {
@@ -88,7 +88,7 @@ export function EstadoSwitcher({ otId, estadoActual }: { otId: string; estadoAct
                 className={`flex w-full min-h-11 items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold transition-colors ${
                   esSeleccionado
                     ? "bg-accent/15 text-accent font-black"
-                    : "text-foreground hover:bg-white/[0.06]"
+                    : "text-foreground hover:bg-muted"
                 }`}
               >
                 <div className="flex items-center gap-2">

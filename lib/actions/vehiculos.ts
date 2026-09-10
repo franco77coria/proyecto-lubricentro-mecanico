@@ -232,38 +232,48 @@ async function resolverOCrearCliente(
 
   // 3. Buscar por nombre y apellido
   if (nom) {
-    let query = supabase
-      .from("cliente")
-      .select("id")
-      .eq("taller_id", tallerId)
-      .ilike("nombre", nom);
+    try {
+      let query = supabase
+        .from("cliente")
+        .select("id")
+        .eq("taller_id", tallerId)
+        .ilike("nombre", nom);
 
-    if (ape) {
-      query = query.ilike("apellido", ape);
-    } else {
-      query = query.or("apellido.eq.'',apellido.is.null");
+      if (ape) {
+        query = query.ilike("apellido", ape);
+      } else {
+        query = query.or("apellido.is.null,apellido.eq.");
+      }
+
+      const { data: porNombre } = await query.limit(1).maybeSingle();
+      if (porNombre) return porNombre.id;
+    } catch (err) {
+      console.warn("[resolverOCrearCliente] Error buscando por nombre:", err);
     }
-
-    const { data: porNombre } = await query.maybeSingle();
-
-    if (porNombre) return porNombre.id;
   }
 
   // 4. Si no existe y tiene al menos nombre, crearlo
   if (nom) {
-    const { data: nuevoCliente } = await supabase
-      .from("cliente")
-      .insert({
-        taller_id: tallerId,
-        nombre: nom,
-        apellido: ape,
-        telefono: telNorm,
-        documento: doc || null,
-      })
-      .select("id")
-      .single();
+    try {
+      const { data: nuevoCliente, error: errInsert } = await supabase
+        .from("cliente")
+        .insert({
+          taller_id: tallerId,
+          nombre: nom,
+          apellido: ape,
+          telefono: telNorm,
+          documento: doc || null,
+        })
+        .select("id")
+        .single();
 
-    return nuevoCliente?.id;
+      if (errInsert) {
+        console.error("[resolverOCrearCliente] Error insertando nuevo cliente:", errInsert);
+      }
+      return nuevoCliente?.id;
+    } catch (err) {
+      console.error("[resolverOCrearCliente] Excepción creando cliente:", err);
+    }
   }
 
   return undefined;

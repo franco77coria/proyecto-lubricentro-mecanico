@@ -19,14 +19,14 @@ export function CalculadoraFugas() {
 
   return (
     <section className="seccion">
-      <div className="relative rounded-[1.5rem] sm:rounded-[2.5rem] bg-white/[0.03] p-1.5 sm:p-2 border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-        <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2.5rem-0.5rem)] bg-[#121216]/95 border border-white/[0.06] p-4 sm:p-12">
+      <div className="relative rounded-[1.5rem] sm:rounded-[2.5rem] bg-white/80 p-1.5 sm:p-2 border border-black/[0.08] shadow-[0_25px_60px_rgba(0,0,0,0.06)] backdrop-blur-2xl">
+        <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2.5rem-0.5rem)] bg-white border border-black/[0.04] p-4 sm:p-12">
           <div className="max-w-2xl">
             <p className="t-eyebrow">Calculadora de Rentabilidad</p>
-            <h2 className="t-titulo mt-4 text-balance text-white">
+            <h2 className="t-titulo mt-4 text-balance text-zinc-950 font-black">
               ¿Cuánto dinero está goteando en tu fosa?
             </h2>
-            <p className="mt-4 text-base sm:text-lg leading-relaxed text-white/70">
+            <p className="mt-4 text-base sm:text-lg leading-relaxed text-zinc-600">
               Medio litro de más en cada cárter, un filtro que se sacó del estante sin anotar,
               un service cobrado de menos. Ajustá los números de tu taller y mirá lo que recuperás con Fierros.
             </p>
@@ -36,13 +36,13 @@ export function CalculadoraFugas() {
             {/* Controles de Entrada */}
             <div className="space-y-4 sm:space-y-6">
               {/* Slider 1: Autos por día */}
-              <div className="rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 sm:p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-slate-50/80 border border-black/[0.06] p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="slider-autos" className="text-sm font-bold text-white">
+                  <label htmlFor="slider-autos" className="text-sm font-bold text-zinc-900">
                     Vehículos atendidos por día:
                   </label>
                   <span className="text-xl font-mono font-black text-accent">
-                    {autosPorDia} <span className="text-xs text-white/50">autos/día</span>
+                    {autosPorDia} <span className="text-xs text-zinc-500 font-sans font-normal">autos/día</span>
                   </span>
                 </div>
                 <input
@@ -54,7 +54,7 @@ export function CalculadoraFugas() {
                   onChange={(e) => setAutosPorDia(Number(e.target.value))}
                   className="w-full accent-[#f97316] cursor-pointer"
                 />
-                <div className="flex justify-between text-[11px] text-white/40 mt-1 font-mono">
+                <div className="flex justify-between text-[11px] text-zinc-400 mt-1 font-mono">
                   <span>2 autos</span>
                   <span>20 autos</span>
                   <span>40 autos</span>
@@ -62,13 +62,13 @@ export function CalculadoraFugas() {
               </div>
 
               {/* Slider 2: Litros de aceite no registrados por semana */}
-              <div className="rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 sm:p-5">
+              <div className="rounded-xl sm:rounded-2xl bg-slate-50/80 border border-black/[0.06] p-4 sm:p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="slider-litros" className="text-sm font-bold text-white">
+                  <label htmlFor="slider-litros" className="text-sm font-bold text-zinc-900">
                     Litros o repuestos chicos olvidados por semana:
                   </label>
-                  <span className="text-xl font-mono font-black text-amber-400">
-                    {litrosPerdidosSemana} <span className="text-xs text-white/50">litros/sem</span>
+                  <span className="text-xl font-mono font-black text-amber-600">
+                    {litrosPerdidosSemana} <span className="text-xs text-zinc-500 font-sans font-normal">litros/sem</span>
                   </span>
                 </div>
                 <input
@@ -80,7 +80,7 @@ export function CalculadoraFugas() {
                   onChange={(e) => setLitrosPerdidosSemana(Number(e.target.value))}
                   className="w-full accent-[#f59e0b] cursor-pointer"
                 />
-                <div className="flex justify-between text-[11px] text-white/40 mt-1 font-mono">
+                <div className="flex justify-between text-[11px] text-zinc-400 mt-1 font-mono">
                   <span>1 litro</span>
                   <span>12 litros</span>
                   <span>25 litros</span>
@@ -89,28 +89,28 @@ export function CalculadoraFugas() {
             </div>
 
             {/* Tarjeta de Resultado: Impacto Financiero */}
-            <div className="rounded-2xl bg-gradient-to-b from-orange-500/15 to-transparent border border-orange-500/30 p-6 sm:p-8 text-center flex flex-col justify-between">
+            <div className="rounded-2xl bg-gradient-to-b from-orange-50/80 to-white border border-orange-200 p-6 sm:p-8 text-center flex flex-col justify-between shadow-sm">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-bold uppercase tracking-wider mb-4 border border-orange-500/30">
-                  <AlertCircle className="h-3.5 w-3.5" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-bold uppercase tracking-wider mb-4 border border-orange-200">
+                  <AlertCircle className="h-3.5 w-3.5 text-orange-600" />
                   <span>Fuga estimada no registrada</span>
                 </div>
 
-                <p className="text-xs uppercase font-bold tracking-widest text-white/50">
+                <p className="text-xs uppercase font-bold tracking-widest text-zinc-500">
                   Pérdida Anual Estimada
                 </p>
-                <p className="t-metrica mt-2 text-3xl sm:text-5xl font-black text-white font-mono tracking-tight">
+                <p className="t-metrica mt-2 text-3xl sm:text-5xl font-black text-zinc-950 font-mono tracking-tight">
                   ${perdidaTotalAnual.toLocaleString("es-AR")}
                 </p>
-                <p className="text-sm text-accent font-semibold mt-2">
+                <p className="text-sm text-orange-600 font-semibold mt-2">
                   ≈ ${perdidaTotalMensual.toLocaleString("es-AR")} por mes
                 </p>
-                <p className="text-xs text-white/60 mt-3 leading-relaxed">
+                <p className="text-xs text-zinc-600 mt-3 leading-relaxed">
                   Con el escáner de stock y el descuento por OT en Postgres, cada gota y cada filtro quedan cargados al vehículo antes de bajarlo del elevador.
                 </p>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="mt-8 pt-6 border-t border-orange-100">
                 <Link
                   href="/login"
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-accent px-6 font-bold text-accent-foreground shadow-lg shadow-orange-500/20 hover:opacity-90 active:scale-[0.98] transition-all"

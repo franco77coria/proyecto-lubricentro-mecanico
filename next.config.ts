@@ -11,7 +11,12 @@ const hostSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "motion", "@supabase/supabase-js"],
+  },
   images: {
+    formats: ["image/avif", "image/webp"],
     // Sin esto, next/image rechaza las fotos del bucket y la galería queda
     // vacía. Se habilita solo el path de Storage, no el host entero.
     remotePatterns: hostSupabase

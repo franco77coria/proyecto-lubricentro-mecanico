@@ -141,7 +141,15 @@ export function FormCliente({
   return (
     <>
       {botonTrigger ? (
-        <div onClick={abrir}>{botonTrigger}</div>
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            abrir();
+          }}
+          className="inline-block cursor-pointer"
+        >
+          {botonTrigger}
+        </div>
       ) : (
         <button
           type="button"

@@ -14,8 +14,38 @@ import {
 } from "@/components/marketing/Secciones";
 
 export default function MarketingPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        name: "Fierros",
+        operatingSystem: "Web, Android, iOS",
+        applicationCategory: "BusinessApplication",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "ARS",
+          description: "Prueba gratuita de 7 días sin tarjeta",
+        },
+        description:
+          "Software integral de fosa, órdenes de trabajo, fichas de lubricación por patente y gestión para lubricentros y talleres mecánicos.",
+      },
+      {
+        "@type": "AutoRepair",
+        name: "Fierros Software Automotor",
+        url: "https://fierros.app",
+        description: "Plataforma de digitalización para talleres mecánicos y lubricentros en Argentina.",
+      },
+    ],
+  };
+
   return (
     <div className="relative flex flex-col items-center w-full max-w-full overflow-x-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <WorkshopAtmosphere />
 
       {/* 1. Hero con Terminal Interactiva de Fosa */}
@@ -50,10 +80,10 @@ export default function MarketingPage() {
       {/* 10. Cierre de Alta Conversión con Button-in-Button CTA */}
       <section className="seccion text-center">
         <div className="regla" />
-        <h2 className="t-titulo mx-auto mt-24 max-w-3xl text-balance text-white">
+        <h2 className="t-titulo mx-auto mt-24 max-w-3xl text-balance text-zinc-950 font-black">
           ¿Listo para acelerar tu taller?
         </h2>
-        <p className="mx-auto mt-8 max-w-md text-lg leading-relaxed text-white/70">
+        <p className="mx-auto mt-8 max-w-md text-lg leading-relaxed text-zinc-600">
           Probalo gratis en tu fosa hoy mismo. Sin tarjeta, sin contratos.
         </p>
 

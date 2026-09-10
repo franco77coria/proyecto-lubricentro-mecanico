@@ -96,17 +96,17 @@ export function InteractivePlateLookup() {
       <div className="grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-16">
         <div>
           <p className="t-eyebrow">Velocidad en Mostrador</p>
-          <h2 className="t-titulo mt-6 text-balance text-white">
+          <h2 className="t-titulo mt-6 text-balance text-zinc-950 font-black">
             Buscá por patente. Tené la ficha técnica en 1 segundo.
           </h2>
-          <p className="mt-6 text-base sm:text-lg leading-relaxed text-white/70">
+          <p className="mt-6 text-base sm:text-lg leading-relaxed text-zinc-600">
             Mientras el cliente baja del auto, ya sabés qué aceite lleva, cuántos litros entran
             en el cárter y qué mantenimiento le corresponde. Cero dudas, cero demoras.
           </p>
 
           {/* Chips de chapas de prueba rápida */}
           <div className="mt-8">
-            <p className="text-xs uppercase tracking-wider font-bold text-white/50 mb-3">
+            <p className="text-xs uppercase tracking-wider font-bold text-zinc-500 mb-3">
               Probá con estas patentes reales:
             </p>
             <div className="flex flex-wrap gap-2">
@@ -118,7 +118,7 @@ export function InteractivePlateLookup() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                     patenteActiva === chapa
                       ? "bg-accent text-accent-foreground shadow-md shadow-orange-500/20 scale-105"
-                      : "bg-white/[0.05] text-white/80 border border-white/10 hover:bg-white/10 hover:text-white"
+                      : "bg-white text-zinc-800 border border-black/10 hover:bg-zinc-50 shadow-xs"
                   }`}
                 >
                   {chapa}
@@ -129,17 +129,17 @@ export function InteractivePlateLookup() {
         </div>
 
         {/* Maqueta Interactiva de Búsqueda y Ficha */}
-        <div className="relative rounded-[1.5rem] sm:rounded-[2rem] bg-white/[0.04] p-1.5 sm:p-2 border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl">
-          <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2rem-0.375rem)] bg-[#101014]/95 border border-white/[0.06] p-4 sm:p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+        <div className="relative rounded-[1.5rem] sm:rounded-[2rem] bg-white/80 p-1.5 sm:p-2 border border-black/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.06)] backdrop-blur-2xl">
+          <div className="rounded-[calc(1.5rem-0.25rem)] sm:rounded-[calc(2rem-0.375rem)] bg-white border border-black/[0.05] p-4 sm:p-7 shadow-xs">
             {/* Input con Icono de Búsqueda */}
             <div className="relative flex items-center mb-5 sm:mb-6">
-              <Search className="absolute left-4 h-5 w-5 text-white/40" />
+              <Search className="absolute left-4 h-5 w-5 text-zinc-400" />
               <input
                 type="text"
                 value={patenteInput}
                 onChange={(e) => handleBuscar(e.target.value)}
                 placeholder="Ingresá una patente (ej: AE789CD)..."
-                className="w-full min-h-12 pl-12 pr-4 rounded-xl bg-white/[0.05] border border-white/10 text-white font-mono font-bold text-sm sm:text-base uppercase tracking-wider placeholder:text-white/30 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                className="w-full min-h-12 pl-12 pr-4 rounded-xl bg-slate-50 border border-black/10 text-zinc-950 font-mono font-bold text-sm sm:text-base uppercase tracking-wider placeholder:text-zinc-400 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
               />
             </div>
 
@@ -154,18 +154,18 @@ export function InteractivePlateLookup() {
                 className="space-y-4 sm:space-y-5"
               >
                 {/* Cabecera del Vehículo Encontrado */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-b border-white/[0.08] pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 border-b border-black/[0.08] pb-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> Ficha Homologada
+                      <span className="text-[11px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3 text-emerald-600" /> Ficha Homologada
                       </span>
-                      <span className="text-xs text-white/40">{datos.anio}</span>
+                      <span className="text-xs text-zinc-400 font-medium">{datos.anio}</span>
                     </div>
-                    <h3 className="text-base sm:text-lg md:text-xl font-black text-white mt-1">
+                    <h3 className="text-base sm:text-lg md:text-xl font-black text-zinc-950 mt-1">
                       {datos.marca} {datos.modelo}
                     </h3>
-                    <p className="text-xs text-white/60 font-mono mt-0.5">{datos.motor}</p>
+                    <p className="text-xs text-zinc-500 font-mono mt-0.5">{datos.motor}</p>
                   </div>
                   <div className="self-start sm:self-center shrink-0">
                     <PlacaPatente patente={patenteActiva} size="sm" className="sm:hidden" />
@@ -175,40 +175,40 @@ export function InteractivePlateLookup() {
 
                 {/* Especificación de Lubricación (El dolor del lubricentro) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-orange-500/[0.08] border border-orange-500/20 p-3.5">
-                    <div className="flex items-center gap-2 text-xs font-bold text-accent uppercase tracking-wider mb-1.5">
-                      <Droplets className="h-4 w-4" />
+                  <div className="rounded-xl bg-orange-50/80 border border-orange-200 p-3.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-orange-700 uppercase tracking-wider mb-1.5">
+                      <Droplets className="h-4 w-4 text-orange-500" />
                       <span>Capacidad Cárter</span>
                     </div>
-                    <p className="text-2xl font-black text-white tracking-tight">
+                    <p className="text-2xl font-black text-zinc-950 tracking-tight">
                       {datos.carterLitros}{" "}
-                      <span className="text-sm font-semibold text-white/70">Litros</span>
+                      <span className="text-sm font-semibold text-zinc-600">Litros</span>
                     </p>
-                    <p className="text-xs text-white/80 font-semibold mt-1">{datos.viscosidad}</p>
-                    <p className="text-[11px] text-white/50 truncate mt-0.5">{datos.norma}</p>
+                    <p className="text-xs text-zinc-800 font-semibold mt-1">{datos.viscosidad}</p>
+                    <p className="text-[11px] text-zinc-500 truncate mt-0.5">{datos.norma}</p>
                   </div>
 
-                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3.5 flex flex-col justify-between">
+                  <div className="rounded-xl bg-slate-50 border border-black/[0.06] p-3.5 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center gap-2 text-xs font-bold text-white/60 uppercase tracking-wider mb-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
                         <Car className="h-4 w-4" />
                         <span>Historial Taller</span>
                       </div>
-                      <p className="text-sm font-bold text-white">Último Service: {datos.ultimoService}</p>
-                      <p className="text-xs text-white/60 font-mono mt-0.5">
+                      <p className="text-sm font-bold text-zinc-900">Último Service: {datos.ultimoService}</p>
+                      <p className="text-xs text-zinc-500 font-mono mt-0.5">
                         Registrado a los {datos.kmUltimoService}
                       </p>
                     </div>
-                    <div className="mt-2 text-[11px] text-emerald-400 font-semibold">
+                    <div className="mt-2 text-[11px] text-emerald-700 font-semibold">
                       ✓ Cliente habitual del taller
                     </div>
                   </div>
                 </div>
 
                 {/* Puntos Clave del Service */}
-                <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3.5">
+                <div className="rounded-xl bg-slate-50 border border-black/[0.06] p-3.5">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-[11px] uppercase font-bold tracking-wider text-white/50">
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-zinc-500">
                       Puntos Clave del Service (Ficha Oficial):
                     </p>
                     <span className="text-[10px] font-mono text-accent font-bold">
@@ -217,9 +217,9 @@ export function InteractivePlateLookup() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                     {datos.puntosClave.map((punto, i) => (
-                      <div key={i} className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center gap-1.5">
-                        <span className="text-emerald-400 font-bold text-xs">✓</span>
-                        <span className="text-white/80 font-medium text-xs leading-tight">{punto}</span>
+                      <div key={i} className="p-2 rounded-lg bg-white border border-black/[0.05] flex items-center gap-1.5 shadow-xs">
+                        <span className="text-emerald-600 font-bold text-xs">✓</span>
+                        <span className="text-zinc-800 font-medium text-xs leading-tight">{punto}</span>
                       </div>
                     ))}
                   </div>
