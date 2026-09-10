@@ -6,11 +6,15 @@ export interface CedulaVerdeOCRData {
   patente: string;
   marca?: string;
   modelo?: string;
+  tipo?: string; // Ej: SEDAN 4 PTAS, HATCHBACK, PICK-UP
+  uso?: string; // Ej: PRIVADO, PÚBLICO
   anio?: number;
-  vin?: string; // Número de chasis / cuadro
+  vin?: string; // Número de chasis / cuadro / VIN
   motor?: string;
   color?: string;
   combustible?: "nafta" | "diesel" | "gnc" | "hibrido" | "electrico";
+  vencimiento?: string; // Ej: 29/11/2023
+  codigoDoc?: string; // Código alfanumérico superior (ej: ATA81365)
   titularNombre?: string;
   titularDocumento?: string; // DNI / CUIT / CPF
   pais?: string;
@@ -35,11 +39,11 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
 
   let combustible: "nafta" | "diesel" | "gnc" | "hibrido" | "electrico" | undefined;
   const combStr = String(crudo.combustible || crudo.combustivel || "").toLowerCase();
-  if (combStr.includes("diesel") || combStr.includes("gasoil") || combStr.includes("diesel")) combustible = "diesel";
+  if (combStr.includes("diesel") || combStr.includes("gasoil")) combustible = "diesel";
   else if (combStr.includes("gnc") || combStr.includes("gas") || combStr.includes("gnv")) combustible = "gnc";
   else if (combStr.includes("hibrido") || combStr.includes("hybrid") || combStr.includes("híbrido")) combustible = "hibrido";
   else if (combStr.includes("electrico") || combStr.includes("ev") || combStr.includes("elétrico")) combustible = "electrico";
-  else if (combStr.includes("nafta") || combStr.includes("gasolina") || combStr.includes("flex") || combStr.includes("etanol") || combStr.includes("alcohol")) combustible = "nafta";
+  else if (combStr.includes("nafta") || combStr.includes("gasolina") || combStr.includes("flex") || combStr.includes("etanol") || combStr.includes("alcohol") || combStr.includes("16v") || combStr.includes("1.6")) combustible = "nafta";
 
   let anio: number | undefined;
   const anioNum = Number(crudo.anio || crudo.ano || crudo.modelo_anio);
@@ -53,11 +57,15 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
     patente: patente || patenteCruda.toUpperCase(),
     marca: crudo.marca ? String(crudo.marca).trim() : undefined,
     modelo: crudo.modelo ? String(crudo.modelo).trim() : undefined,
+    tipo: crudo.tipo ? String(crudo.tipo).trim() : undefined,
+    uso: crudo.uso ? String(crudo.uso).trim() : undefined,
     anio,
     vin: vinLimpio.length >= 6 ? vinLimpio : undefined,
     motor: crudo.motor ? String(crudo.motor).trim() : undefined,
     color: crudo.color ? String(crudo.color).trim() : undefined,
     combustible,
+    vencimiento: crudo.vencimiento || crudo.vence ? String(crudo.vencimiento || crudo.vence).trim() : undefined,
+    codigoDoc: crudo.codigoDoc || crudo.codigo || crudo.numeroControl ? String(crudo.codigoDoc || crudo.codigo || crudo.numeroControl).trim() : undefined,
     titularNombre: crudo.titularNombre || crudo.titular || crudo.propietario || crudo.proprietario
       ? String(crudo.titularNombre || crudo.titular || crudo.propietario || crudo.proprietario).trim()
       : undefined,
@@ -69,30 +77,35 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
   };
 }
 
-const PROMPT_CEDULA_VERDE = `Eres un sistema experto de OCR vehicular especializado en Cédulas Verdes, Cédulas de Identificación del Automotor, Títulos de Propiedad Automotor, Tarjetas de Circulación (México/España) y CRLV (Brasil).
+const PROMPT_CEDULA_VERDE = `Eres un sistema experto de OCR vehicular de máxima precisión, especializado en Cédulas Verdes, Cédulas de Identificación del Automotor (DNRPA Argentina), Títulos de Propiedad, Tarjetas de Circulación y CRLV.
 
-Analiza minuciosamente la imagen de la cédula del automotor y extrae los datos del vehículo y del titular registrado.
+Analiza minuciosamente la imagen de la cédula del automotor (incluso si está orientada vertical o girada) y extrae TODOS los datos impresos del vehículo y del titular.
 
-Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura:
+Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura completa:
 
 {
-  "patente": "Dominio o Placa (ej: AF123CD o AB123CD o RTF421)",
-  "marca": "Marca del fabricante (ej: VOLKSWAGEN, TOYOTA, PEUGEOT, FORD)",
-  "modelo": "Modelo y versión exacta (ej: GOL TREND 1.6 MSI 5P, HILUX 2.8 4X4 CD)",
-  "anio": 2021,
-  "vin": "Número de Chasis / VIN alfanumérico (ej: 8AWZZZ...)",
-  "motor": "Número de Motor",
+  "patente": "Dominio o Chapa patente (ej: LSJ982 o AB123CD)",
+  "marca": "Marca del fabricante (ej: RENAULT, VOLKSWAGEN, TOYOTA)",
+  "modelo": "Modelo y versión exacta completa (ej: RENAULT FLUENCE 1.6 16V CONFORT)",
+  "tipo": "Tipo de carrocería (ej: SEDAN 4 PTAS, HATCHBACK, PICK-UP)",
+  "uso": "Uso registrado (ej: PRIVADO, PÚBLICO)",
+  "anio": 2018,
+  "vin": "Número de Chasis / Cuadro completo alfanumérico (ej: 8A1LZB115DL468090)",
+  "motor": "Número de Motor completo alfanumérico (ej: K4MV838R079119)",
   "combustible": "nafta" | "diesel" | "gnc" | "hibrido" | "electrico",
-  "titularNombre": "Apellido y Nombres completos del titular",
-  "titularDocumento": "DNI / CUIT / CPF del titular",
+  "vencimiento": "Fecha de vencimiento exacta (ej: 29/11/2023)",
+  "codigoDoc": "Código superior del documento (ej: ATA81365)",
+  "titularNombre": "Apellido y Nombres completos del titular si figuran",
+  "titularDocumento": "DNI / CUIT del titular si figura",
   "pais": "AR" | "BR" | "CL" | "MX" | "ES" | "CO" | "US"
 }
 
 REGLAS CRÍTICAS:
-1. Asegúrate de extraer la patente sin espacios ni caracteres extraños.
-2. Si el número de chasis / VIN está presente, transcríbelo con exactitud.
-3. Si el titular está visible en la cédula, extrae su nombre completo para asignar el cliente automáticamente.
-4. Devuelve EXCLUSIVAMENTE el JSON, sin texto introductorio ni bloques decorativos.`;
+1. Extrae la patente sin espacios ni guiones (ej: LSJ982).
+2. Transcribe el número de Chasis (VIN) y el número de Motor con exactitud total.
+3. Extrae la marca y la denominación de modelo exacta completa.
+4. Si figura Tipo (ej: SEDAN 4 PTAS), Uso (ej: PRIVADO) y Vence (ej: 29/11/2023), inclúyelos.
+5. Devuelve EXCLUSIVAMENTE el JSON, sin texto explicativo.`;
 
 export async function procesarOCRCedulaVerde(
   imagen: EntradaImagen,

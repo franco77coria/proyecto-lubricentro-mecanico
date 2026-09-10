@@ -32,6 +32,8 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [formatoEspecial, setFormatoEspecial] = useState(false);
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [anio, setAnio] = useState("");
+  const [vin, setVin] = useState("");
+  const [combustible, setCombustible] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteApellido, setClienteApellido] = useState("");
   const [clienteTelefono, setClienteTelefono] = useState("");
@@ -95,6 +97,8 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (vehiculo.modeloId) formDataVehiculo.append("modeloId", vehiculo.modeloId);
         if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
         if (anio) formDataVehiculo.append("anio", anio);
+        if (vin) formDataVehiculo.append("vin", vin);
+        if (combustible) formDataVehiculo.append("combustible", combustible);
         if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
         if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
         if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
@@ -277,8 +281,16 @@ export function FormNuevoTurno({ marcas }: { marcas: OpcionCatalogo[] }) {
             onCedulaDetectada={(d) => {
               if (d.patente) setPatente(d.patente);
               if (d.anio) setAnio(String(d.anio));
+              if (d.vin) setVin(d.vin);
+              if (d.combustible) setCombustible(d.combustible);
               if (d.titularNombre && !clienteNombre) {
-                setClienteNombre(d.titularNombre);
+                const partes = d.titularNombre.split(/\s+/);
+                if (partes.length >= 2) {
+                  setClienteApellido(partes[0]);
+                  setClienteNombre(partes.slice(1).join(" "));
+                } else {
+                  setClienteNombre(d.titularNombre);
+                }
               }
               if (d.marca || d.modelo) {
                 startTransition(async () => {

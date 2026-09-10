@@ -331,6 +331,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             formatoEspecial={formatoEspecial}
             onFormatoEspecialChange={setFormatoEspecial}
             onCedulaDetectada={(d) => {
+              setCedulaPayload(JSON.stringify(d));
               if (d.patente) setPatente(d.patente);
               if (d.anio) setAnio(String(d.anio));
               if (d.vin) setVin(d.vin);
