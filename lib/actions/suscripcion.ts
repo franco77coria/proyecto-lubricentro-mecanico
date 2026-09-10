@@ -10,9 +10,13 @@ import {
   cancelarPreapproval,
   obtenerDetallePreapproval,
   obtenerDetallePago,
-  obtenerPrecioPlanMensual,
 } from "@/lib/mercadopago/cliente";
-import { calcularEstadoSuscripcion, type EstadoSuscripcionCalculado } from "@/lib/suscripcion";
+import {
+  calcularEstadoSuscripcion,
+  obtenerConfigPlan,
+  type EstadoSuscripcionCalculado,
+  type PlanId,
+} from "@/lib/suscripcion";
 
 export interface ResultadoIniciarSuscripcion {
   ok?: boolean;
@@ -23,6 +27,8 @@ export interface ResultadoIniciarSuscripcion {
 export interface ResultadoEstadoSuscripcion {
   estadoCalculado: EstadoSuscripcionCalculado;
   precioARS: number;
+  planId: PlanId | "trial";
+  nombrePlan: string;
   esDueno: boolean;
   nombreTaller: string;
   suscripcionFin?: string | null;
@@ -30,14 +36,15 @@ export interface ResultadoEstadoSuscripcion {
 }
 
 /**
- * Inicia el proceso de suscripción o pago puntual con Mercado Pago.
+ * Inicia el proceso de suscripción o pago puntual con Mercado Pago para cualquiera de los 3 planes.
  *
  * Exclusivo para el dueño del taller:
  * - modo 'un_mes': Genera preferencia de Checkout Pro (permite Dinero en Cuenta, Mercado Crédito, Débito y Crédito).
  * - modo 'recurrente': Genera suscripción mensual por débito automático.
  */
 export async function iniciarSuscripcionAction(
-  modo: "recurrente" | "un_mes" = "recurrente"
+  modo: "recurrente" | "un_mes" = "recurrente",
+  planId: PlanId = "pro"
 ): Promise<ResultadoIniciarSuscripcion> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida. Volvé a ingresar." };
@@ -58,7 +65,8 @@ export async function iniciarSuscripcionAction(
     if (!taller) return { error: "No se encontró la información del taller." };
 
     const emailDueno = sesion.user.email || "taller@ejemplo.com";
-    const monto = obtenerPrecioPlanMensual();
+    const configPlan = obtenerConfigPlan(planId);
+    const monto = configPlan.precioARS;
 
     // Si es pago de 1 mes puntual, usamos Checkout Pro (como en Cuánto Sale)
     const resultado =
@@ -68,19 +76,24 @@ export async function iniciarSuscripcionAction(
             emailDueno,
             nombreTaller: taller.nombre,
             montoARS: monto,
+            planId: configPlan.id,
+            nombrePlan: configPlan.nombre,
           })
         : await crearSuscripcionPreapproval({
             tallerId,
             emailDueno,
             nombreTaller: taller.nombre,
             montoARS: monto,
+            planId: configPlan.id,
+            nombrePlan: configPlan.nombre,
           });
 
-    // Guardar el ID de referencia en el taller
+    // Guardar el ID de referencia y el plan seleccionado en el taller
     const admin = crearClienteAdmin();
     await admin
       .from("taller")
       .update({
+        plan: configPlan.id,
         mp_preapproval_id: resultado.id,
         mp_subscription_status: resultado.status || "pending",
       })
@@ -103,7 +116,7 @@ export async function iniciarSuscripcionAction(
 }
 
 /**
- * Obtiene el estado detallado de la suscripción y días de prueba para la interfaz de usuario.
+ * Consulta el estado actual de la suscripción del taller desde el servidor.
  */
 export async function obtenerEstadoSuscripcionAction(): Promise<ResultadoEstadoSuscripcion | null> {
   const sesion = await obtenerSesion();
@@ -113,20 +126,21 @@ export async function obtenerEstadoSuscripcionAction(): Promise<ResultadoEstadoS
     const supabase = await crearClienteServidor();
     const { data: taller } = await supabase
       .from("taller")
-      .select("nombre, estado_suscripcion, trial_fin, suscripcion_fin, mp_subscription_status")
+      .select("nombre, plan, estado_suscripcion, trial_fin, suscripcion_fin, mp_subscription_status")
       .eq("id", sesion.perfil.taller_id)
       .single();
 
     if (!taller) return null;
 
     const estadoCalculado = calcularEstadoSuscripcion(taller);
-    const precioARS = obtenerPrecioPlanMensual();
-    const esDueno = sesion.perfil.rol === "dueno";
+    const configPlan = obtenerConfigPlan((taller.plan as PlanId) || "pro");
 
     return {
       estadoCalculado,
-      precioARS,
-      esDueno,
+      precioARS: configPlan.precioARS,
+      planId: estadoCalculado.plan,
+      nombrePlan: estadoCalculado.nombrePlan,
+      esDueno: sesion.perfil.rol === "dueno",
       nombreTaller: taller.nombre,
       suscripcionFin: taller.suscripcion_fin,
     };
@@ -223,6 +237,12 @@ export async function sincronizarSuscripcionRetornoAction(
         const baseTime = actualFin > Date.now() ? actualFin : Date.now();
         const fechaFin = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+        const [, refPlanId] = (pago.external_reference || "").split(":");
+        const planToSet =
+          refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium"
+            ? refPlanId
+            : undefined;
+
         await admin
           .from("taller")
           .update({
@@ -230,6 +250,7 @@ export async function sincronizarSuscripcionRetornoAction(
             suscripcion_fin: fechaFin,
             mp_subscription_status: "approved",
             mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
+            ...(planToSet ? { plan: planToSet } : {}),
           })
           .eq("id", tallerId);
 
@@ -257,6 +278,12 @@ export async function sincronizarSuscripcionRetornoAction(
           ? new Date(detalle.next_payment_date).toISOString()
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+        const [, refPlanId] = (detalle.external_reference || "").split(":");
+        const planToSet =
+          refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium"
+            ? refPlanId
+            : undefined;
+
         await admin
           .from("taller")
           .update({
@@ -265,6 +292,7 @@ export async function sincronizarSuscripcionRetornoAction(
             mp_preapproval_id: detalle.id,
             mp_subscription_status: detalle.status,
             mp_payer_id: detalle.payer_id ? String(detalle.payer_id) : null,
+            ...(planToSet ? { plan: planToSet } : {}),
           })
           .eq("id", tallerId);
 

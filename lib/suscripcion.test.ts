@@ -51,6 +51,7 @@ describe("calcularEstadoSuscripcion", () => {
     const ahora = Date.now();
     const trialFin = new Date(ahora - 10 * 24 * 60 * 60 * 1000).toISOString(); // trial venció hace 10 días
     const res = calcularEstadoSuscripcion({
+      plan: "pro",
       estado_suscripcion: "activa",
       trial_fin: trialFin,
       suscripcion_fin: new Date(ahora + 25 * 24 * 60 * 60 * 1000).toISOString(),
@@ -60,6 +61,8 @@ describe("calcularEstadoSuscripcion", () => {
     assert.equal(res.enTrial, false);
     assert.equal(res.trialVencido, false);
     assert.equal(res.estado, "activa");
+    assert.equal(res.plan, "pro");
+    assert.equal(res.nombrePlan, "Plan Pro");
   });
 
   test("taller cancelado no tiene acceso aunque tuviera trial viejo", () => {
@@ -70,5 +73,34 @@ describe("calcularEstadoSuscripcion", () => {
 
     assert.equal(res.tieneAcceso, false);
     assert.equal(res.estado, "cancelada");
+  });
+
+  test("soporta los 3 planes con sus respectivos nombres y límites", () => {
+    const ahora = Date.now();
+    const suscripcionFin = new Date(ahora + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const inicial = calcularEstadoSuscripcion({
+      plan: "inicial",
+      estado_suscripcion: "activa",
+      suscripcion_fin: suscripcionFin,
+    });
+    assert.equal(inicial.plan, "inicial");
+    assert.equal(inicial.nombrePlan, "Plan Inicial");
+
+    const pro = calcularEstadoSuscripcion({
+      plan: "pro",
+      estado_suscripcion: "activa",
+      suscripcion_fin: suscripcionFin,
+    });
+    assert.equal(pro.plan, "pro");
+    assert.equal(pro.nombrePlan, "Plan Pro");
+
+    const premium = calcularEstadoSuscripcion({
+      plan: "premium",
+      estado_suscripcion: "activa",
+      suscripcion_fin: suscripcionFin,
+    });
+    assert.equal(premium.plan, "premium");
+    assert.equal(premium.nombrePlan, "Plan Premium");
   });
 });

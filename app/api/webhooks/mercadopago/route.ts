@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: true, mensaje: "Recurso no encontrado en MP" }, { status: 200 });
       }
 
-      const tallerId = preapproval.external_reference;
+      const [tallerId, refPlanId] = (preapproval.external_reference || "").split(":");
       if (!tallerId) {
         console.warn("[Webhook MercadoPago] Preapproval sin external_reference (tallerId):", dataId);
         return NextResponse.json({ ok: true, mensaje: "Sin taller_id asociado" }, { status: 200 });
@@ -88,11 +88,16 @@ export async function POST(request: NextRequest) {
         mp_preapproval_id: string;
         mp_payer_id?: string | null;
         suscripcion_fin?: string | null;
+        plan?: string;
       } = {
         estado_suscripcion: nuevoEstadoSuscripcion,
         mp_subscription_status: preapproval.status,
         mp_preapproval_id: preapproval.id,
       };
+
+      if (refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium") {
+        updateData.plan = refPlanId;
+      }
 
       if (preapproval.payer_id) {
         updateData.mp_payer_id = String(preapproval.payer_id);
@@ -127,7 +132,7 @@ export async function POST(request: NextRequest) {
     if (type === "payment") {
       const pago = await obtenerDetallePago(dataId);
       if (pago && pago.status === "approved" && pago.external_reference) {
-        const tallerId = pago.external_reference;
+        const [tallerId, refPlanId] = (pago.external_reference || "").split(":");
         const admin = crearClienteAdmin();
 
         const { data: taller } = await admin
@@ -140,14 +145,26 @@ export async function POST(request: NextRequest) {
         const baseTime = actualFin > Date.now() ? actualFin : Date.now();
         const nuevaFin = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+        const updateDataPago: {
+          estado_suscripcion: string;
+          suscripcion_fin: string;
+          mp_subscription_status: string;
+          mp_payer_id?: string | null;
+          plan?: string;
+        } = {
+          estado_suscripcion: "activa",
+          suscripcion_fin: nuevaFin,
+          mp_subscription_status: "approved",
+          mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
+        };
+
+        if (refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium") {
+          updateDataPago.plan = refPlanId;
+        }
+
         await admin
           .from("taller")
-          .update({
-            estado_suscripcion: "activa",
-            suscripcion_fin: nuevaFin,
-            mp_subscription_status: "approved",
-            mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
-          })
+          .update(updateDataPago)
           .eq("id", tallerId);
 
         await admin.from("taller_suscripcion_evento").insert({

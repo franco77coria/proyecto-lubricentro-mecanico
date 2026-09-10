@@ -216,9 +216,12 @@ async function main() {
         select column_name
         from information_schema.columns
         where table_schema = 'public' and table_name = 'taller'
-          and column_name in ('trial_fin', 'estado_suscripcion', 'suscripcion_fin', 'mp_preapproval_id', 'mp_subscription_status')
+          and column_name in ('plan', 'trial_fin', 'estado_suscripcion', 'suscripcion_fin', 'mp_preapproval_id', 'mp_subscription_status')
       `);
       const colNames = cols.rows.map((r) => r.column_name);
+      colNames.includes("plan")
+        ? ok("Columna taller.plan presente")
+        : fail("Falta taller.plan");
       colNames.includes("trial_fin")
         ? ok("Columna taller.trial_fin presente")
         : fail("Falta taller.trial_fin");

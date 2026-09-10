@@ -46,6 +46,8 @@ export default async function PaginaSuscripcion({ searchParams }: PaginaSuscripc
     <main className="flex-1 pt-[calc(var(--safe-top)+1.5rem)] pb-16 px-4">
       <PanelSuscripcion
         estadoCalculado={datos.estadoCalculado}
+        planActual={datos.planId}
+        nombrePlan={datos.nombrePlan}
         precioARS={datos.precioARS}
         esDueno={datos.esDueno}
         nombreTaller={datos.nombreTaller}

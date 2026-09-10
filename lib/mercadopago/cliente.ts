@@ -13,6 +13,8 @@ export interface CrearSuscripcionParams {
   emailDueno: string;
   nombreTaller: string;
   montoARS?: number;
+  planId?: string;
+  nombrePlan?: string;
   backUrl?: string;
 }
 
@@ -110,11 +112,15 @@ export async function crearSuscripcionPreapproval(
     backUrl = `https://tallerpro.app${ruta.startsWith("/") ? ruta : `/${ruta}`}`;
   }
 
+  const nombrePlan = params.nombrePlan || "Taller Pro";
+  const planId = params.planId || "pro";
+  const extRef = `${params.tallerId}:${planId}`;
+
   const body = {
     payer_email: params.emailDueno.trim().toLowerCase(),
     back_url: backUrl,
-    reason: `Suscripción Mensual Taller Pro — ${params.nombreTaller}`,
-    external_reference: params.tallerId,
+    reason: `Suscripción Mensual ${nombrePlan} — ${params.nombreTaller}`,
+    external_reference: extRef,
     auto_recurring: {
       frequency: 1,
       frequency_type: "months",
@@ -160,6 +166,9 @@ export async function crearPreferenciaCheckoutPro(
 ): Promise<ResultadoPreapproval> {
   const token = obtenerAccessToken();
   const monto = params.montoARS ?? obtenerPrecioPlanMensual();
+  const nombrePlan = params.nombrePlan || "Plan Taller Pro";
+  const planId = params.planId || "pro";
+  const extRef = `${params.tallerId}:${planId}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   let backUrl = params.backUrl || `${appUrl}/suscripcion?status=success`;
 
@@ -179,9 +188,9 @@ export async function crearPreferenciaCheckoutPro(
     body: JSON.stringify({
       items: [
         {
-          id: "plan-taller-pro-mes",
-          title: `Plan Taller Pro (1 Mes) — ${params.nombreTaller}`,
-          description: "Acceso mensual completo al sistema para lubricentro y taller mecánico",
+          id: `plan-${planId}-mes`,
+          title: `${nombrePlan} (1 Mes) — ${params.nombreTaller}`,
+          description: `Acceso mensual al ${nombrePlan} para lubricentro y taller mecánico`,
           quantity: 1,
           currency_id: "ARS",
           unit_price: monto,
@@ -190,7 +199,7 @@ export async function crearPreferenciaCheckoutPro(
       payer: {
         email: params.emailDueno.trim().toLowerCase(),
       },
-      external_reference: params.tallerId,
+      external_reference: extRef,
       back_urls: {
         success: backUrl,
         failure: backUrl.replace("status=success", "status=failure"),
