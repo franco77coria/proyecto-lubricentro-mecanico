@@ -2,7 +2,14 @@
 
 import { unstable_rethrow } from "next/navigation";
 
-import { MODELO_IA, iaDisponible, motivoDeFalla, obtenerCliente } from "@/lib/ia/cliente";
+import {
+  MODELO_IA,
+  generarTextoGemini,
+  iaDisponible,
+  motivoDeFalla,
+  obtenerCliente,
+  proveedorIAActivo,
+} from "@/lib/ia/cliente";
 import { limitarIA, mensajeLimiteIA } from "@/lib/rate-limit";
 import type { Json } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
@@ -69,8 +76,7 @@ export async function sugerirDiagnostico(otId: string): Promise<ResultadoDiagnos
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 
-  const cliente = obtenerCliente();
-  if (!cliente) return { error: "El asistente no está configurado en este taller." };
+  if (!iaDisponible()) return { error: "El asistente no está configurado en este taller." };
 
   const limite = await limitarIA(sesion.perfil.taller_id, "diagnostico");
   if (!limite.permitido) return { error: mensajeLimiteIA(limite.esperaSegundos) };
@@ -136,6 +142,57 @@ export async function sugerirDiagnostico(otId: string): Promise<ResultadoDiagnos
     ]
       .filter(Boolean)
       .join("\n");
+
+    const systemPromptDiagnostico = `Sos un mecánico argentino con treinta años en el oficio, ayudando a un colega que tiene el auto arriba del elevador.
+
+Devolvé exactamente 3 hipótesis, de más a menos probable, con probabilidades que sumen 100.
+Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura:
+{
+  "hipotesis": [
+    { "causa": "string", "probabilidad": 60, "como_verificar": "string" }
+  ]
+}
+
+Reglas:
+- Usá el vocabulario del taller argentino (bujías, bobina, cuerpo de mariposa, rótulas, bieletas, tren delantero, correa de distribución).
+- "como_verificar" tiene que ser una comprobación concreta y barata que se pueda hacer AHORA, antes de desarmar: qué medir, qué escuchar, qué mirar. No "llevar al especialista".
+- Priorizá las causas frecuentes y baratas antes que las raras y caras.
+- Si el taller ya resolvió el mismo síntoma en este modelo, eso pesa más que cualquier regla general: mencionalo.
+- Esto ORIENTA la revisión, no la reemplaza. No afirmes una causa como certeza.`;
+
+    // 1. Si está activo Gemini (Flash 3.0), procesar directamente con Gemini
+    if (proveedorIAActivo() === "gemini") {
+      const resGemini = await generarTextoGemini({
+        prompt: entrada,
+        system: systemPromptDiagnostico,
+        jsonOutput: true,
+      });
+
+      if (!resGemini) return { error: "No se pudo consultar el asistente de diagnóstico Gemini." };
+
+      const parseado = JSON.parse(resGemini.texto) as { hipotesis: HipotesisDiagnostico[] };
+
+      await supabase.from("ot_sugerencia_ia").insert({
+        taller_id: sesion.perfil.taller_id,
+        ot_id: otId,
+        tipo: "diagnostico",
+        entrada,
+        salida: parseado as unknown as Json,
+        modelo: resGemini.modelo,
+        tokens_entrada: resGemini.tokensEntrada ?? 0,
+        tokens_salida: resGemini.tokensSalida ?? 0,
+        creado_por: sesion.user.id,
+      });
+
+      return {
+        hipotesis: parseado.hipotesis,
+        antecedentes: (antecedentes ?? []).length,
+      };
+    }
+
+    // 2. Si no, usar Claude como fallback
+    const cliente = obtenerCliente();
+    if (!cliente) return { error: "El asistente no está configurado en este taller." };
 
     const respuesta = await cliente.beta.messages.create({
       model: MODELO_IA,
@@ -210,8 +267,7 @@ export async function traducirDescargo(otId: string): Promise<ResultadoTraduccio
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
 
-  const cliente = obtenerCliente();
-  if (!cliente) return { error: "El asistente no está configurado en este taller." };
+  if (!iaDisponible()) return { error: "El asistente no está configurado en este taller." };
 
   const limite = await limitarIA(sesion.perfil.taller_id, "traduccion");
   if (!limite.permitido) return { error: mensajeLimiteIA(limite.esperaSegundos) };
@@ -255,13 +311,7 @@ export async function traducirDescargo(otId: string): Promise<ResultadoTraduccio
       .filter(Boolean)
       .join("\n");
 
-    const respuesta = await cliente.beta.messages.create({
-      model: MODELO_IA,
-      max_tokens: 2000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "low" },
-      system: `Convertís las notas técnicas de un mecánico en un mensaje de WhatsApp para el dueño del auto, en castellano rioplatense.
+    const systemPromptTraduccion = `Convertís las notas técnicas de un mecánico en un mensaje de WhatsApp para el dueño del auto, en castellano rioplatense.
 
 Reglas:
 - Explicá QUÉ se hizo y POR QUÉ importaba, en palabras que entienda alguien que no sabe de mecánica. "Se rectificaron los discos" → "se corrigió la superficie de los discos para que el freno agarre parejo".
@@ -269,7 +319,48 @@ Reglas:
 - Tono de taller de barrio: cordial y directo. Sin "estimado cliente" ni lenguaje corporativo.
 - No inventes NADA que no esté en las notas: ni trabajos, ni precios, ni garantías, ni plazos. Si una nota es ambigua, describila en general en vez de suponer.
 - No pongas saludo ni firma: los agrega el sistema.
-- Devolvé solo el texto del mensaje.`,
+- Devolvé solo el texto del mensaje.`;
+
+    // 1. Si está activo Gemini (Flash 3.0), procesar directamente con Gemini
+    if (proveedorIAActivo() === "gemini") {
+      const resGemini = await generarTextoGemini({
+        prompt: entrada,
+        system: systemPromptTraduccion,
+        jsonOutput: false,
+      });
+
+      if (!resGemini || !resGemini.texto.trim()) {
+        return { error: "No se pudo generar el mensaje con Gemini. Probá de nuevo." };
+      }
+
+      const texto = resGemini.texto.trim();
+
+      await supabase.from("ot_sugerencia_ia").insert({
+        taller_id: sesion.perfil.taller_id,
+        ot_id: otId,
+        tipo: "traduccion",
+        entrada,
+        salida: { texto },
+        modelo: resGemini.modelo,
+        tokens_entrada: resGemini.tokensEntrada ?? 0,
+        tokens_salida: resGemini.tokensSalida ?? 0,
+        creado_por: sesion.user.id,
+      });
+
+      return { texto };
+    }
+
+    // 2. Si no, usar Claude como fallback
+    const cliente = obtenerCliente();
+    if (!cliente) return { error: "El asistente no está configurado en este taller." };
+
+    const respuesta = await cliente.beta.messages.create({
+      model: MODELO_IA,
+      max_tokens: 2000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      output_config: { effort: "low" },
+      system: systemPromptTraduccion,
       messages: [{ role: "user", content: entrada }],
     });
 

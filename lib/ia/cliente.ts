@@ -20,22 +20,45 @@ import Anthropic from "@anthropic-ai/sdk";
  * Si se cambia, se cambia una vez.
  */
 export const MODELO_IA = "claude-opus-5";
+export const MODELO_GEMINI = process.env.GEMINI_MODELO || "gemini-3.6-flash";
 
 /**
  * La feature es OPCIONAL y tiene que poder no estar.
  *
- * Sin `ANTHROPIC_API_KEY` la app entera sigue funcionando y los botones de IA
- * no aparecen. Un taller que no quiere pagarla no tiene por qué ver botones que
- * fallan, y el deploy no puede romperse por una variable que falta.
+ * Funciona tanto con Google Gemini como con Anthropic Claude.
+ * Sin credenciales, la app entera sigue funcionando y los botones de IA no aparecen.
  */
 export function iaDisponible(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return Boolean(
+    process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_AI_API_KEY ||
+      process.env.GOOGLE_API_KEY ||
+      process.env.ANTHROPIC_API_KEY,
+  );
+}
+
+/**
+ * Indica qué proveedor de IA está activo según las variables de entorno.
+ * Prioriza Gemini si está configurado.
+ */
+export function proveedorIAActivo(): "gemini" | "claude" | null {
+  if (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY
+  ) {
+    return "gemini";
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return "claude";
+  }
+  return null;
 }
 
 let cliente: Anthropic | null = null;
 
 export function obtenerCliente(): Anthropic | null {
-  if (!iaDisponible()) return null;
+  if (!process.env.ANTHROPIC_API_KEY) return null;
   cliente ??= new Anthropic();
   return cliente;
 }
@@ -46,11 +69,148 @@ export interface UsoTokens {
 }
 
 /**
+ * Ejecuta generación de texto con Google Gemini (Flash 3.0).
+ */
+export async function generarTextoGemini(opciones: {
+  prompt: string;
+  system?: string;
+  jsonOutput?: boolean;
+}): Promise<{
+  texto: string;
+  modelo: string;
+  tokensEntrada?: number;
+  tokensSalida?: number;
+} | null> {
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY;
+
+  if (!apiKey) return null;
+  const modelo = MODELO_GEMINI;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
+
+  const body: Record<string, unknown> = {
+    contents: [{ role: "user", parts: [{ text: opciones.prompt }] }],
+    generationConfig: {
+      temperature: 0.2,
+      ...(opciones.jsonOutput ? { response_mime_type: "application/json" } : {}),
+    },
+  };
+
+  if (opciones.system) {
+    body.systemInstruction = {
+      parts: [{ text: opciones.system }],
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`[generarTextoGemini] HTTP ${res.status}:`, err);
+      return null;
+    }
+
+    const data = await res.json();
+    const texto = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!texto) return null;
+
+    return {
+      texto,
+      modelo,
+      tokensEntrada: data.usageMetadata?.promptTokenCount,
+      tokensSalida: data.usageMetadata?.candidatesTokenCount,
+    };
+  } catch (err) {
+    console.error("[generarTextoGemini] Error al conectar con Gemini:", err);
+    return null;
+  }
+}
+
+/**
+ * Ejecuta generación multimodal con imágenes con Google Gemini (Flash 3.0).
+ */
+export async function generarVisionGemini(opciones: {
+  prompt: string;
+  imagenes: Array<{ base64: string; mediaType: string }>;
+  system?: string;
+  jsonOutput?: boolean;
+}): Promise<{
+  texto: string;
+  modelo: string;
+  tokensEntrada?: number;
+  tokensSalida?: number;
+} | null> {
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY;
+
+  if (!apiKey) return null;
+  const modelo = MODELO_GEMINI;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
+
+  const parts: Array<Record<string, unknown>> = [
+    { text: opciones.prompt },
+    ...opciones.imagenes.map((img) => ({
+      inline_data: {
+        mime_type: img.mediaType,
+        data: img.base64,
+      },
+    })),
+  ];
+
+  const body: Record<string, unknown> = {
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      temperature: 0.1,
+      ...(opciones.jsonOutput ? { response_mime_type: "application/json" } : {}),
+    },
+  };
+
+  if (opciones.system) {
+    body.systemInstruction = {
+      parts: [{ text: opciones.system }],
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`[generarVisionGemini] HTTP ${res.status}:`, err);
+      return null;
+    }
+
+    const data = await res.json();
+    const texto = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!texto) return null;
+
+    return {
+      texto,
+      modelo,
+      tokensEntrada: data.usageMetadata?.promptTokenCount,
+      tokensSalida: data.usageMetadata?.candidatesTokenCount,
+    };
+  } catch (err) {
+    console.error("[generarVisionGemini] Error al conectar con Gemini:", err);
+    return null;
+  }
+}
+
+/**
  * Motivo por el que una respuesta no llegó, en castellano y para el usuario.
- *
- * El `refusal` no es un error de red: es un 200 con `stop_reason: "refusal"`, y
- * si el código lee `content[0]` sin chequear, revienta. Se traduce a un mensaje
- * que le sirva al mecánico en vez de mostrarle el código de la API.
  */
 export function motivoDeFalla(stopReason: string | null): string {
   switch (stopReason) {

@@ -411,7 +411,7 @@ async function analizarConGemini(
     return { error: "No está configurada la clave de Gemini (GEMINI_API_KEY)." };
   }
 
-  const modelo = process.env.GEMINI_MODELO || "gemini-2.0-flash";
+  const modelo = process.env.GEMINI_MODELO || "gemini-3.6-flash";
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
 
   const infoVehiculo = opciones?.vehiculoInfo
