@@ -5,6 +5,7 @@ import {
   Car,
   ClipboardList,
   Columns3,
+  CreditCard,
   Users,
   LayoutGrid,
   type LucideIcon,
@@ -130,6 +131,14 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     icono: Settings,
     grupo: "config",
     ayuda: "Taller, equipo, roles, idioma y auditoría",
+  },
+  {
+    href: "/suscripcion",
+    etiqueta: "Mi Plan SaaS",
+    icono: CreditCard,
+    soloDueno: true,
+    grupo: "config",
+    ayuda: "Prueba de 7 días, estado y pago con Mercado Pago",
   },
 ];
 

@@ -1808,10 +1808,15 @@ export type Database = {
           idioma: string
           logo_url: string | null
           moneda: string
+          mp_payer_id: string | null
+          mp_preapproval_id: string | null
+          mp_subscription_status: string | null
           nombre: string
           pais: string
           plan: string
+          suscripcion_fin: string | null
           telefono: string | null
+          trial_fin: string
         }
         Insert: {
           config?: Json
@@ -1823,10 +1828,15 @@ export type Database = {
           idioma?: string
           logo_url?: string | null
           moneda?: string
+          mp_payer_id?: string | null
+          mp_preapproval_id?: string | null
+          mp_subscription_status?: string | null
           nombre: string
           pais?: string
           plan?: string
+          suscripcion_fin?: string | null
           telefono?: string | null
+          trial_fin?: string
         }
         Update: {
           config?: Json
@@ -1838,10 +1848,15 @@ export type Database = {
           idioma?: string
           logo_url?: string | null
           moneda?: string
+          mp_payer_id?: string | null
+          mp_preapproval_id?: string | null
+          mp_subscription_status?: string | null
           nombre?: string
           pais?: string
           plan?: string
+          suscripcion_fin?: string | null
           telefono?: string | null
+          trial_fin?: string
         }
         Relationships: []
       }
@@ -1864,6 +1879,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "taller_contador_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taller_suscripcion_evento: {
+        Row: {
+          creado_en: string
+          estado: string
+          id: string
+          monto: number | null
+          mp_id: string | null
+          payload: Json
+          taller_id: string
+          tipo: string
+        }
+        Insert: {
+          creado_en?: string
+          estado: string
+          id?: string
+          monto?: number | null
+          mp_id?: string | null
+          payload?: Json
+          taller_id: string
+          tipo: string
+        }
+        Update: {
+          creado_en?: string
+          estado?: string
+          id?: string
+          monto?: number | null
+          mp_id?: string | null
+          payload?: Json
+          taller_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taller_suscripcion_evento_taller_id_fkey"
             columns: ["taller_id"]
             isOneToOne: false
             referencedRelation: "taller"

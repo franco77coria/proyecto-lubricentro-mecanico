@@ -9,9 +9,12 @@ import { NextResponse, type NextRequest } from "next/server";
  * leen cookies obsoletas del request y devuelven 307 de nuevo a /login.
  */
 export async function proxy(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   });
 

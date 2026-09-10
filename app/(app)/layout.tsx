@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { BarraInferior } from "@/components/isla/BarraInferior";
 import { Isla } from "@/components/isla/Isla";
@@ -7,6 +8,8 @@ import { I18nProvider } from "@/lib/i18n/I18nContext";
 import type { Idioma, Moneda } from "@/lib/i18n";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { TrackerActividad } from "@/components/telemetria/TrackerActividad";
+import { BannerTrial } from "@/components/suscripcion/BannerTrial";
+import { calcularEstadoSuscripcion } from "@/lib/suscripcion";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -18,9 +21,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const supabase = await crearClienteServidor();
   const { data: taller } = await supabase
     .from("taller")
-    .select("nombre, pais, idioma, moneda")
+    .select("nombre, pais, idioma, moneda, estado_suscripcion, trial_fin, suscripcion_fin, mp_subscription_status")
     .eq("id", sesion.perfil.taller_id)
     .single();
+
+  const estadoSub = calcularEstadoSuscripcion(taller);
+  const cabeceras = await headers();
+  const rutaActual = cabeceras.get("x-pathname") || "";
+
+  // Guard de Suscripción: Si venció el trial de 7 días y no tiene suscripción activa,
+  // se restringe el acceso a las funciones operativas y se redirige a /suscripcion.
+  if (!estadoSub.tieneAcceso && !rutaActual.startsWith("/suscripcion")) {
+    redirect("/suscripcion");
+  }
 
   const vistasPermitidas = (sesion.perfil as { vistas_permitidas?: string[] | null }).vistas_permitidas;
 
@@ -41,6 +54,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* El margen deja lugar al sidebar sin que el contenido quede debajo. */}
         <div className="flex min-h-dvh flex-col lg:pl-[var(--sidebar-ancho)]">
+          {estadoSub.enTrial && (
+            <BannerTrial
+              diasRestantes={estadoSub.diasRestantesTrial}
+              esDueno={sesion.perfil.rol === "dueno"}
+            />
+          )}
           <Isla />
           {children}
         </div>
