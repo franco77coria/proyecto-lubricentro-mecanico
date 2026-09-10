@@ -239,6 +239,18 @@ export function PatenteInput({
               </div>
             )}
 
+            {/* Motorización / Cilindrada */}
+            {datosCedula.motorizacion && (
+              <div className="bg-card/90 rounded-xl p-2.5 border border-accent/30 bg-accent/5 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-accent block">
+                  Motorización / Cilindrada
+                </span>
+                <span className="font-bold text-foreground font-mono text-sm block">
+                  {datosCedula.motorizacion}
+                </span>
+              </div>
+            )}
+
             {/* Número de Motor */}
             {datosCedula.motor && (
               <div className="bg-card/90 rounded-xl p-2.5 border border-border/60 shadow-2xs flex items-center justify-between">

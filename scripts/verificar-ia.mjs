@@ -150,26 +150,32 @@ async function main() {
     fail(`Error en traducción WhatsApp: ${err.message}`);
   }
 
-  // 5. Prueba: Visión Multimodal con Imagen (1x1 PNG)
+  // 5. Prueba: Visión Multimodal con Imagen
   console.log("\n[5] Prueba: Visión Multimodal para Cédula Verde y Carrocería");
   try {
-    const imgBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const imgBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEklEQVR42mP8z8AARhhGAQkNAEAAAAD//1P3AWMAAAAASUVORK5CYII=";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: "Devolve un JSON con {'vision_activa': true}" },
-              { inline_data: { mime_type: "image/png", data: imgBase64 } },
-            ],
-          },
-        ],
-        generationConfig: { response_mime_type: "application/json" },
-      }),
-    });
+    
+    let res;
+    for (let intento = 1; intento <= 3; intento++) {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: "Devolve un JSON con {'vision_activa': true}" },
+                { inline_data: { mime_type: "image/png", data: imgBase64 } },
+              ],
+            },
+          ],
+          generationConfig: { response_mime_type: "application/json" },
+        }),
+      });
+      if (res.status !== 503 && res.status !== 429) break;
+      await new Promise((r) => setTimeout(r, 2500 * intento));
+    }
 
     if (!res.ok) {
       fail(`HTTP ${res.status} en visión multimodal`);

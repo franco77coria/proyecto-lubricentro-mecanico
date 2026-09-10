@@ -53,4 +53,24 @@ describe("sanitizarCedulaVerde", () => {
     assert.equal(res.titularNombre, "CARLOS SILVA");
     assert.equal(res.pais, "BR");
   });
+
+  test("detecta motorización 1.6 16V y código de motor K4M en Renault Fluence", () => {
+    const raw = {
+      patente: "LSJ 982",
+      marca: "RENAULT",
+      modelo: "FLUENCE 1.6 16V CONFORT",
+      motor: "K4MV838R079119",
+      chasis: "8A1LZB115DL468090",
+      combustible: "Nafta",
+    };
+
+    const res = sanitizarCedulaVerde(raw);
+
+    assert.equal(res.patente, "LSJ982");
+    assert.equal(res.marca, "RENAULT");
+    assert.equal(res.motorizacion, "1.6 16V");
+    assert.equal(res.combustible, "nafta");
+    assert.equal(res.motor, "K4MV838R079119");
+    assert.equal(res.vin, "8A1LZB115DL468090");
+  });
 });

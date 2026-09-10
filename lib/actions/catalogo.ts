@@ -123,6 +123,7 @@ export async function listarMotorizaciones(modeloId: string): Promise<OpcionCata
 export interface VehiculoResuelto {
   marcaId: string;
   modeloId: string;
+  motorizacionId?: string;
   /** Para confirmarle al usuario qué se reconoció, sin que tenga que mirar. */
   descripcion: string;
 }
@@ -130,8 +131,9 @@ export interface VehiculoResuelto {
 export async function resolverDesdeCedula(
   marca?: string,
   modelo?: string,
+  motorizacionTexto?: string,
 ): Promise<VehiculoResuelto> {
-  const vacio: VehiculoResuelto = { marcaId: "", modeloId: "", descripcion: "" };
+  const vacio: VehiculoResuelto = { marcaId: "", modeloId: "", motorizacionId: "", descripcion: "" };
   const sesion = await obtenerSesion();
   if (!sesion?.perfil || (!marca && !modelo)) return vacio;
 
@@ -155,10 +157,42 @@ export async function resolverDesdeCedula(
         : Promise.resolve({ data: null }),
     ]);
 
+    let motorizacionId = "";
+    let nombreMotor = "";
+
+    // Si encontramos el modelo, buscar si alguna de sus motorizaciones matchea con el texto
+    if (modeloId) {
+      const { data: motores } = await supabase
+        .from("motorizacion")
+        .select("id, nombre, nombre_norm")
+        .eq("modelo_id", modeloId)
+        .eq("estado", "aprobado");
+
+      if (motores && motores.length > 0) {
+        // Texto combinado donde buscar la motorización (modelo crudo, motorización extraída, etc.)
+        const textoBusqueda = ` ${marca || ""} ${modelo || ""} ${motorizacionTexto || ""} `
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, " ");
+
+        // Ordenar motores por longitud de nombre para matchear el más específico primero (ej: "1.6 16v" antes de "1.6")
+        const motoresOrdenados = [...motores].sort((a, b) => b.nombre.length - a.nombre.length);
+
+        for (const mot of motoresOrdenados) {
+          const norm = mot.nombre_norm?.replace(/[^a-z0-9]+/g, " ") || mot.nombre.toLowerCase().replace(/[^a-z0-9]+/g, " ");
+          if (norm && textoBusqueda.includes(` ${norm} `)) {
+            motorizacionId = mot.id;
+            nombreMotor = mot.nombre;
+            break;
+          }
+        }
+      }
+    }
+
     return {
       marcaId,
       modeloId,
-      descripcion: [filaMarca?.nombre, filaModelo?.nombre].filter(Boolean).join(" "),
+      motorizacionId,
+      descripcion: [filaMarca?.nombre, filaModelo?.nombre, nombreMotor].filter(Boolean).join(" "),
     };
   } catch (error) {
     unstable_rethrow(error);

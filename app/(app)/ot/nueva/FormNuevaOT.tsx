@@ -158,7 +158,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         setVehiculo((prev) =>
           prev.marcaId
             ? prev
-            : { marcaId: resuelto.marcaId, modeloId: resuelto.modeloId, motorizacionId: "" },
+            : {
+                marcaId: resuelto.marcaId,
+                modeloId: resuelto.modeloId,
+                motorizacionId: resuelto.motorizacionId || "",
+              },
         );
       }
 
@@ -345,21 +349,22 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
                 }
               }
               if (d.marca || d.modelo) {
-                setCedulaResumen(`${d.marca || ""} ${d.modelo || ""}`.trim());
+                const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
+                setCedulaResumen(desc);
                 startTransition(async () => {
-                  const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "");
+                  const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "", d.motorizacion || "");
                   if (resuelto.marcaId) {
                     setVehiculo({
                       marcaId: resuelto.marcaId,
                       modeloId: resuelto.modeloId,
-                      motorizacionId: "",
+                      motorizacionId: resuelto.motorizacionId || "",
                     });
                   }
                 });
               }
               notificar({
                 tipo: "exito",
-                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""})`,
+                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})`,
               });
             }}
           />

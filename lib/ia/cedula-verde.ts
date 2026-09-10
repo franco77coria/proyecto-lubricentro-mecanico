@@ -6,6 +6,7 @@ export interface CedulaVerdeOCRData {
   patente: string;
   marca?: string;
   modelo?: string;
+  motorizacion?: string; // Ej: 1.6 16V, 2.0 TDI, 2.8 D-4D, 3.0 V6
   tipo?: string; // Ej: SEDAN 4 PTAS, HATCHBACK, PICK-UP
   uso?: string; // Ej: PRIVADO, PÚBLICO
   anio?: number;
@@ -53,10 +54,25 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
 
   const vinLimpio = String(crudo.vin || crudo.chasis || crudo.cuadro || "").replace(/[^A-HJ-NPR-Z0-9]/gi, "").toUpperCase();
 
+  // Detección de motorización / cilindrada (ej: "1.6 16V", "2.0 TDI", "2.8 D-4D", "3.0 V6")
+  let motorizacion = crudo.motorizacion ? String(crudo.motorizacion).trim() : undefined;
+  if (!motorizacion) {
+    const textoCompleto = `${crudo.modelo || ""} ${crudo.motor || ""}`;
+    const matchMotor = textoCompleto.match(
+      /\b(\d\.\d(?:\s*(?:16v|8v|tdi|hdi|dci|tsi|msi|turbo|thp|d-4d|gse|v6|v8))?|\d\.\d|\b(?:v6|v8|tdi|turbo))\b/i,
+    );
+    if (matchMotor) {
+      motorizacion = matchMotor[0].toUpperCase();
+    } else if (String(crudo.motor || "").toUpperCase().startsWith("K4M")) {
+      motorizacion = "1.6 16V";
+    }
+  }
+
   return {
     patente: patente || patenteCruda.toUpperCase(),
     marca: crudo.marca ? String(crudo.marca).trim() : undefined,
     modelo: crudo.modelo ? String(crudo.modelo).trim() : undefined,
+    motorizacion,
     tipo: crudo.tipo ? String(crudo.tipo).trim() : undefined,
     uso: crudo.uso ? String(crudo.uso).trim() : undefined,
     anio,
@@ -86,7 +102,8 @@ Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura completa
 {
   "patente": "Dominio o Chapa patente (ej: LSJ982 o AB123CD)",
   "marca": "Marca del fabricante (ej: RENAULT, VOLKSWAGEN, TOYOTA)",
-  "modelo": "Modelo y versión exacta completa (ej: RENAULT FLUENCE 1.6 16V CONFORT)",
+  "modelo": "Modelo y versión exacta completa (ej: FLUENCE 1.6 16V CONFORT)",
+  "motorizacion": "Motorización o cilindrada si figura en el modelo o documento (ej: 1.6 16V, 2.0 TDI, 2.8 D-4D, 3.0 V6)",
   "tipo": "Tipo de carrocería (ej: SEDAN 4 PTAS, HATCHBACK, PICK-UP)",
   "uso": "Uso registrado (ej: PRIVADO, PÚBLICO)",
   "anio": 2018,
@@ -103,7 +120,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura completa
 REGLAS CRÍTICAS:
 1. Extrae la patente sin espacios ni guiones (ej: LSJ982).
 2. Transcribe el número de Chasis (VIN) y el número de Motor con exactitud total.
-3. Extrae la marca y la denominación de modelo exacta completa.
+3. Extrae la marca, la denominación de modelo exacta y la motorización/cilindrada (ej: 1.6 16V, 2.0 TDI).
 4. Si figura Tipo (ej: SEDAN 4 PTAS), Uso (ej: PRIVADO) y Vence (ej: 29/11/2023), inclúyelos.
 5. Devuelve EXCLUSIVAMENTE el JSON, sin texto explicativo.`;
 

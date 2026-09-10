@@ -299,19 +299,19 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
             }
             if (d.marca || d.modelo) {
               startTransition(async () => {
-                const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "");
+                const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "", d.motorizacion || "");
                 if (resuelto.marcaId) {
                   setVehiculo({
                     marcaId: resuelto.marcaId,
                     modeloId: resuelto.modeloId,
-                    motorizacionId: "",
+                    motorizacionId: resuelto.motorizacionId || "",
                   });
                 }
               });
             }
             notificar({
               tipo: "exito",
-              mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""})`,
+              mensaje: `✨ Cédula Verde detectada: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})`,
             });
           }}
         />
