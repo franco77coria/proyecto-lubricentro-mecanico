@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { crearClienteAdmin } from "@/lib/supabase/admin";
 import {
   crearSuscripcionPreapproval,
   cancelarPreapproval,
+  obtenerDetallePreapproval,
   obtenerPrecioPlanMensual,
 } from "@/lib/mercadopago/cliente";
 import { calcularEstadoSuscripcion, type EstadoSuscripcionCalculado } from "@/lib/suscripcion";
@@ -162,5 +164,70 @@ export async function cancelarSuscripcionAction(): Promise<{ ok?: boolean; error
     unstable_rethrow(error);
     console.error("[cancelarSuscripcionAction]", error);
     return { error: "No se pudo cancelar la suscripción." };
+  }
+}
+
+/**
+ * Sincroniza el estado de la suscripción al volver del checkout de Mercado Pago.
+ *
+ * Se ejecuta al cargar `/suscripcion?status=success` o con `preapproval_id`,
+ * garantizando la activación inmediata tanto en producción como en entornos locales/demo.
+ */
+export async function sincronizarSuscripcionRetornoAction(
+  preapprovalIdParam?: string
+): Promise<{ ok: boolean; activada?: boolean }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { ok: false };
+
+  try {
+    const tallerId = sesion.perfil.taller_id;
+    const admin = crearClienteAdmin();
+
+    const { data: taller } = await admin
+      .from("taller")
+      .select("mp_preapproval_id, estado_suscripcion")
+      .eq("id", tallerId)
+      .single();
+
+    const preapprovalId = preapprovalIdParam || taller?.mp_preapproval_id;
+    if (!preapprovalId) return { ok: true, activada: false };
+
+    const detalle = await obtenerDetallePreapproval(preapprovalId);
+    if (!detalle) return { ok: true, activada: false };
+
+    if (detalle.status === "authorized") {
+      const fechaFin = detalle.next_payment_date
+        ? new Date(detalle.next_payment_date).toISOString()
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      await admin
+        .from("taller")
+        .update({
+          estado_suscripcion: "activa",
+          suscripcion_fin: fechaFin,
+          mp_preapproval_id: detalle.id,
+          mp_subscription_status: detalle.status,
+          mp_payer_id: detalle.payer_id ? String(detalle.payer_id) : null,
+        })
+        .eq("id", tallerId);
+
+      await admin.from("taller_suscripcion_evento").insert({
+        taller_id: tallerId,
+        tipo: "retorno_checkout_sincronizado",
+        mp_id: detalle.id,
+        estado: detalle.status,
+        monto: detalle.auto_recurring?.transaction_amount || null,
+        payload: JSON.parse(JSON.stringify(detalle)),
+      });
+
+      revalidatePath("/suscripcion");
+      revalidatePath("/", "layout");
+      return { ok: true, activada: true };
+    }
+
+    return { ok: true, activada: false };
+  } catch (error) {
+    console.error("[sincronizarSuscripcionRetornoAction]", error);
+    return { ok: false };
   }
 }

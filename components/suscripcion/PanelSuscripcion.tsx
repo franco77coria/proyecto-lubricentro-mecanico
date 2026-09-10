@@ -22,6 +22,7 @@ interface PanelSuscripcionProps {
   esDueno: boolean;
   nombreTaller: string;
   suscripcionFin?: string | null;
+  exitoReciente?: boolean;
 }
 
 export function PanelSuscripcion({
@@ -30,6 +31,7 @@ export function PanelSuscripcion({
   esDueno,
   nombreTaller,
   suscripcionFin,
+  exitoReciente,
 }: PanelSuscripcionProps) {
   const [cargando, setCargando] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -150,7 +152,19 @@ export function PanelSuscripcion({
         </div>
 
         {/* Mensajes de Contexto */}
-        {enTrial && (
+        {exitoReciente && (
+          <div className="flex items-start gap-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 p-4 text-xs text-foreground leading-relaxed animate-fade-in">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" aria-hidden />
+            <div>
+              <p className="font-bold text-emerald-400">¡Pago acreditado exitosamente!</p>
+              <p className="text-muted-foreground mt-0.5">
+                Tu suscripción mensual a Plan Taller Pro ya está activa en Mercado Pago. Todas las funciones del taller se encuentran 100% habilitadas.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {enTrial && !exitoReciente && (
           <div className="flex items-start gap-3 rounded-2xl bg-accent/10 border border-accent/20 p-4 text-xs text-foreground leading-relaxed">
             <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" aria-hidden />
             <div>

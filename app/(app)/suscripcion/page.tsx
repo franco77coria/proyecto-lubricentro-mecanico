@@ -1,10 +1,27 @@
 import { redirect } from "next/navigation";
-import { obtenerEstadoSuscripcionAction } from "@/lib/actions/suscripcion";
+import {
+  obtenerEstadoSuscripcionAction,
+  sincronizarSuscripcionRetornoAction,
+} from "@/lib/actions/suscripcion";
 import { PanelSuscripcion } from "@/components/suscripcion/PanelSuscripcion";
 
 export const dynamic = "force-dynamic";
 
-export default async function PaginaSuscripcion() {
+interface PaginaSuscripcionProps {
+  searchParams: Promise<{ status?: string; preapproval_id?: string }>;
+}
+
+export default async function PaginaSuscripcion({ searchParams }: PaginaSuscripcionProps) {
+  const params = await searchParams;
+  let exitoReciente = false;
+
+  if (params.status === "success" || params.preapproval_id) {
+    const sinc = await sincronizarSuscripcionRetornoAction(params.preapproval_id);
+    if (sinc.activada || params.status === "success") {
+      exitoReciente = true;
+    }
+  }
+
   const datos = await obtenerEstadoSuscripcionAction();
 
   if (!datos) {
@@ -19,6 +36,7 @@ export default async function PaginaSuscripcion() {
         esDueno={datos.esDueno}
         nombreTaller={datos.nombreTaller}
         suscripcionFin={datos.suscripcionFin}
+        exitoReciente={exitoReciente}
       />
     </main>
   );

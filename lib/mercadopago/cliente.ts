@@ -80,7 +80,15 @@ export async function crearSuscripcionPreapproval(
   const token = obtenerAccessToken();
   const monto = params.montoARS ?? obtenerPrecioPlanMensual();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const backUrl = params.backUrl || `${appUrl}/suscripcion?status=success`;
+  let backUrl = params.backUrl || `${appUrl}/suscripcion?status=success`;
+
+  // Mercado Pago exige HTTPS en back_url.
+  if (!backUrl.startsWith("https://")) {
+    const ruta = backUrl.startsWith("http://")
+      ? backUrl.replace(/^http:\/\/[^/]+/, "")
+      : "/suscripcion?status=success";
+    backUrl = `https://tallerpro.app${ruta.startsWith("/") ? ruta : `/${ruta}`}`;
+  }
 
   const body = {
     payer_email: params.emailDueno.trim().toLowerCase(),
