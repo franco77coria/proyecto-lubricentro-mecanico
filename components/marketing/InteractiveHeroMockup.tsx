@@ -35,6 +35,19 @@ const VEHICULOS_DEMO: VehiculoDemo[] = [
   },
   {
     id: "2",
+    patente: "LSJ982",
+    modelo: "Renault Fluence 1.6 16V Confort",
+    motor: "K4M 1.6L 16V 110cv",
+    km: "89.400 km",
+    tiempoFosa: "25 min",
+    aceite: "Semisintético 10W-40 RN0700",
+    litros: 4.8,
+    filtro: "Filtro Blindado Aceite + Habitáculo",
+    estado: "en_fosa",
+    alertas: "Chasis 8A1LZB115DL468090 · Cédula leída con IA",
+  },
+  {
+    id: "3",
     patente: "AF342XP",
     modelo: "VW Amarok 3.0 V6 TDI",
     motor: "3.0 V6 258cv",
@@ -46,7 +59,7 @@ const VEHICULOS_DEMO: VehiculoDemo[] = [
     estado: "recibido",
   },
   {
-    id: "3",
+    id: "4",
     patente: "RTF421",
     modelo: "Ford Ranger 3.2 TDCi",
     motor: "Duratorq 5 Cilindros",

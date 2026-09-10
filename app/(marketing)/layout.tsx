@@ -27,7 +27,7 @@ export default async function MarketingLayout({
 
   return (
     <div
-      /* Sin bg propio: el fondo lo pone VideoBackdrop, que va en la capa de
+      /* Sin bg propio: el fondo lo pone WorkshopAtmosphere, que va en la capa de
          z-index negativo. Un background opaco acá lo taparía — los fondos de
          elemento se pintan por encima de esa capa. El color de base queda en
          <body>. */

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Hero } from "@/components/marketing/Hero";
-import { VideoBackdrop } from "@/components/marketing/VideoBackdrop";
+import { WorkshopAtmosphere } from "@/components/marketing/WorkshopAtmosphere";
 import { InteractivePlateLookup } from "@/components/marketing/InteractivePlateLookup";
 import { InteractiveWhatsAppPreview } from "@/components/marketing/InteractiveWhatsAppPreview";
 import { CalculadoraFugas } from "@/components/marketing/CalculadoraFugas";
@@ -16,7 +16,7 @@ import {
 export default function MarketingPage() {
   return (
     <div className="relative flex flex-col items-center overflow-x-clip">
-      <VideoBackdrop />
+      <WorkshopAtmosphere />
 
       {/* 1. Hero con Terminal Interactiva de Fosa */}
       <Hero />
