@@ -1,99 +1,194 @@
 "use client";
 
-import { useReducedMotion, useScroll, useTransform } from "motion/react";
-import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { motion, useReducedMotion, useScroll, useTransform, useSpring } from "motion/react";
 
 /**
- * Atmósfera Visual de Taller y Fosa de Precisión.
- *
- * Reemplaza el video scrub por una puesta en escena lumínica y geométrica
- * acelerada por hardware (60 FPS fijos, 0 decodificación de video, cero lag de scroll):
- *
- * 1. Iluminación cenital de bahía de servicio (ámbar cálido de lámparas de taller
- *    y cian de instrumental diagnóstico).
- * 2. Rieles y líneas de perspectiva técnica en el suelo (guías de elevador y fosa).
- * 3. Partículas lumínicas ambientales que responden al scroll con paralaje sutil.
+ * Escenas Fotográficas Reales de Taller y Fosa de Precisión:
+ * 1. Bahía principal con Toyota Hilux en elevador hidráulico sobre fosa.
+ * 2. Vista desde la fosa mirando cárter, tren delantero y recuperador de aceite.
+ * 3. Bahía diagnóstica con motor turbo diesel y tablet de telemetría.
  */
+const SCENES = [
+  {
+    id: "bay",
+    src: "/img/marketing/hero-fosa-hilux.jpg",
+    alt: "Taller mecánico y lubricentro argentino con Toyota Hilux en elevador",
+  },
+  {
+    id: "pit",
+    src: "/img/marketing/fosa-carter.jpg",
+    alt: "Fosa de lubricentro con vista de cárter y suspensión",
+  },
+  {
+    id: "diag",
+    src: "/img/marketing/motor-diagnostico.jpg",
+    alt: "Diagnóstico computarizado de motor turbo diesel",
+  },
+] as const;
+
 export function WorkshopAtmosphere() {
   const reduceMotion = useReducedMotion();
-  const { scrollY } = useScroll();
-
-  // Transformaciones suaves basadas en scroll
-  const glowY = useTransform(scrollY, [0, 1200], [0, 180]);
-  const ambientOpacity = useTransform(scrollY, [0, 600, 1800], [0.85, 0.65, 0.4]);
-  const gridY = useTransform(scrollY, [0, 1000], [0, -40]);
-
+  const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  const { scrollYProgress } = useScroll();
+
+  // Suavizado cinemático de scroll
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 70,
+    damping: 24,
+    restDelta: 0.001,
+  });
+
+  // Opacidades y escalas por etapa del scroll
+  // Escena 1 (Hero e Introducción: 0% a 35%)
+  const scene1Opacity = useTransform(smoothProgress, [0, 0.2, 0.38], [0.85, 0.85, 0]);
+  const scene1Scale = useTransform(smoothProgress, [0, 0.35], [1.02, 1.1]);
+  const scene1Y = useTransform(smoothProgress, [0, 0.35], ["0%", "-5%"]);
+
+  // Escena 2 (Fosa y Cárter: 28% a 68%)
+  const scene2Opacity = useTransform(smoothProgress, [0.28, 0.42, 0.58, 0.72], [0, 0.8, 0.8, 0]);
+  const scene2Scale = useTransform(smoothProgress, [0.28, 0.7], [1.08, 1.01]);
+  const scene2Y = useTransform(smoothProgress, [0.28, 0.7], ["4%", "-4%"]);
+
+  // Escena 3 (Diagnóstico y Motor: 60% a 95%)
+  const scene3Opacity = useTransform(smoothProgress, [0.62, 0.76, 0.88, 0.98], [0, 0.75, 0.75, 0.2]);
+  const scene3Scale = useTransform(smoothProgress, [0.62, 1], [1.05, 1.12]);
+
+  // Láser de escaneo óptico / barra de luz que barre con el scroll
+  const scanLaserY = useTransform(smoothProgress, [0, 1], ["5%", "95%"]);
+
+  // Paralaje de mouse sutil (tilt 3D)
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (reduceMotion) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const { innerWidth, innerHeight } = window;
+      const x = (e.clientX / innerWidth - 0.5) * 16; // ±8px
+      const y = (e.clientY / innerHeight - 0.5) * 16; // ±8px
+      setMousePos({ x, y });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [reduceMotion]);
 
   return (
     <div
+      ref={containerRef}
       aria-hidden
-      className="fixed inset-0 -z-10 bg-[#070709] overflow-hidden pointer-events-none select-none"
+      className="fixed inset-0 -z-10 bg-[#060608] overflow-hidden pointer-events-none select-none"
     >
-      {/* 1. Iluminación Cenital de Bahía: Spot ámbar central superior */}
-      <motion.div
-        style={reduceMotion || !mounted ? undefined : { y: glowY, opacity: ambientOpacity }}
-        className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[85vw] max-w-[1100px] h-[650px] rounded-full blur-[140px] opacity-70 pointer-events-none"
-        aria-hidden
-      >
-        <div className="w-full h-full bg-gradient-to-b from-orange-500/25 via-amber-500/15 to-transparent rounded-full" />
-      </motion.div>
+      {/* ── PLANO 0: Iluminación de Bahía & Grilla de Precisión Técnica ── */}
+      <div className="absolute inset-0 bg-radial-[circle_at_50%_15%,rgba(249,115,22,0.18)_0%,transparent_65%] pointer-events-none" />
+      <div className="absolute inset-0 bg-radial-[circle_at_15%_45%,rgba(14,165,233,0.12)_0%,transparent_60%] pointer-events-none" />
 
-      {/* 2. Haz de luz diagnóstica lateral (Cian técnico) */}
-      <div
-        className="absolute top-[35%] -left-[15%] w-[600px] h-[600px] rounded-full blur-[160px] opacity-20 bg-sky-500/30 pointer-events-none"
-        aria-hidden
-      />
-
-      {/* 3. Reflejo cálido de elevador/piso de fosa inferior */}
-      <div
-        className="absolute bottom-[-10%] right-[-10%] w-[700px] h-[500px] rounded-full blur-[150px] opacity-25 bg-orange-600/20 pointer-events-none"
-        aria-hidden
-      />
-
-      {/* 4. Grilla de precisión técnica y líneas de fosa en perspectiva */}
-      <motion.div
-        style={reduceMotion || !mounted ? undefined : { y: gridY }}
-        className="absolute inset-0 opacity-[0.07] pointer-events-none"
-        aria-hidden
-      >
+      {/* Grilla técnica sutil de ingeniería de taller */}
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="fosa-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <pattern id="fosa-blueprint-grid" width="48" height="48" patternUnits="userSpaceOnUse">
               <path
-                d="M 60 0 L 0 0 0 60"
+                d="M 48 0 L 0 0 0 48"
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.6)"
-                strokeWidth="0.75"
+                stroke="rgba(255, 255, 255, 0.7)"
+                strokeWidth="0.7"
               />
-              <circle cx="0" cy="0" r="1.5" fill="rgba(249, 115, 22, 0.8)" />
+              <circle cx="0" cy="0" r="1.2" fill="rgba(249, 115, 22, 0.9)" />
             </pattern>
-            {/* Gradiente de atenuación para que la grilla se funda en el espacio */}
-            <radialGradient id="grid-mask" cx="50%" cy="35%" r="65%">
-              <stop offset="0%" stopColor="#fff" />
-              <stop offset="60%" stopColor="#fff" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#000" stopOpacity="0" />
-            </radialGradient>
-            <mask id="fosa-mask">
-              <rect width="100%" height="100%" fill="url(#grid-mask)" />
-            </mask>
           </defs>
-          <rect width="100%" height="100%" fill="url(#fosa-grid)" mask="url(#fosa-mask)" />
+          <rect width="100%" height="100%" fill="url(#fosa-blueprint-grid)" />
         </svg>
-      </motion.div>
-
-      {/* 5. Líneas longitudinales de fosa (guías de ruedas de elevador) */}
-      <div className="absolute inset-0 flex justify-center pointer-events-none opacity-[0.09]" aria-hidden>
-        <div className="w-full max-w-6xl h-full border-x border-dashed border-orange-500" />
       </div>
 
-      {/* 6. Viñeta perimetral de contraste para garantizar legibilidad absoluta de textos */}
-      <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_20%,#070709_90%] pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#070709]/60 via-transparent to-[#070709] pointer-events-none" />
+      {/* ── PLANO 1: Escenografía Fotográfica Real con Transición Cinemática por Scroll ── */}
+      <motion.div
+        style={
+          reduceMotion || !mounted
+            ? undefined
+            : {
+                x: mousePos.x,
+                y: mousePos.y,
+              }
+        }
+        className="absolute inset-0 w-full h-full transition-transform duration-700 ease-out"
+      >
+        {/* Escena 1: Bahía Principal - Toyota Hilux en Elevador */}
+        <motion.div
+          style={reduceMotion || !mounted ? undefined : { opacity: scene1Opacity, scale: scene1Scale, y: scene1Y }}
+          className="absolute inset-0 w-full h-full will-change-transform"
+        >
+          <Image
+            src={SCENES[0].src}
+            alt={SCENES[0].alt}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center filter brightness-[0.72] contrast-[1.12]"
+          />
+        </motion.div>
+
+        {/* Escena 2: Perspectiva de Fosa y Cárter */}
+        <motion.div
+          style={reduceMotion || !mounted ? undefined : { opacity: scene2Opacity, scale: scene2Scale, y: scene2Y }}
+          className="absolute inset-0 w-full h-full will-change-transform"
+        >
+          <Image
+            src={SCENES[1].src}
+            alt={SCENES[1].alt}
+            fill
+            sizes="100vw"
+            className="object-cover object-center filter brightness-[0.7] contrast-[1.15]"
+          />
+        </motion.div>
+
+        {/* Escena 3: Diagnóstico Computarizado & Motor */}
+        <motion.div
+          style={reduceMotion || !mounted ? undefined : { opacity: scene3Opacity, scale: scene3Scale }}
+          className="absolute inset-0 w-full h-full will-change-transform"
+        >
+          <Image
+            src={SCENES[2].src}
+            alt={SCENES[2].alt}
+            fill
+            sizes="100vw"
+            className="object-cover object-center filter brightness-[0.68] contrast-[1.18]"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* ── PLANO 2: Láser Óptico de Telemetría (Línea de Escaneo de Taller) ── */}
+      {!reduceMotion && mounted && (
+        <motion.div
+          style={{ top: scanLaserY }}
+          className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent shadow-[0_0_15px_rgba(6,182,212,0.8)] opacity-40 pointer-events-none"
+        >
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-48 h-3 bg-cyan-400/20 blur-md rounded-full" />
+        </motion.div>
+      )}
+
+      {/* Micro-partículas lumínicas ambientales flotantes */}
+      {!reduceMotion && mounted && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/4 left-1/5 w-1.5 h-1.5 rounded-full bg-orange-400/40 blur-[0.5px] animate-pulse" />
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 rounded-full bg-amber-400/30 blur-[1px] animate-ping" />
+          <div className="absolute bottom-1/3 left-1/3 w-1 h-1 rounded-full bg-cyan-400/50 blur-[0.5px] animate-pulse" />
+        </div>
+      )}
+
+      {/* ── PLANO 3: Scrims & Viñeteado Cinemático para Contraste Impecable de Textos ── */}
+      {/* Gradiente vertical para asegurar legibilidad total de tipografía */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#060608]/75 via-[#060608]/50 to-[#060608]/95 pointer-events-none" />
+
+      {/* Gradiente lateral izquierdo para anclar la columna de lectura en desktop */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#060608]/90 via-[#060608]/55 to-[#060608]/30 sm:to-transparent pointer-events-none" />
+
+      {/* Viñeta perimetral de contraste */}
+      <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_35%,#060608_95%] pointer-events-none" />
     </div>
   );
 }
