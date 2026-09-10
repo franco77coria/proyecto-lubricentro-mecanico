@@ -44,10 +44,13 @@ export interface DetallePreapproval {
  * Obtiene el access token de Mercado Pago configurado en las variables de entorno.
  */
 function obtenerAccessToken(): string {
-  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const token =
+    process.env.MERCADOPAGO_ACCESS_TOKEN ||
+    process.env.MERCADO_PAGO_ACCESS_TOKEN ||
+    process.env.MP_ACCESS_TOKEN;
   if (!token) {
     throw new Error(
-      "MERCADO_PAGO_ACCESS_TOKEN no está configurado. Configurá tus credenciales de Mercado Pago en .env.local."
+      "MERCADOPAGO_ACCESS_TOKEN (o MP_ACCESS_TOKEN) no está configurado. Configurá tus credenciales de Mercado Pago en .env.local o ejecuta `mpcli login`."
     );
   }
   return token;
@@ -57,7 +60,10 @@ function obtenerAccessToken(): string {
  * Obtiene el monto mensual configurado para la suscripción en ARS (default: $29.900 ARS).
  */
 export function obtenerPrecioPlanMensual(): number {
-  const envVal = process.env.MP_PRECIO_PLAN_MENSUAL;
+  const envVal =
+    process.env.MP_PRECIO_PLAN_MENSUAL ||
+    process.env.MP_AMOUNT ||
+    process.env.MERCADOPAGO_PRECIO_PLAN;
   if (envVal) {
     const parsed = Number(envVal);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -172,7 +178,10 @@ export function validarFirmaWebhookMP(
   xRequestId: string | null,
   dataId: string | null
 ): boolean {
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+  const secret =
+    process.env.MERCADOPAGO_WEBHOOK_SECRET ||
+    process.env.MERCADO_PAGO_WEBHOOK_SECRET ||
+    process.env.MP_WEBHOOK_SECRET;
   // Si no se configuró secret en desarrollo/staging, se permite la invocación para pruebas controladas
   if (!secret) return true;
   if (!xSignature || !dataId) return false;
