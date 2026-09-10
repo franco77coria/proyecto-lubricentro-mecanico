@@ -32,6 +32,46 @@ function BanderaArgentina({ className = "w-3.5 h-2.5" }: { className?: string })
   );
 }
 
+function EscudoArgentino({ className = "w-3 h-3" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      {/* Sol de Mayo */}
+      <circle cx="12" cy="3" r="1.8" fill="#F59E0B" />
+      <path d="M12 0.5V1.8M9 1.5L9.8 2.5M15 1.5L14.2 2.5" stroke="#F59E0B" strokeWidth="0.8" strokeLinecap="round" />
+      {/* Laureles */}
+      <path
+        d="M4 14C3.5 9.5 5.5 6 8.5 4M20 14C20.5 9.5 18.5 6 15.5 4"
+        stroke="#16A34A"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Óvalo interior dividido: celeste arriba, blanco abajo */}
+      <ellipse cx="12" cy="13" rx="5.5" ry="7" fill="#FFFFFF" />
+      <path d="M6.5 13C6.5 9.13 8.96 6 12 6C15.04 6 17.5 9.13 17.5 13Z" fill="#38BDF8" />
+      {/* Pica vertical y Gorro Frigio */}
+      <line x1="12" y1="8.5" x2="12" y2="17.5" stroke="#78350F" strokeWidth="0.9" />
+      <circle cx="12" cy="8.2" r="1" fill="#DC2626" />
+      {/* Manos entrelazadas */}
+      <ellipse cx="12" cy="13" rx="2" ry="1" fill="#FBBF24" />
+      {/* Borde del óvalo */}
+      <ellipse cx="12" cy="13" rx="5.5" ry="7" stroke="#94A3B8" strokeWidth="0.6" fill="none" />
+    </svg>
+  );
+}
+
+function RanuraChapa({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "rounded-[1px] bg-zinc-300/90 border border-zinc-400 shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.6),0_0.5px_0_rgba(255,255,255,0.9)] pointer-events-none shrink-0",
+        className,
+      )}
+      aria-hidden
+    />
+  );
+}
+
 function Tornillo({ className = "" }: { className?: string }) {
   return (
     <span
@@ -50,7 +90,8 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
 
   const esMercosurAR = formato === "auto_mercosur" || formato === "moto_mercosur";
   const esMercosurBR = formato === "br_mercosur" || formato === "br_moto_mercosur";
-  const esViejo = formato === "auto_viejo" || formato === "moto_vieja" || formato === "br_antigua";
+  const esArgentinaVieja = formato === "auto_viejo" || formato === "moto_vieja";
+  const esBrasilAntigua = formato === "br_antigua";
   const esEspanaUE = formato === "es_actual" || formato === "es_provincial";
   const esChile = formato === "cl_nuevo" || formato === "cl_antiguo";
   const esColombia = formato === "co_moto";
@@ -136,30 +177,129 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
     );
   }
 
-  // 2. PATENTE ANTERIOR ARGENTINA 1995-2016 (Fotorrealista: placa negra mate, fino marco perimetral blanco reflectivo, dos orificios de tornillos y tipografía blanca estampada en relieve)
-  if (esViejo) {
-    const sizeConfig = {
-      sm: { box: "min-w-[75px] h-[26px] px-1.5 border-[1.5px]", text: "text-[11px] tracking-[0.18em]", screw: "h-1 w-1 top-[2px]" },
-      md: { box: "min-w-[105px] h-[36px] px-2.5 border-[2px]", text: "text-[15px] tracking-[0.22em]", screw: "h-1.5 w-1.5 top-[3px]" },
-      lg: { box: "min-w-[150px] h-[50px] px-3.5 border-[2.5px]", text: "text-[21px] tracking-[0.26em]", screw: "h-2 w-2 top-[4px]" },
-    }[size];
+  // 2. PATENTE ANTERIOR ARGENTINA 1995-2016 (Fotorrealista: marco exterior blanco reflectivo, Escudo Nacional a la izquierda, "ARGENTINA" en celeste oficial centrado, 4 ranuras de fijación y recuadro central negro con letras estampadas en relieve blanco)
+  if (esArgentinaVieja) {
+    if (size === "sm") {
+      return (
+        <div
+          className={cn(
+            "relative inline-flex flex-col items-center justify-between rounded-[4px] border border-zinc-400/90 bg-gradient-to-b from-[#FFFFFF] via-[#F3F4F6] to-[#E5E7EB] shadow-[0_1.5px_3px_rgba(0,0,0,0.25),inset_0_1px_0.5px_rgba(255,255,255,0.95)] overflow-hidden select-none min-w-[84px] h-[28px] p-[2px]",
+            className,
+          )}
+        >
+          {/* Cabecera superior: Escudo + Ranura + ARGENTINA celeste + Ranura */}
+          <div className="flex w-full items-center justify-between px-0.5 leading-none">
+            <EscudoArgentino className="w-2.5 h-2.5 shrink-0" />
+            <RanuraChapa className="w-2.5 h-[1.5px]" />
+            <span className="text-[5.5px] font-black uppercase tracking-[0.14em] text-[#2E9CDA] drop-shadow-[0_0.2px_0_rgba(255,255,255,0.8)]">
+              ARGENTINA
+            </span>
+            <RanuraChapa className="w-2.5 h-[1.5px]" />
+          </div>
 
+          {/* Recuadro central negro con borde metálico y tipografía blanca en relieve */}
+          <div className="flex w-full items-center justify-center rounded-[2px] border border-zinc-300/90 bg-[#0B0B0D] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0.5px_0_rgba(255,255,255,0.7)] px-1 h-[15px]">
+            <span
+              className="text-display font-black text-white leading-none text-[11.5px] tracking-[0.16em]"
+              style={{ textShadow: "0 0.5px 0 rgba(255,255,255,0.85), 0 1px 1.5px rgba(0,0,0,0.9)" }}
+            >
+              {textoFormateado}
+            </span>
+          </div>
+
+          {/* Ranuras inferiores */}
+          <div className="flex w-full items-center justify-between px-3 leading-none h-[2px]">
+            <RanuraChapa className="w-2.5 h-[1px]" />
+            <RanuraChapa className="w-2.5 h-[1px]" />
+          </div>
+        </div>
+      );
+    }
+
+    if (size === "lg") {
+      return (
+        <div
+          className={cn(
+            "relative inline-flex flex-col items-center justify-between rounded-[7px] border-[2px] border-zinc-400/90 bg-gradient-to-b from-[#FFFFFF] via-[#F3F4F6] to-[#E5E7EB] shadow-[0_3px_8px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.95)] overflow-hidden select-none min-w-[175px] h-[56px] p-[3.5px]",
+            className,
+          )}
+        >
+          {/* Cabecera superior */}
+          <div className="flex w-full items-center justify-between px-1.5 leading-none">
+            <EscudoArgentino className="w-5 h-5 shrink-0" />
+            <RanuraChapa className="w-5 h-[3px]" />
+            <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#2E9CDA] drop-shadow-[0_0.5px_0_rgba(255,255,255,0.9)]">
+              ARGENTINA
+            </span>
+            <RanuraChapa className="w-5 h-[3px]" />
+          </div>
+
+          {/* Recuadro central negro */}
+          <div className="flex w-full items-center justify-center rounded-[4px] border-[1.5px] border-zinc-300 bg-[#0B0B0D] shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.85),0_0.5px_0_rgba(255,255,255,0.8)] px-2.5 h-[31px]">
+            <span
+              className="text-display font-black text-white leading-none text-[23px] tracking-[0.2em]"
+              style={{ textShadow: "0 1px 0 rgba(255,255,255,0.9), 0 1.5px 3px rgba(0,0,0,0.9)" }}
+            >
+              {textoFormateado}
+            </span>
+          </div>
+
+          {/* Ranuras inferiores */}
+          <div className="flex w-full items-center justify-between px-7 leading-none h-[4px]">
+            <RanuraChapa className="w-5 h-[2px]" />
+            <RanuraChapa className="w-5 h-[2px]" />
+          </div>
+        </div>
+      );
+    }
+
+    // Default: size === "md"
     return (
       <div
         className={cn(
-          "relative inline-flex flex-col items-center justify-center rounded-[5px] border-zinc-200 bg-[#121214] shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_0_1px_rgba(255,255,255,0.2)] select-none",
-          sizeConfig.box,
+          "relative inline-flex flex-col items-center justify-between rounded-[5px] border-[1.5px] border-zinc-400/90 bg-gradient-to-b from-[#FFFFFF] via-[#F3F4F6] to-[#E5E7EB] shadow-[0_2px_5px_rgba(0,0,0,0.25),inset_0_1px_0.5px_rgba(255,255,255,0.95)] overflow-hidden select-none min-w-[122px] h-[39px] p-[2.5px]",
           className,
         )}
       >
-        <Tornillo className={cn("left-[14%]", sizeConfig.screw)} />
-        <Tornillo className={cn("right-[14%]", sizeConfig.screw)} />
-        <span
-          className={cn("text-display font-black text-zinc-100 uppercase", sizeConfig.text)}
-          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.9), 0 0 1px rgba(255,255,255,0.3)" }}
-        >
-          {textoFormateado}
-        </span>
+        {/* Cabecera superior */}
+        <div className="flex w-full items-center justify-between px-1 leading-none">
+          <EscudoArgentino className="w-3.5 h-3.5 shrink-0" />
+          <RanuraChapa className="w-3.5 h-[2px]" />
+          <span className="text-[7.5px] font-black uppercase tracking-[0.16em] text-[#2E9CDA] drop-shadow-[0_0.3px_0_rgba(255,255,255,0.8)]">
+            ARGENTINA
+          </span>
+          <RanuraChapa className="w-3.5 h-[2px]" />
+        </div>
+
+        {/* Recuadro central negro */}
+        <div className="flex w-full items-center justify-center rounded-[3px] border-[1.5px] border-zinc-300/90 bg-[#0B0B0D] shadow-[inset_0_1px_2px_rgba(0,0,0,0.8),0_0.5px_0_rgba(255,255,255,0.7)] px-2 h-[22px]">
+          <span
+            className="text-display font-black text-white leading-none text-[16px] tracking-[0.18em]"
+            style={{ textShadow: "0 0.75px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(0,0,0,0.9)" }}
+          >
+            {textoFormateado}
+          </span>
+        </div>
+
+        {/* Ranuras inferiores */}
+        <div className="flex w-full items-center justify-between px-5 leading-none h-[3px]">
+          <RanuraChapa className="w-3.5 h-[1.5px]" />
+          <RanuraChapa className="w-3.5 h-[1.5px]" />
+        </div>
+      </div>
+    );
+  }
+
+  // 3. BRASIL ANTIGUA
+  if (esBrasilAntigua) {
+    return (
+      <div
+        className={cn(
+          "relative inline-flex flex-col items-center justify-center rounded-[5px] border-[2px] border-zinc-400 bg-zinc-200 text-zinc-900 font-mono font-black shadow-sm select-none px-2 py-0.5",
+          className,
+        )}
+      >
+        {textoFormateado}
       </div>
     );
   }
