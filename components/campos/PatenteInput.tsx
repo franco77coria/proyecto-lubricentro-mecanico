@@ -10,10 +10,12 @@ import {
   CheckCheck,
   X,
   ShieldCheck,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import { ayudaPatente, detectarFormato, nombreFormato, normalizarPatente } from "@/lib/patente";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
+import { comprimirParaOCR } from "@/lib/imagen";
 import type { CedulaVerdeOCRData } from "@/lib/ia/cedula-verde";
 
 export function PatenteInput({
@@ -41,6 +43,7 @@ export function PatenteInput({
   const [datosCedula, setDatosCedula] = useState<CedulaVerdeOCRData | null>(null);
   const [copiado, setCopiado] = useState<string | null>(null);
   const inputFotoRef = useRef<HTMLInputElement>(null);
+  const inputGaleriaRef = useRef<HTMLInputElement>(null);
 
   const valor = valueProp !== undefined ? valueProp : internalValor;
   const especial = especialProp !== undefined ? especialProp : internalEspecial;
@@ -74,13 +77,7 @@ export function PatenteInput({
   async function procesarFotoCedula(file: File) {
     setEscaneando(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const dataUri = await base64Promise;
+      const dataUri = await comprimirParaOCR(file);
 
       const res = await escanearCedulaVerdeAction(dataUri);
       if (res.datos) {
@@ -102,32 +99,60 @@ export function PatenteInput({
       <div className="flex items-center justify-between">
         <span className="text-caption font-medium text-muted-foreground">Patente</span>
         {mostrarBotonEscanear && (
-          <button
-            type="button"
-            onClick={() => inputFotoRef.current?.click()}
-            disabled={escaneando}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50 shadow-sm"
-          >
-            {escaneando ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Leyendo cédula con IA...</span>
-              </>
-            ) : (
-              <>
-                <Camera className="h-3.5 w-3.5" />
-                <span>Foto Cédula (IA)</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => inputFotoRef.current?.click()}
+              disabled={escaneando}
+              className="inline-flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50 shadow-sm"
+              title="Sacar foto a la cédula"
+            >
+              {escaneando ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Leyendo...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="h-3.5 w-3.5" />
+                  <span>Foto</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => inputGaleriaRef.current?.click()}
+              disabled={escaneando}
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/60 px-2 py-1 text-[11px] font-bold text-foreground transition-all hover:bg-muted active:scale-95 disabled:opacity-50 shadow-sm"
+              title="Subir foto desde la galería"
+            >
+              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>Galería</span>
+            </button>
+          </div>
         )}
       </div>
 
+      {/* Input oculto para cámara nativa */}
       <input
         ref={inputFotoRef}
         type="file"
         accept="image/*"
         capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) procesarFotoCedula(f);
+          e.target.value = "";
+        }}
+      />
+
+      {/* Input oculto para galería (sin capture) */}
+      <input
+        ref={inputGaleriaRef}
+        type="file"
+        accept="image/*"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];

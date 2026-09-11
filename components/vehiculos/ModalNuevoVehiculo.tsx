@@ -13,6 +13,7 @@ const LectorCodigo = dynamic(
 import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
 import { interpretarCedula } from "@/lib/cedula";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
+import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
 import { useIsla } from "@/components/isla/IslaContext";
 
 export function ModalNuevoVehiculo() {
@@ -40,6 +41,23 @@ export function ModalNuevoVehiculo() {
     if (d.vin) setVinNuevo(d.vin);
     if (d.anio) setAnioNuevo(String(d.anio));
     notificar({ tipo: "exito", mensaje: `Cédula escaneada: ${d.patente || "Leída"}` });
+  };
+
+  const handleCedulaIA = async (dataUri: string) => {
+    setEscaneando(false);
+    try {
+      const res = await escanearCedulaVerdeAction(dataUri);
+      if (res.datos) {
+        if (res.datos.patente) setPatenteNueva(res.datos.patente);
+        if (res.datos.vin) setVinNuevo(res.datos.vin);
+        if (res.datos.anio) setAnioNuevo(String(res.datos.anio));
+        notificar({ tipo: "exito", mensaje: `✨ Cédula leída con IA: ${res.datos.patente || "Leída"}` });
+      } else if (res.error) {
+        notificar({ tipo: "alerta", mensaje: res.error });
+      }
+    } catch {
+      notificar({ tipo: "error", mensaje: "No se pudo leer la cédula con IA." });
+    }
   };
 
   const handleCrear = (e: React.FormEvent) => {
@@ -81,9 +99,10 @@ export function ModalNuevoVehiculo() {
       {escaneando && (
         <LectorCodigo
           titulo="Escanear cédula"
-          ayuda="Apuntá al código QR o de barras de la cédula verde o azul."
+          ayuda="Apuntá al código QR del dorso o sacá una foto a la cédula completa con IA."
           formatos={FORMATOS_CEDULA}
           onLeido={handleCedulaLeida}
+          onCapturaFotoIA={handleCedulaIA}
           onCerrar={() => setEscaneando(false)}
         />
       )}

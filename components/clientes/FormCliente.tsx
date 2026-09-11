@@ -2,12 +2,13 @@
 
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Camera, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { Pencil, Plus, Camera, Loader2, Sparkles, AlertCircle, Image as ImageIcon } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import { Sheet } from "@/components/sheet/Sheet";
 import { actualizarCliente, crearCliente } from "@/lib/actions/clientes";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
+import { comprimirParaOCR } from "@/lib/imagen";
 import { desglosarTitular } from "@/lib/cedula";
 
 export interface DatosCliente {
@@ -36,6 +37,7 @@ export function FormCliente({
   const [error, setError] = useState<string | null>(null);
   const [escaneandoCedula, setEscaneandoCedula] = useState(false);
   const inputFotoRef = useRef<HTMLInputElement>(null);
+  const inputGaleriaRef = useRef<HTMLInputElement>(null);
 
   const editando = Boolean(cliente?.id);
 
@@ -79,13 +81,7 @@ export function FormCliente({
     setEscaneandoCedula(true);
     setError(null);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const dataUri = await base64Promise;
+      const dataUri = await comprimirParaOCR(file);
 
       const res = await escanearCedulaVerdeAction(dataUri);
       if (res.error) {
@@ -188,12 +184,25 @@ export function FormCliente({
         onCerrar={() => setAbierto(false)}
         titulo={editando ? "Editar cliente" : "Nuevo cliente"}
       >
-        {/* Input oculto para subir foto de cédula */}
+        {/* Input oculto para sacar foto de cédula con cámara */}
         <input
           ref={inputFotoRef}
           type="file"
           accept="image/*"
           capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) procesarFotoCedula(file);
+            e.target.value = "";
+          }}
+        />
+
+        {/* Input oculto para subir foto de cédula desde galería */}
+        <input
+          ref={inputGaleriaRef}
+          type="file"
+          accept="image/*"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -212,28 +221,41 @@ export function FormCliente({
                   ¿Tenés la Cédula Verde a mano?
                 </span>
                 <p className="text-[11px] text-muted-foreground">
-                  Escaneá la cédula y la IA completa nombre, apellido y DNI en 2 segundos.
+                  Subí o sacá una foto y la IA completa nombre, apellido y DNI.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => inputFotoRef.current?.click()}
-                disabled={escaneandoCedula}
-                className="shrink-0 flex items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-60 transition-all"
-              >
-                {escaneandoCedula ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Leyendo...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="h-3.5 w-3.5" />
-                    <span>Escanear Cédula</span>
-                  </>
-                )}
-              </button>
+              <div className="shrink-0 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => inputFotoRef.current?.click()}
+                  disabled={escaneandoCedula}
+                  className="flex items-center gap-1 rounded-xl bg-accent px-2.5 py-2 text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-60 transition-all"
+                  title="Sacar foto con cámara"
+                >
+                  {escaneandoCedula ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Leyendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="h-3.5 w-3.5" />
+                      <span>Cámara</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => inputGaleriaRef.current?.click()}
+                  disabled={escaneandoCedula}
+                  className="flex items-center gap-1 rounded-xl border border-border bg-card px-2.5 py-2 text-xs font-bold text-foreground shadow-xs hover:bg-muted active:scale-95 disabled:opacity-60 transition-all"
+                  title="Subir foto desde galería"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Galería</span>
+                </button>
+              </div>
             </div>
           )}
 

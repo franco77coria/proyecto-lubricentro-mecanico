@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   compress: true,
   experimental: {
     optimizePackageImports: ["lucide-react", "motion", "@supabase/supabase-js"],
+    serverActions: {
+      bodySizeLimit: "4.5mb",
+    },
   },
   images: {
     formats: ["image/avif", "image/webp"],

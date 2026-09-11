@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2, Camera } from "lucide-react";
+import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import { buscarClientesOmni, type ClienteOmniResultado } from "@/lib/actions/clientes";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { FormCliente } from "./FormCliente";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
+import { comprimirParaOCR } from "@/lib/imagen";
 import { desglosarTitular } from "@/lib/cedula";
 import { useIsla } from "@/components/isla/IslaContext";
 
@@ -40,6 +41,7 @@ export function SelectorCliente({
 }: SelectorClienteProps) {
   const { notificar } = useIsla();
   const inputFotoRef = useRef<HTMLInputElement>(null);
+  const inputGaleriaRef = useRef<HTMLInputElement>(null);
   const [escaneandoCedula, setEscaneandoCedula] = useState(false);
   const [termino, setTermino] = useState("");
   const [resultados, setResultados] = useState<ClienteOmniResultado[]>([]);
@@ -50,13 +52,7 @@ export function SelectorCliente({
   async function procesarFotoCedula(file: File) {
     setEscaneandoCedula(true);
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const dataUri = await base64Promise;
+      const dataUri = await comprimirParaOCR(file);
 
       const res = await escanearCedulaVerdeAction(dataUri);
       if (res.error) {
@@ -150,6 +146,19 @@ export function SelectorCliente({
         }}
       />
 
+      {/* Input oculto para subir foto de cédula desde galería */}
+      <input
+        ref={inputGaleriaRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) procesarFotoCedula(file);
+          e.target.value = "";
+        }}
+      />
+
       {/* 1. Buscador Rápido de Clientes Registrados */}
       {!clienteSeleccionado && (
         <div className="relative">
@@ -157,20 +166,31 @@ export function SelectorCliente({
             <label htmlFor="buscar-cliente" className="block text-caption font-semibold text-muted-foreground">
               Buscar cliente (por Nombre, Teléfono o Patente)
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => inputFotoRef.current?.click()}
                 disabled={escaneandoCedula}
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95 disabled:opacity-60"
-                title="Escanear cédula verde con la cámara para autocompletar cliente"
+                title="Sacar foto a la cédula verde con la cámara"
               >
                 {escaneandoCedula ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
                   <Camera className="h-3 w-3" />
                 )}
-                <span>{escaneandoCedula ? "Leyendo..." : "Escanear Cédula"}</span>
+                <span>{escaneandoCedula ? "Leyendo..." : "Cédula"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => inputGaleriaRef.current?.click()}
+                disabled={escaneandoCedula}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground active:scale-95 disabled:opacity-60"
+                title="Subir foto de la cédula desde la galería"
+              >
+                <ImageIcon className="h-3 w-3" />
+                <span>Galería</span>
               </button>
 
               <FormCliente

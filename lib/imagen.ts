@@ -106,3 +106,95 @@ export function formatearPeso(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Comprime una imagen o fotograma de video específicamente para OCR con IA.
+ *
+ * Devuelve un data URI `data:image/jpeg;base64,...` optimizado (máximo 1600px,
+ * calidad 0.82-0.85). Esto reduce fotos pesadas de celulares (5 a 15 MB) a
+ * ~150-250 KB, evitando el límite de 4.5 MB de Serverless Functions en Vercel
+ * y el default de Next.js Server Actions, preservando la máxima legibilidad de
+ * patentes, números de chasis y textos chicos.
+ *
+ * `imageOrientation: "from-image"` es mandatorio para corregir automáticamente
+ * la orientación EXIF de fotos sacadas con el celular.
+ */
+export async function comprimirParaOCR(
+  origen: File | Blob | HTMLVideoElement,
+  ladoMax = 1600,
+  calidad = 0.82,
+): Promise<string> {
+  if (typeof window === "undefined") {
+    throw new Error("comprimirParaOCR solo se puede ejecutar en el navegador.");
+  }
+
+  let canvas: HTMLCanvasElement;
+  let ctx: CanvasRenderingContext2D | null;
+
+  if (origen instanceof HTMLVideoElement) {
+    const ancho = origen.videoWidth;
+    const alto = origen.videoHeight;
+    if (ancho <= 0 || alto <= 0) {
+      throw new Error("El video no tiene dimensiones válidas para capturar el fotograma.");
+    }
+    const dims = calcularDimensiones(ancho, alto, ladoMax);
+    canvas = document.createElement("canvas");
+    canvas.width = dims.ancho;
+    canvas.height = dims.alto;
+    ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas.");
+    ctx.drawImage(origen, 0, 0, dims.ancho, dims.alto);
+  } else {
+    // Es File o Blob
+    let bitmap: ImageBitmap | null = null;
+    if (typeof createImageBitmap === "function") {
+      try {
+        bitmap = await createImageBitmap(origen, { imageOrientation: "from-image" });
+      } catch (err) {
+        console.warn("[comprimirParaOCR] createImageBitmap con orientación falló, reintentando básico:", err);
+        try {
+          bitmap = await createImageBitmap(origen);
+        } catch {
+          bitmap = null;
+        }
+      }
+    }
+
+    if (bitmap) {
+      const dims = calcularDimensiones(bitmap.width, bitmap.height, ladoMax);
+      canvas = document.createElement("canvas");
+      canvas.width = dims.ancho;
+      canvas.height = dims.alto;
+      ctx = canvas.getContext("2d");
+      if (!ctx) {
+        bitmap.close();
+        throw new Error("No se pudo obtener el contexto 2D del canvas.");
+      }
+      ctx.drawImage(bitmap, 0, 0, dims.ancho, dims.alto);
+      bitmap.close();
+    } else {
+      // Fallback para entornos donde createImageBitmap no esté disponible
+      const img = new Image();
+      const url = URL.createObjectURL(origen);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = (e) => reject(new Error("No se pudo decodificar la imagen: " + String(e)));
+          img.src = url;
+        });
+        const dims = calcularDimensiones(img.naturalWidth, img.naturalHeight, ladoMax);
+        canvas = document.createElement("canvas");
+        canvas.width = dims.ancho;
+        canvas.height = dims.alto;
+        ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("No se pudo obtener el contexto 2D del canvas.");
+        ctx.drawImage(img, 0, 0, dims.ancho, dims.alto);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+  }
+
+  return canvas.toDataURL("image/jpeg", calidad);
+}
+
