@@ -391,24 +391,6 @@ export function ComprobanteOT({ ot }: { ot: DatosComprobante }) {
           <span className="cmp-monto-valor cmp-monto-total">{money(totalGeneral)}</span>
         </div>
       </section>
-
-      {/* ───────────────────────── TÉRMINOS, GARANTÍA Y FIRMAS ───────────────────────── */}
-      <footer className="cmp-pie">
-        <div className="cmp-garantia-texto">
-          <strong>Garantía técnica de taller:</strong> Todo trabajo de mano de obra y repuestos colocados cuenta con <strong>90 días corridos</strong> de garantía bajo uso normal. El titular autoriza las pruebas de rodaje necesarias para el diagnóstico y control de calidad.
-        </div>
-
-        <div className="cmp-firmas">
-          <div className="cmp-firma-col">
-            <span className="cmp-firma-linea" />
-            <span className="cmp-firma-texto">Firma y Aclaración Cliente</span>
-          </div>
-          <div className="cmp-firma-col">
-            <span className="cmp-firma-linea" />
-            <span className="cmp-firma-texto">Responsable Técnico / Taller</span>
-          </div>
-        </div>
-      </footer>
     </article>
   );
 }

@@ -548,50 +548,7 @@
   color: var(--cmp-acento);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   PIE, GARANTÍA Y FIRMAS
-   ───────────────────────────────────────────────────────────── */
-.cmp-pie {
-  border-top: 1px solid var(--cmp-borde);
-  padding-top: 3mm;
-  margin-top: auto;
-}
 
-.cmp-garantia-texto {
-  font-size: 6.5pt;
-  color: var(--cmp-tenue);
-  line-height: 1.35;
-  margin-bottom: 4mm;
-}
-
-.cmp-firmas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15mm;
-  padding: 2mm 5mm 0;
-}
-
-.cmp-firma-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.cmp-firma-linea {
-  display: block;
-  width: 100%;
-  max-width: 50mm;
-  border-top: 1px solid var(--cmp-tinta);
-  margin-bottom: 1.5mm;
-}
-
-.cmp-firma-texto {
-  font-size: 6.5pt;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--cmp-tenue);
-  letter-spacing: 0.05em;
-}
 
 /* ─────────────────────────────────────────────────────────────
    REGLAS PARA IMPRESIÓN Y EXPORTACIÓN A PDF
