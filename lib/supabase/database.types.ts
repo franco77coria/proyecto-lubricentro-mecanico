@@ -1992,6 +1992,7 @@ export type Database = {
           km_actualizado_en: string | null
           marca_id: string | null
           modelo_id: string | null
+          motor: string | null
           motorizacion_id: string | null
           notas: string | null
           patente: string
@@ -2010,6 +2011,7 @@ export type Database = {
           km_actualizado_en?: string | null
           marca_id?: string | null
           modelo_id?: string | null
+          motor?: string | null
           motorizacion_id?: string | null
           notas?: string | null
           patente: string
@@ -2028,6 +2030,7 @@ export type Database = {
           km_actualizado_en?: string | null
           marca_id?: string | null
           modelo_id?: string | null
+          motor?: string | null
           motorizacion_id?: string | null
           notas?: string | null
           patente?: string

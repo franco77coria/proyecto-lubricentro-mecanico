@@ -24,6 +24,7 @@ export function ModalNuevoVehiculo() {
 
   const [patenteNueva, setPatenteNueva] = useState("");
   const [vinNuevo, setVinNuevo] = useState("");
+  const [motorNuevo, setMotorNuevo] = useState("");
   const [anioNuevo, setAnioNuevo] = useState("");
   const [marcaId, setMarcaId] = useState("");
   const [modeloId, setModeloId] = useState("");
@@ -32,6 +33,7 @@ export function ModalNuevoVehiculo() {
   const limpiar = () => {
     setPatenteNueva("");
     setVinNuevo("");
+    setMotorNuevo("");
     setAnioNuevo("");
     setMarcaId("");
     setModeloId("");
@@ -47,6 +49,7 @@ export function ModalNuevoVehiculo() {
         const d = res.datos;
         if (d.patente) setPatenteNueva(d.patente);
         if (d.vin) setVinNuevo(d.vin);
+        if (d.motor) setMotorNuevo(d.motor);
         if (d.anio) setAnioNuevo(String(d.anio));
         if (d.marca || d.modelo) {
           const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
@@ -74,6 +77,7 @@ export function ModalNuevoVehiculo() {
       const formData = new FormData();
       formData.append("patente", patenteNueva.trim());
       if (vinNuevo.trim()) formData.append("vin", vinNuevo.trim());
+      if (motorNuevo.trim()) formData.append("motor", motorNuevo.trim());
       if (anioNuevo.trim()) formData.append("anio", anioNuevo.trim());
       if (marcaId) formData.append("marcaId", marcaId);
       if (modeloId) formData.append("modeloId", modeloId);
@@ -184,6 +188,20 @@ export function ModalNuevoVehiculo() {
                   className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-xs font-mono font-medium text-foreground focus:border-accent focus:outline-none"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="text-caption font-semibold text-muted-foreground block mb-1">
+                Nro. de Motor (opcional)
+              </label>
+              <input
+                type="text"
+                placeholder="Ej: K4MV838R079119"
+                value={motorNuevo}
+                onChange={(e) => setMotorNuevo(e.target.value.toUpperCase())}
+                maxLength={40}
+                className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-xs font-mono font-medium text-foreground focus:border-accent focus:outline-none"
+              />
             </div>
 
             <button

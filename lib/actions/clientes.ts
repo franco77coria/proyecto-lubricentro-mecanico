@@ -232,6 +232,7 @@ const vehiculoEdicionSchema = z.object({
   anio: z.coerce.number().int().min(1900).max(2100).optional().nullable(),
   color: z.string().trim().max(30).optional(),
   vin: z.string().trim().max(30).optional(),
+  motor: z.string().trim().max(40).optional(),
   km: z.coerce.number().int().min(0).max(3000000).optional().nullable(),
   combustible: z.enum(["nafta", "diesel", "gnc", "hibrido", "electrico"]).optional().or(z.literal("")),
 });
@@ -260,6 +261,7 @@ export async function actualizarVehiculo(id: string, datos: unknown): Promise<Re
         anio: d.anio ?? null,
         color: d.color || null,
         vin: d.vin || null,
+        motor: d.motor || null,
         km_actual: d.km ?? null,
         // Solo se toca la fecha si hay kilometraje: si no, quedaría diciendo
         // que se actualizó algo que sigue vacío.

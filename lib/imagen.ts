@@ -121,8 +121,8 @@ export function formatearPeso(bytes: number): string {
  */
 export async function comprimirParaOCR(
   origen: File | Blob | HTMLVideoElement,
-  ladoMax = 1600,
-  calidad = 0.82,
+  ladoMax = 1280,
+  calidad = 0.78,
 ): Promise<string> {
   if (typeof window === "undefined") {
     throw new Error("comprimirParaOCR solo se puede ejecutar en el navegador.");

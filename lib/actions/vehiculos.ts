@@ -41,6 +41,7 @@ export async function crearVehiculo(
     anio: formData.get("anio") ?? "",
     color: formData.get("color") ?? "",
     vin: formData.get("vin") ?? "",
+    motor: formData.get("motor") ?? "",
     combustible: formData.get("combustible") ?? "",
     km: formData.get("km") ?? "",
     clienteNombre: formData.get("clienteNombre") ?? "",
@@ -68,6 +69,7 @@ export async function crearVehiculo(
         anio: d.anio === "" ? null : Number(d.anio),
         color: d.color || null,
         vin: d.vin || null,
+        motor: d.motor || null,
         combustible: d.combustible || null,
         km_actual: d.km === "" ? null : Number(d.km),
         km_actualizado_en: d.km === "" ? null : new Date().toISOString(),
@@ -80,7 +82,7 @@ export async function crearVehiculo(
         const { data: existente } = await supabase
           .from("vehiculo")
           .select(
-            `id, patente, anio, color, combustible, vin, km_actual,
+            `id, patente, anio, color, combustible, vin, motor, km_actual,
              marca_id, modelo_id, motorizacion_id,
              marca:marca_id(nombre), modelo:modelo_id(nombre),
              motorizacion:motorizacion_id(nombre)`,
@@ -99,6 +101,7 @@ export async function crearVehiculo(
           if (d.anio !== "" && existente.anio == null) parche.anio = Number(d.anio);
           if (d.color && !existente.color) parche.color = d.color;
           if (d.vin && !existente.vin) parche.vin = d.vin;
+          if (d.motor && !existente.motor) parche.motor = d.motor;
           if (d.combustible && !existente.combustible) parche.combustible = d.combustible;
 
           if (d.km !== "" && Number(d.km) > (existente.km_actual ?? -1)) {
@@ -413,6 +416,7 @@ export interface DatosVehiculoEncontrado {
   motorizacionNombre?: string;
   anio?: number;
   vin?: string;
+  motor?: string;
   color?: string;
   combustible?: string;
   kmActual?: number;
@@ -442,7 +446,7 @@ export async function buscarVehiculoPorPatente(
     const { data: v, error } = await supabase
       .from("vehiculo")
       .select(`
-        id, patente, anio, vin, color, combustible, km_actual, notas,
+        id, patente, anio, vin, motor, color, combustible, km_actual, notas,
         marca_id, modelo_id, motorizacion_id,
         marca:marca_id(id, nombre),
         modelo:modelo_id(id, nombre),
@@ -534,6 +538,7 @@ export async function buscarVehiculoPorPatente(
         motorizacionNombre,
         anio: v.anio || undefined,
         vin: v.vin || undefined,
+        motor: v.motor || undefined,
         color: v.color || undefined,
         combustible: v.combustible || undefined,
         kmActual: v.km_actual || undefined,

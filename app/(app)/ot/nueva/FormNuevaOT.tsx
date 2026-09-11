@@ -59,6 +59,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [km, setKm] = useState("");
   const [anio, setAnio] = useState("");
   const [vin, setVin] = useState("");
+  const [motor, setMotor] = useState("");
   const [escaneando, setEscaneando] = useState(false);
   const [procesandoFoto, setProcesandoFoto] = useState(false);
   const [vehiculoEncontradoBadge, setVehiculoEncontradoBadge] = useState<string | null>(null);
@@ -96,6 +97,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         if (d.km) setKm(d.km);
         if (d.anio) setAnio(d.anio);
         if (d.vin) setVin(d.vin);
+        if (d.motor) setMotor(d.motor);
         if (d.tipo) setTipo(d.tipo);
         if (d.clienteNombre) setClienteNombre(d.clienteNombre);
         if (d.clienteApellido) setClienteApellido(d.clienteApellido);
@@ -119,6 +121,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         km,
         anio,
         vin,
+        motor,
         tipo,
         clienteNombre,
         clienteApellido,
@@ -129,7 +132,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(dataToSave));
     }
-  }, [patente, vehiculo, km, anio, vin, tipo, clienteNombre, clienteApellido, clienteTelefono, clienteDocumento, anomalias, observaciones]);
+  }, [patente, vehiculo, km, anio, vin, motor, tipo, clienteNombre, clienteApellido, clienteTelefono, clienteDocumento, anomalias, observaciones]);
 
   // Hay borrador si hay algo cargado. Antes esto era un estado que un efecto
   // encendía, lo que obligaba a un render extra por cada tecla escrita.
@@ -146,6 +149,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     setKm("");
     setAnio("");
     setVin("");
+    setMotor("");
     setClienteNombre("");
     setClienteApellido("");
     setClienteTelefono("");
@@ -179,6 +183,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         }
         if (v.anio) setAnio(String(v.anio));
         if (v.vin) setVin(v.vin);
+        if (v.motor) setMotor(v.motor);
         if (v.kmActual && !km) setKm(String(v.kmActual));
         if (v.cliente) {
           if (v.cliente.nombre) setClienteNombre(v.cliente.nombre);
@@ -187,7 +192,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
           if (v.cliente.documento) setClienteDocumento(v.cliente.documento);
         }
         setVehiculoEncontradoBadge(
-          `✓ Encontrado en taller: ${v.descripcion}${v.cliente?.nombre ? ` · Titular: ${v.cliente.nombre} ${v.cliente.apellido || ""}` : ""}`
+          `✓ Encontrado en taller: ${v.descripcion}${v.motor ? ` · Motor: ${v.motor}` : ""}${v.cliente?.nombre ? ` · Titular: ${v.cliente.nombre} ${v.cliente.apellido || ""}` : ""}`
         );
         setMostrarSugerenciaFoto(false);
         notificar({
@@ -243,6 +248,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         }
         if (d.anio) setAnio(String(d.anio));
         if (d.vin) setVin(d.vin);
+        if (d.motor) setMotor(d.motor);
         if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
         if (d.titularNombre) {
           const desglose = desglosarTitular(d.titularNombre);
@@ -263,10 +269,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             }
           });
         }
+        const motorBadge = d.motor ? ` · Motor: ${d.motor}` : "";
         const titularBadge = d.titularNombre ? ` · Titular: ${d.titularNombre}` : "";
         notificar({
           tipo: "exito",
-          mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${titularBadge}`,
+          mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${motorBadge}${titularBadge}`,
         });
       }
     } catch (err) {
@@ -305,6 +312,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (km) formDataVehiculo.append("km", km);
       if (anio) formDataVehiculo.append("anio", anio);
       if (vin) formDataVehiculo.append("vin", vin);
+      if (motor) formDataVehiculo.append("motor", motor);
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
       if (clienteTelefono) formDataVehiculo.append("clienteTelefono", clienteTelefono);
@@ -499,6 +507,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
               }
               if (d.anio) setAnio(String(d.anio));
               if (d.vin) setVin(d.vin);
+              if (d.motor) setMotor(d.motor);
               if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
               if (d.titularNombre) {
                 const desglose = desglosarTitular(d.titularNombre);
@@ -519,10 +528,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
                   }
                 });
               }
+              const motorBadge = d.motor ? ` · Motor: ${d.motor}` : "";
               const titularBadge = d.titularNombre ? ` · Titular: ${d.titularNombre}` : "";
               notificar({
                 tipo: "exito",
-                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${titularBadge}`,
+                mensaje: `✨ Cédula Verde procesada con IA: ${d.patente} (${d.marca || ""} ${d.modelo || ""}${d.motorizacion ? ` · ${d.motorizacion}` : ""})${motorBadge}${titularBadge}`,
               });
             }}
           />
@@ -563,19 +573,35 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             </div>
           </div>
 
-          <div>
-            <label htmlFor="vin-ingreso" className="text-caption text-muted-foreground">
-              Chasis / VIN (opcional)
-            </label>
-            <input
-              id="vin-ingreso"
-              type="text"
-              placeholder="17 caracteres alfanuméricos"
-              value={vin}
-              onChange={(e) => setVin(e.target.value.toUpperCase())}
-              maxLength={17}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base sm:text-sm font-mono font-medium text-foreground focus:border-accent focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="vin-ingreso" className="text-caption text-muted-foreground">
+                Chasis / VIN (opcional)
+              </label>
+              <input
+                id="vin-ingreso"
+                type="text"
+                placeholder="17 caracteres"
+                value={vin}
+                onChange={(e) => setVin(e.target.value.toUpperCase())}
+                maxLength={17}
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base sm:text-sm font-mono font-medium text-foreground focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="motor-ingreso" className="text-caption text-muted-foreground">
+                Nro. de Motor (opcional)
+              </label>
+              <input
+                id="motor-ingreso"
+                type="text"
+                placeholder="Ej: K4MV838R079119"
+                value={motor}
+                onChange={(e) => setMotor(e.target.value.toUpperCase())}
+                maxLength={40}
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base sm:text-sm font-mono font-medium text-foreground focus:border-accent focus:outline-none"
+              />
+            </div>
           </div>
         </section>
 

@@ -14,6 +14,7 @@ export interface DatosVehiculo {
   anio?: number | null;
   color?: string | null;
   vin?: string | null;
+  motor?: string | null;
   km_actual?: number | null;
   combustible?: string | null;
 }
@@ -58,6 +59,7 @@ export function EditarVehiculo({
     anio: vehiculo.anio?.toString() ?? "",
     color: vehiculo.color ?? "",
     vin: vehiculo.vin ?? "",
+    motor: vehiculo.motor ?? "",
     km: vehiculo.km_actual?.toString() ?? "",
     combustible: vehiculo.combustible ?? "",
   });
@@ -68,6 +70,7 @@ export function EditarVehiculo({
       anio: vehiculo.anio?.toString() ?? "",
       color: vehiculo.color ?? "",
       vin: vehiculo.vin ?? "",
+      motor: vehiculo.motor ?? "",
       km: vehiculo.km_actual?.toString() ?? "",
       combustible: vehiculo.combustible ?? "",
     });
@@ -91,6 +94,7 @@ export function EditarVehiculo({
         anio: f.anio ? Number(f.anio) : null,
         color: f.color,
         vin: f.vin,
+        motor: f.motor,
         km: f.km ? Number(f.km) : null,
         combustible: f.combustible,
       });
@@ -169,6 +173,7 @@ export function EditarVehiculo({
             />
           </div>
           <Campo etiqueta="Número de Chasis / VIN" value={f.vin} onChange={set("vin")} disabled={pendiente} />
+          <Campo etiqueta="Número de Motor" value={f.motor} onChange={set("motor")} disabled={pendiente} />
 
           {error && (
             <p role="alert" className="text-caption text-destructive font-bold">

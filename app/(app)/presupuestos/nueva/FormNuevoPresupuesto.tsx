@@ -41,6 +41,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [anio, setAnio] = useState("");
   const [vin, setVin] = useState("");
+  const [motor, setMotor] = useState("");
   const [combustible, setCombustible] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteApellido, setClienteApellido] = useState("");
@@ -153,6 +154,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
         }
         if (v.anio) setAnio(String(v.anio));
         if (v.vin) setVin(v.vin);
+        if (v.motor) setMotor(v.motor);
         if (v.combustible) setCombustible(v.combustible);
         if (v.cliente) {
           if (v.cliente.nombre) setClienteNombre(v.cliente.nombre);
@@ -250,6 +252,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
       if (vehiculo.motorizacionId) formDataVehiculo.append("motorizacionId", vehiculo.motorizacionId);
       if (anio) formDataVehiculo.append("anio", anio);
       if (vin) formDataVehiculo.append("vin", vin);
+      if (motor) formDataVehiculo.append("motor", motor);
       if (combustible) formDataVehiculo.append("combustible", combustible);
       if (clienteNombre) formDataVehiculo.append("clienteNombre", clienteNombre);
       if (clienteApellido) formDataVehiculo.append("clienteApellido", clienteApellido);
@@ -371,6 +374,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
             }
             if (d.anio) setAnio(String(d.anio));
             if (d.vin) setVin(d.vin);
+            if (d.motor) setMotor(d.motor);
             if (d.combustible) setCombustible(d.combustible);
             if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
             if (d.titularNombre) {

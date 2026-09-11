@@ -68,6 +68,20 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
     }
   }
 
+  const motorCrudo = String(
+    crudo.motor ||
+      crudo.nroMotor ||
+      crudo.numeroMotor ||
+      crudo.nro_motor ||
+      crudo.numero_motor ||
+      crudo.id_motor ||
+      crudo.motor_id ||
+      "",
+  ).trim();
+  const motorLimpio = motorCrudo
+    ? motorCrudo.replace(/[^A-Z0-9]/gi, "").toUpperCase()
+    : undefined;
+
   return {
     patente: patente || patenteCruda.toUpperCase(),
     marca: crudo.marca ? String(crudo.marca).trim() : undefined,
@@ -77,7 +91,7 @@ export function sanitizarCedulaVerde(crudo: CrudoIA): CedulaVerdeOCRData {
     uso: crudo.uso ? String(crudo.uso).trim() : undefined,
     anio,
     vin: vinLimpio.length >= 6 ? vinLimpio : undefined,
-    motor: crudo.motor ? String(crudo.motor).trim() : undefined,
+    motor: motorLimpio || (motorCrudo ? motorCrudo.toUpperCase() : undefined),
     color: crudo.color ? String(crudo.color).trim() : undefined,
     combustible,
     vencimiento: crudo.vencimiento || crudo.vence ? String(crudo.vencimiento || crudo.vence).trim() : undefined,
@@ -108,7 +122,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura completa
   "uso": "Uso registrado (ej: PRIVADO, PÚBLICO)",
   "anio": 2018,
   "vin": "Número de Chasis / Cuadro completo alfanumérico (ej: 8A1LZB115DL468090)",
-  "motor": "Número de Motor completo alfanumérico (ej: K4MV838R079119)",
+  "motor": "Número o Identificador de Motor alfanumérico completo tal como figura en 'NRO. MOTOR' (ej: K4MV838R079119)",
   "combustible": "nafta" | "diesel" | "gnc" | "hibrido" | "electrico",
   "vencimiento": "Fecha de vencimiento exacta (ej: 29/11/2023)",
   "codigoDoc": "Código superior del documento (ej: ATA81365)",
@@ -119,7 +133,7 @@ Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura completa
 
 REGLAS CRÍTICAS:
 1. Extrae la patente sin espacios ni guiones (ej: LSJ982).
-2. Transcribe el número de Chasis (VIN) y el número de Motor con exactitud total.
+2. Transcribe con exactitud TOTAL el número de Chasis (VIN) y el número de Motor (ej: K4MV838R079119) que figura en 'NRO. MOTOR'.
 3. Extrae la marca, la denominación de modelo exacta y la motorización/cilindrada (ej: 1.6 16V, 2.0 TDI).
 4. Si figura Tipo (ej: SEDAN 4 PTAS), Uso (ej: PRIVADO) y Vence (ej: 29/11/2023), inclúyelos.
 5. Devuelve EXCLUSIVAMENTE el JSON, sin texto explicativo.`;
@@ -132,17 +146,18 @@ export async function procesarOCRCedulaVerde(
     return { error: "No se pudo procesar la imagen de la cédula verde." };
   }
 
-  // 1. Probar con Gemini Vision si está configurado (Flash 3.0)
+  // 1. Probar con Gemini Vision si está configurado (Flash 3.5 ultra-rápido)
   const geminiKey =
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_AI_API_KEY ||
     process.env.GOOGLE_API_KEY;
 
   if (geminiKey) {
+    // Priorizar gemini-3.5-flash primero por máxima velocidad y disponibilidad
     const modelosAProbar = Array.from(
       new Set([
-        MODELO_GEMINI,
         "gemini-3.5-flash",
+        MODELO_GEMINI,
         "gemini-3.6-flash",
         "gemini-flash-latest",
       ]),
@@ -170,6 +185,8 @@ export async function procesarOCRCedulaVerde(
           generationConfig: {
             response_mime_type: "application/json",
             temperature: 0.1,
+            max_output_tokens: 600,
+            thinking_config: { thinking_budget: 0 },
           },
         };
 

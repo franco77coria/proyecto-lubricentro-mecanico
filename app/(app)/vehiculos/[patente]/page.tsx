@@ -47,7 +47,7 @@ export default async function HistorialVehiculo({
   const { data: vehiculo } = await supabase
     .from("vehiculo")
     .select(
-      `id, patente, anio, color, combustible, vin, km_actual, km_actualizado_en,
+      `id, patente, anio, color, combustible, vin, motor, km_actual, km_actualizado_en,
        marca:marca_id(nombre), modelo:modelo_id(nombre)`,
     )
     .eq("patente_norm", norm)
@@ -231,6 +231,7 @@ export default async function HistorialVehiculo({
                 {vehiculo.color && <Dato etiqueta="Color" valor={vehiculo.color} />}
                 {vehiculo.combustible && <Dato etiqueta="Combustible" valor={vehiculo.combustible} />}
                 {vehiculo.vin && <Dato etiqueta="Chasis" valor={vehiculo.vin} />}
+                {vehiculo.motor && <Dato etiqueta="Motor" valor={vehiculo.motor} />}
               </dl>
               <EditarVehiculo
                 vehiculo={{
@@ -238,6 +239,7 @@ export default async function HistorialVehiculo({
                   anio: vehiculo.anio,
                   color: vehiculo.color,
                   vin: vehiculo.vin,
+                  motor: vehiculo.motor,
                   km_actual: vehiculo.km_actual,
                   combustible: vehiculo.combustible,
                 }}
