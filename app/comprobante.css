@@ -1,519 +1,605 @@
 /* ==========================================================================
-   Comprobante A4 — Orden de Trabajo / Presupuesto
-
-   Diseñado para impresión y PDF. Medidas en milímetros.
-   Paleta: negro sobre blanco, acento naranja solo en importes clave.
+   Comprobante A4 — Orden de Trabajo y Presupuesto
+   Diseño técnico profesional, limpio y estructurado para taller automotriz.
+   Compatible con pantalla, impresión y guardado como PDF en hoja A4 estándar.
    ========================================================================== */
 
 .comprobante {
-  --cmp-tinta:   #0f172a;
-  --cmp-tenue:   #64748b;
-  --cmp-linea:   #e2e8f0;
-  --cmp-linea2:  #cbd5e1;
-  --cmp-acento:  #c2410c;
-  --cmp-fondo:   #f8fafc;
+  --cmp-tinta: #0f172a;
+  --cmp-tenue: #475569;
+  --cmp-borde: #cbd5e1;
+  --cmp-borde-fino: #e2e8f0;
+  --cmp-acento: #ea580c;
+  --cmp-acento-fondo: #fff7ed;
+  --cmp-fondo-suave: #f8fafc;
+  --cmp-verde: #16a34a;
+  --cmp-verde-fondo: #f0fdf4;
+  --cmp-rojo: #dc2626;
 
-  max-width: 190mm;
-  margin-inline: auto;
-  padding: 10mm 12mm;
-  background: #fff;
+  width: 100%;
+  max-width: 195mm;
+  min-height: 270mm;
+  margin: 0 auto;
+  padding: 8mm 10mm;
+  background: #ffffff;
   color: var(--cmp-tinta);
-  font-family: system-ui, -apple-system, sans-serif;
-  font-size: 9.5pt;
-  line-height: 1.45;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 8.5pt;
+  line-height: 1.35;
+  box-sizing: border-box;
 }
 
-/* ══════════════════════════════════
-   CABECERA
-   ══════════════════════════════════ */
-
-.cmp-cabecera {
+/* ─────────────────────────────────────────────────────────────
+   BARRA TÍTULO SUPERIOR
+   ───────────────────────────────────────────────────────────── */
+.cmp-barra-titulo {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 8mm;
-  padding-bottom: 5mm;
-  margin-bottom: 5mm;
-  border-bottom: 2.5px solid var(--cmp-tinta);
+  align-items: center;
+  border-bottom: 2px solid var(--cmp-tinta);
+  padding-bottom: 2mm;
+  margin-bottom: 4mm;
+}
+
+.cmp-barra-tipo {
+  font-size: 11pt;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cmp-tinta);
+}
+
+.cmp-barra-estado {
+  font-size: 7.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1mm 2.5mm;
+  border-radius: 1mm;
+  background: var(--cmp-fondo-suave);
+  border: 1px solid var(--cmp-borde);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CABECERA PRINCIPAL (TALLER A LA IZQ, VEHÍCULO A LA DER)
+   ───────────────────────────────────────────────────────────── */
+.cmp-cabecera {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  gap: 5mm;
+  align-items: stretch;
+  margin-bottom: 4.5mm;
 }
 
 .cmp-cabecera-izq {
   display: flex;
-  align-items: center;
-  gap: 4mm;
-  flex: 1;
-  min-width: 0;
+  gap: 3.5mm;
+  align-items: flex-start;
 }
 
 .cmp-logo {
-  max-height: 16mm;
+  max-height: 18mm;
   max-width: 45mm;
   object-fit: contain;
   border-radius: 1.5mm;
   flex-shrink: 0;
 }
 
-.cmp-taller {
-  font-size: 17pt;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  margin: 0 0 1mm;
-}
-
-.cmp-taller-datos {
-  margin: 0.5mm 0 0;
-  font-size: 8pt;
-  color: var(--cmp-tenue);
-  line-height: 1.4;
-}
-
-.cmp-numero-caja {
+/* Fallback SVG cuando no hay logo */
+.cmp-logo-fallback {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  flex-shrink: 0;
-  gap: 1mm;
-}
-
-.cmp-doc-tipo {
-  font-size: 7.5pt;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cmp-tenue);
-}
-
-.cmp-numero {
-  font-size: 16pt;
-  font-weight: 800;
-  color: var(--cmp-acento);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-}
-
-.cmp-fecha {
-  font-size: 8pt;
-  color: var(--cmp-tenue);
-}
-
-.cmp-estado-badge {
-  display: inline-block;
-  font-size: 7pt;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  border: 1px solid var(--cmp-linea2);
+  align-items: center;
+  gap: 2.5mm;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 2.5mm 3.5mm;
   border-radius: 2mm;
-  padding: 0.5mm 2mm;
-  color: var(--cmp-tinta);
-  background: var(--cmp-fondo);
+  flex-shrink: 0;
 }
 
-/* ══════════════════════════════════
-   GRID 3 COLUMNAS — datos principales
-   ══════════════════════════════════ */
-
-.cmp-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.1fr;
-  gap: 4mm;
-  margin-bottom: 6mm;
+.cmp-logo-svg {
+  color: #ea580c;
 }
 
-.cmp-caja {
+.cmp-logo-fallback-info {
   display: flex;
   flex-direction: column;
-  gap: 0.6mm;
-  padding: 3mm 4mm;
-  border: 1px solid var(--cmp-linea);
-  border-radius: 2.5mm;
-  background: var(--cmp-fondo);
 }
 
-.cmp-caja-total {
-  background: #fff;
-  border-color: var(--cmp-linea2);
+.cmp-logo-siglas {
+  font-size: 10pt;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
-.cmp-etiqueta {
-  display: block;
-  font-size: 7pt;
+.cmp-logo-rubro {
+  font-size: 5.5pt;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  margin-top: 0.5mm;
+}
+
+.cmp-taller-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cmp-taller {
+  font-size: 13pt;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 1.5mm;
+  color: var(--cmp-tinta);
+}
+
+.cmp-taller-dato {
+  font-size: 7.5pt;
+  color: var(--cmp-tenue);
+  margin: 0.5mm 0;
+  line-height: 1.35;
+}
+
+.cmp-taller-dato strong {
+  color: var(--cmp-tinta);
+}
+
+/* Cuadro estructurado derecho: Datos del Vehículo */
+.cmp-cuadro-vehiculo {
+  border: 1px solid var(--cmp-borde);
+  border-radius: 2mm;
+  background: var(--cmp-fondo-suave);
+  padding: 2.5mm 3.5mm;
+  box-sizing: border-box;
+}
+
+.cmp-cuadro-titulo {
+  font-size: 7pt;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cmp-tenue);
+  border-bottom: 1px solid var(--cmp-borde);
+  padding-bottom: 1mm;
+  margin-bottom: 1.5mm;
+}
+
+.cmp-cuadro-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  row-gap: 1mm;
+  column-gap: 2mm;
+  font-size: 7.5pt;
+  align-items: center;
+}
+
+.cmp-campo-label {
+  color: var(--cmp-tenue);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cmp-campo-valor {
+  color: var(--cmp-tinta);
+  font-weight: 500;
+}
+
+.cmp-bold {
+  font-weight: 700;
+}
+
+.cmp-patente-box {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 8.5pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.3mm 2mm;
+  background: #ffffff;
+  border: 1px solid var(--cmp-borde);
+  border-radius: 1mm;
+}
+
+.cmp-accent-text {
+  color: var(--cmp-acento);
+  font-weight: 700;
+}
+
+.cmp-numero-destacado {
+  font-family: monospace;
+  font-size: 8pt;
+  font-weight: 800;
+  color: var(--cmp-tinta);
+  border: 1px dashed var(--cmp-borde);
+  padding: 0.5mm 2mm;
+  background: #ffffff;
+  border-radius: 1mm;
+  display: inline-block;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BARRAS SECCIONALES
+   ───────────────────────────────────────────────────────────── */
+.cmp-seccion-barra {
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 7pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 1mm 2.5mm;
+  border-radius: 1mm 1mm 0 0;
+  margin-bottom: 1.5mm;
+}
+
+.cmp-seccion-barra-warn {
+  background: #c2410c;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ANOMALÍAS Y DESCARGOS DEL TALLER (BLOQUES EMPAREJADOS)
+   ───────────────────────────────────────────────────────────── */
+.cmp-bloque-anomalias {
+  margin-bottom: 4mm;
+}
+
+.cmp-anomalias-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5mm;
+}
+
+.cmp-anomalia-card,
+.cmp-descargo-card {
+  border: 1px solid var(--cmp-borde);
+  border-radius: 1.5mm;
+  padding: 2mm 3mm;
+  background: #ffffff;
+  font-size: 7.5pt;
+}
+
+.cmp-descargo-card {
+  background: var(--cmp-fondo-suave);
+  border-color: #94a3b8;
+}
+
+.cmp-subseccion-label {
+  display: block;
+  font-size: 6.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--cmp-tenue);
   margin-bottom: 1mm;
 }
 
-.cmp-patente {
-  font-size: 14pt;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+.cmp-lista-limpia {
+  margin: 0;
+  padding-left: 3.5mm;
+  line-height: 1.35;
 }
 
-.cmp-dato {
-  font-size: 9pt;
-}
-.cmp-dato-fuerte {
-  font-size: 10pt;
-  font-weight: 700;
-}
-.cmp-dato-tenue {
-  font-size: 8pt;
-  color: var(--cmp-tenue);
+.cmp-lista-limpia li {
+  margin-bottom: 0.8mm;
+  color: var(--cmp-tinta);
+  font-weight: 500;
 }
 
-/* Resumen económico dentro de caja */
-.cmp-resumen-fila {
+/* ─────────────────────────────────────────────────────────────
+   CHECKLIST DE INSPECCIÓN TÉCNICA
+   ───────────────────────────────────────────────────────────── */
+.cmp-bloque-checklist {
+  margin-bottom: 4mm;
+}
+
+.cmp-checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5mm 4mm;
+  border: 1px solid var(--cmp-borde);
+  border-radius: 1.5mm;
+  padding: 2.5mm 3.5mm;
+  background: #ffffff;
+}
+
+.cmp-check-item {
   display: flex;
-  justify-content: space-between;
-  font-size: 9pt;
-  color: var(--cmp-tenue);
-  padding: 0.5mm 0;
-  border-bottom: 1px dotted var(--cmp-linea);
-}
-.cmp-resumen-total-fila {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11pt;
-  font-weight: 800;
-  color: var(--cmp-acento);
-  margin-top: 1.5mm;
-  padding-top: 1.5mm;
-  border-top: 1.5px solid var(--cmp-tinta);
+  align-items: center;
+  gap: 1.8mm;
+  font-size: 7pt;
+  border-bottom: 1px dotted var(--cmp-borde-fino);
+  padding-bottom: 0.8mm;
 }
 
-/* ══════════════════════════════════
-   BLOQUES DE SECCIÓN
-   ══════════════════════════════════ */
-
-.cmp-bloque {
-  margin-top: 5mm;
-  break-inside: avoid;
+.cmp-check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5mm;
+  height: 3.5mm;
+  border: 1px solid var(--cmp-borde);
+  border-radius: 0.8mm;
+  font-weight: 900;
+  font-size: 6.5pt;
+  flex-shrink: 0;
 }
 
-.cmp-titulo {
-  font-size: 7.5pt;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--cmp-tente);
-  background: var(--cmp-fondo);
-  margin: 0 0 3mm;
-  padding: 1.5mm 3mm;
-  border-left: 2.5px solid var(--cmp-acento);
-  border-radius: 0 1mm 1mm 0;
+.cmp-check-ok {
+  color: var(--cmp-verde);
+  border-color: #86efac;
+  background: var(--cmp-verde-fondo);
 }
 
-.cmp-bloque-items {
-  break-inside: avoid;
+.cmp-check-obs {
+  color: #d97706;
+  border-color: #fde68a;
+  background: #fffbeb;
 }
 
-.cmp-subtitulo {
-  font-size: 9pt;
+.cmp-check-critico {
+  color: var(--cmp-rojo);
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.cmp-check-na {
+  color: #94a3b8;
+  border-color: var(--cmp-borde-fino);
+}
+
+.cmp-check-cuerpo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmp-check-nombre {
   font-weight: 700;
   color: var(--cmp-tinta);
-  margin-top: 3mm;
+}
+
+.cmp-check-descargo {
+  color: #1e293b;
+  font-weight: 600;
+  margin-left: 1mm;
+}
+
+.cmp-check-estado-tag {
+  font-size: 6pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.3mm 1mm;
+  border-radius: 0.6mm;
+  white-space: nowrap;
+}
+
+.cmp-alerta-obs {
+  margin-top: 1.5mm;
+  padding: 1.5mm 2.5mm;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 1mm;
+  font-size: 7pt;
+  color: #92400e;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DETALLE DE TRABAJOS Y REPUESTOS (TABLA)
+   ───────────────────────────────────────────────────────────── */
+.cmp-bloque-items {
+  margin-bottom: 4mm;
+}
+
+.cmp-subbloque {
+  margin-bottom: 2mm;
+}
+
+.cmp-subbloque-titulo {
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cmp-tenue);
   margin-bottom: 1mm;
 }
-
-.cmp-lista {
-  margin: 0;
-  padding-left: 5mm;
-}
-.cmp-lista li {
-  margin-bottom: 1mm;
-  font-size: 9pt;
-}
-
-.cmp-parrafo {
-  margin: 0;
-  font-size: 9.5pt;
-}
-
-.cmp-nota-bloque {
-  margin: 0 0 2mm;
-  font-size: 8.5pt;
-  color: var(--cmp-tenue);
-}
-
-.cmp-vacio {
-  font-size: 9pt;
-  color: var(--cmp-tenue);
-  font-style: italic;
-}
-
-/* ══════════════════════════════════
-   TABLA DE ÍTEMS
-   ══════════════════════════════════ */
 
 .cmp-tabla {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1mm;
-  font-size: 9pt;
+  font-size: 7.5pt;
 }
 
 .cmp-tabla thead tr {
-  border-bottom: 1px solid var(--cmp-linea2);
+  border-bottom: 1.5px solid var(--cmp-borde);
+  background: var(--cmp-fondo-suave);
 }
 
 .cmp-th-desc,
 .cmp-th-cant,
-.cmp-th-precio {
-  font-size: 7pt;
-  font-weight: 700;
-  letter-spacing: 0.07em;
+.cmp-th-precio,
+.cmp-th-subtotal {
+  font-size: 6.5pt;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--cmp-tenue);
-  padding: 1.5mm 1mm 1.5mm 0;
+  padding: 1.2mm 1.5mm;
+}
+
+.cmp-th-desc {
   text-align: left;
 }
 
 .cmp-th-cant,
-.cmp-th-precio {
+.cmp-th-precio,
+.cmp-th-subtotal {
   text-align: right;
   white-space: nowrap;
-  padding-right: 0;
+}
+
+.cmp-tabla tbody tr {
+  border-bottom: 1px solid var(--cmp-borde-fino);
 }
 
 .cmp-tabla td {
-  padding: 1.5mm 0;
-  vertical-align: top;
+  padding: 1.2mm 1.5mm;
+  vertical-align: middle;
 }
 
 .cmp-td-desc {
-  width: 100%;
-}
-
-.cmp-td-cant {
-  white-space: nowrap;
-  padding-right: 4mm;
-  color: var(--cmp-tenue);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  font-size: 8.5pt;
-}
-
-.cmp-td-precio {
-  white-space: nowrap;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  padding-left: 3mm;
-}
-.cmp-td-bold {
-  font-weight: 700;
-}
-
-.cmp-td-subtotal-label,
-.cmp-td-subtotal {
-  border-top: 1px solid var(--cmp-linea);
-  padding-top: 1.5mm;
-  font-size: 8.5pt;
-  color: var(--cmp-tenue);
-}
-
-.cmp-td-subtotal-label {
-  text-align: right;
-  padding-right: 4mm;
-}
-
-.cmp-td-subtotal {
-  text-align: right;
-  font-weight: 700;
-  color: var(--cmp-tinta);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.cmp-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-top: 4mm;
-  padding: 3mm 4mm;
-  border-top: 2px solid var(--cmp-tinta);
-  background: var(--cmp-fondo);
-  border-radius: 0 0 2mm 2mm;
-  font-size: 10.5pt;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.cmp-total-valor {
-  font-size: 18pt;
-  color: var(--cmp-acento);
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.cmp-recomendado {
-  border: 1.5px dashed var(--cmp-acento);
-  border-radius: 2mm;
-  padding: 4mm;
-  background: #fff8f4;
-}
-
-/* ══════════════════════════════════
-   CHECKLIST DE INSPECCIÓN
-   ══════════════════════════════════ */
-
-.cmp-checklist {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1mm 6mm;
-  background: var(--cmp-fondo);
-  border: 1px solid var(--cmp-linea);
-  border-radius: 2mm;
-  padding: 2.5mm 4mm;
-}
-
-.cmp-check {
-  display: flex;
-  align-items: center;
-  gap: 2mm;
-  padding: 0.8mm 0;
-  font-size: 9pt;
-  border-bottom: 1px dotted var(--cmp-linea);
-}
-
-.cmp-punto {
-  width: 2.5mm;
-  height: 2.5mm;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.cmp-punto.estado-ok       { background: #15803d; }
-.cmp-punto.estado-observado { background: #b45309; }
-.cmp-punto.estado-critico  { background: #dc2626; }
-.cmp-punto.estado-na       { background: #94a3b8; }
-.cmp-punto.estado-pendiente { background: transparent; border: 1px dashed #64748b; }
-
-.cmp-check-texto {
-  flex: 1;
-}
-
-.cmp-check-estado {
-  font-size: 7.5pt;
-  color: var(--cmp-tenue);
-  white-space: nowrap;
   font-weight: 600;
 }
 
-.cmp-check-critico {
-  color: #dc2626;
-  font-weight: 800;
+.cmp-td-cant,
+.cmp-td-precio,
+.cmp-td-subtotal {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.cmp-check-obs {
-  color: #b45309;
+.cmp-td-subtotal {
   font-weight: 700;
 }
 
-.cmp-observaciones-caja {
-  margin-top: 3mm;
-  padding: 2.5mm 3.5mm;
-  background: #fff8f4;
-  border: 1px solid #fed7aa;
-  border-radius: 1.5mm;
-}
-
-.cmp-observaciones {
-  margin-top: 1.5mm;
-  font-size: 8.5pt;
-}
-
-/* ══════════════════════════════════
-   DESCARGO LEGAL + FIRMAS
-   ══════════════════════════════════ */
-
-.cmp-descargo-legal {
-  margin-top: 6mm;
-  padding: 3.5mm 4mm;
-  border: 1px solid var(--cmp-linea);
-  background: var(--cmp-fondo);
-  border-radius: 2mm;
-  break-inside: avoid;
-}
-
-.cmp-descargo-grid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6mm;
-  align-items: start;
-}
-
-.cmp-descargo-titulo {
-  display: block;
-  font-size: 7.5pt;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cmp-tinta);
-  margin-bottom: 1.5mm;
-}
-
-.cmp-descargo-texto {
-  font-size: 7.5pt;
-  line-height: 1.5;
+.cmp-td-subtotal-lbl {
+  text-align: right;
+  font-weight: 700;
+  font-size: 7pt;
   color: var(--cmp-tenue);
-  margin: 0;
+  padding: 1.5mm 1.5mm;
+  border-top: 1.5px solid var(--cmp-borde);
 }
 
-.cmp-descargo-firma-caja {
-  display: flex;
-  flex-direction: column;
-  gap: 4mm;
-  min-width: 55mm;
-  flex-shrink: 0;
+.cmp-td-subtotal-val {
+  text-align: right;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 1.5mm 1.5mm;
+  border-top: 1.5px solid var(--cmp-borde);
 }
 
-.cmp-firma-mini {
+/* ─────────────────────────────────────────────────────────────
+   OBSERVACIONES
+   ───────────────────────────────────────────────────────────── */
+.cmp-observaciones-taller {
+  border-left: 2.5px solid var(--cmp-acento);
+  background: var(--cmp-fondo-suave);
+  padding: 1.5mm 3mm;
+  font-size: 7pt;
+  color: var(--cmp-tenue);
+  margin-bottom: 3.5mm;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DESGLOSE DE VALORES ESTRUCTURADO (3 CAJAS DESTACADAS)
+   ───────────────────────────────────────────────────────────── */
+.cmp-bloque-totales {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 3.5mm;
+  margin-top: 3mm;
+  margin-bottom: 4mm;
+}
+
+.cmp-caja-monto {
   display: flex;
   flex-direction: column;
-  gap: 1mm;
+  justify-content: center;
+  padding: 2mm 3mm;
+  border: 1.5px solid var(--cmp-borde);
+  border-radius: 1.5mm;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.cmp-caja-total-final {
+  border: 2px solid var(--cmp-tinta);
+  background: var(--cmp-fondo-suave);
+}
+
+.cmp-monto-label {
+  font-size: 6.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cmp-tenue);
+}
+
+.cmp-caja-total-final .cmp-monto-label {
+  color: var(--cmp-tinta);
+}
+
+.cmp-monto-valor {
+  font-size: 11pt;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--cmp-tinta);
+  margin-top: 0.5mm;
+}
+
+.cmp-monto-total {
+  font-size: 13.5pt;
+  font-weight: 900;
+  color: var(--cmp-acento);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PIE, GARANTÍA Y FIRMAS
+   ───────────────────────────────────────────────────────────── */
+.cmp-pie {
+  border-top: 1px solid var(--cmp-borde);
+  padding-top: 3mm;
+  margin-top: auto;
+}
+
+.cmp-garantia-texto {
+  font-size: 6.5pt;
+  color: var(--cmp-tenue);
+  line-height: 1.35;
+  margin-bottom: 4mm;
+}
+
+.cmp-firmas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15mm;
+  padding: 2mm 5mm 0;
+}
+
+.cmp-firma-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .cmp-firma-linea {
   display: block;
-  border-top: 1px solid var(--cmp-tinta);
   width: 100%;
+  max-width: 50mm;
+  border-top: 1px solid var(--cmp-tinta);
+  margin-bottom: 1.5mm;
 }
 
-.cmp-firma-label {
-  font-size: 7.5pt;
+.cmp-firma-texto {
+  font-size: 6.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
   color: var(--cmp-tenue);
-  text-align: center;
+  letter-spacing: 0.05em;
 }
 
-/* ══════════════════════════════════
-   PIE DE PÁGINA
-   ══════════════════════════════════ */
-
-.cmp-legal {
-  margin-top: 4mm;
-  font-size: 7.5pt;
-  color: var(--cmp-tenue);
-  text-align: center;
-  border-top: 1px solid var(--cmp-linea);
-  padding-top: 2mm;
-}
-
-/* ══════════════════════════════════
-   IMPRESIÓN / PDF
-   ══════════════════════════════════ */
-
+/* ─────────────────────────────────────────────────────────────
+   REGLAS PARA IMPRESIÓN Y EXPORTACIÓN A PDF
+   ───────────────────────────────────────────────────────────── */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm 8mm;
   }
 
   body * {
@@ -529,6 +615,7 @@
     position: absolute;
     inset: 0;
     max-width: none;
+    width: 100%;
     padding: 0;
     margin: 0;
     -webkit-print-color-adjust: exact;

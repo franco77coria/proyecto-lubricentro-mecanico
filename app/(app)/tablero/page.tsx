@@ -233,149 +233,155 @@ export default async function PaginaTablero() {
           })}
         </section>
 
-        {/* Panel Principal: Órdenes Recientes & Widgets */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Órdenes Recientes con Placas Patentes y Telemetría */}
-          <section className="space-y-4 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Gauge className="h-5 w-5 text-accent" />
-                <h2 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  Flujo de Vehículos Recientes
-                </h2>
-              </div>
-              {flujoReciente.length > 0 && (
-                <Link
-                  href="/vehiculos"
-                  className="flex items-center gap-1 text-xs font-bold text-accent hover:text-accent/80 transition-colors"
-                >
-                  Ver todos <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              )}
+        {/* Flujo de Vehículos Recientes (Protagonista de Ancho Completo) */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Gauge className="h-5 w-5 text-accent" />
+              <h2 className="text-sm font-black uppercase tracking-wider text-foreground">
+                Flujo de Vehículos Recientes
+              </h2>
             </div>
+            {flujoReciente.length > 0 && (
+              <Link
+                href="/vehiculos"
+                className="flex items-center gap-1 text-xs font-bold text-accent hover:text-accent/80 transition-colors"
+              >
+                Ver todos <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
+          </div>
 
-            {flujoReciente.length === 0 ? (
-              <MotionCard delay={0.2} className="flex flex-col items-center gap-4 rounded-3xl px-6 py-16 text-center border-dashed">
-                <span className="grid h-16 w-16 place-items-center rounded-full bg-accent/10 text-accent ring-8 ring-accent/5">
-                  <Car className="h-8 w-8" aria-hidden />
-                </span>
-                <p className="max-w-xs text-sm text-muted-foreground font-medium">
-                  Todavía no hay órdenes ni presupuestos registrados. Creá uno para comenzar el circuito.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
-                  <Link
-                    href="/ot/nueva"
-                    className="flex min-h-11 items-center gap-2 rounded-2xl bg-accent px-6 py-2 text-sm font-black text-white shadow-md transition-transform hover:brightness-110 active:scale-95"
-                  >
-                    <Plus className="h-4 w-4 stroke-[3]" />
-                    Nueva orden
-                  </Link>
-                  <Link
-                    href="/presupuestos/nueva"
-                    className="flex min-h-11 items-center gap-2 rounded-2xl border border-border bg-card px-5 py-2 text-sm font-bold text-foreground hover:bg-muted active:scale-95"
-                  >
-                    Nuevo presupuesto
-                  </Link>
-                </div>
-              </MotionCard>
-            ) : (
-              <ul className="space-y-3">
-                {flujoReciente.map((item, i) => {
-                  const patente = item.patente || "S/PAT";
-                  const estadoTexto =
-                    ESTADO_LABEL[item.estado] ??
-                    (item.estado ? item.estado.charAt(0).toUpperCase() + item.estado.slice(1) : "En taller");
-                  const estadoTono =
-                    ESTADO_TONO[item.estado] ?? "bg-muted text-foreground border border-border/50";
-                  const tiempo = tiempoRelativo(item.fecha);
+          {flujoReciente.length === 0 ? (
+            <MotionCard delay={0.2} className="flex flex-col items-center gap-4 rounded-3xl px-6 py-16 text-center border-dashed">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-accent/10 text-accent ring-8 ring-accent/5">
+                <Car className="h-8 w-8" aria-hidden />
+              </span>
+              <p className="max-w-xs text-sm text-muted-foreground font-medium">
+                Todavía no hay órdenes ni presupuestos registrados. Creá uno para comenzar el circuito.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                <Link
+                  href="/ot/nueva"
+                  className="flex min-h-11 items-center gap-2 rounded-2xl bg-accent px-6 py-2 text-sm font-black text-white shadow-md transition-transform hover:brightness-110 active:scale-95"
+                >
+                  <Plus className="h-4 w-4 stroke-[3]" />
+                  Nueva orden
+                </Link>
+                <Link
+                  href="/presupuestos/nueva"
+                  className="flex min-h-11 items-center gap-2 rounded-2xl border border-border bg-card px-5 py-2 text-sm font-bold text-foreground hover:bg-muted active:scale-95"
+                >
+                  Nuevo presupuesto
+                </Link>
+              </div>
+            </MotionCard>
+          ) : (
+            <ul className="space-y-3">
+              {flujoReciente.map((item, i) => {
+                const patente = item.patente || "S/PAT";
+                const estadoTexto =
+                  ESTADO_LABEL[item.estado] ??
+                  (item.estado ? item.estado.charAt(0).toUpperCase() + item.estado.slice(1) : "En taller");
+                const estadoTono =
+                  ESTADO_TONO[item.estado] ?? "bg-muted text-foreground border border-border/50";
+                const tiempo = tiempoRelativo(item.fecha);
 
-                  return (
-                    <li key={`${item.tipoDoc}-${item.id}`}>
-                      <MotionCard
-                        delay={0.1 + i * 0.03}
-                        interactive
-                        className="group overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md transition-all hover:border-accent/50 hover:shadow-xl"
+                return (
+                  <li key={`${item.tipoDoc}-${item.id}`}>
+                    <MotionCard
+                      delay={0.1 + i * 0.03}
+                      interactive
+                      className="group overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md transition-all hover:border-accent/50 hover:shadow-xl"
+                    >
+                      <Link
+                        href={item.href}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 w-full"
                       >
-                        <Link
-                          href={item.href}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 w-full"
-                        >
-                          <div className="flex items-center gap-4 min-w-0">
-                            {/* Placa Patente Vectorizada */}
-                            <PlacaPatente patente={patente} size="sm" className="shrink-0 shadow-sm" />
+                        <div className="flex items-center gap-4 min-w-0">
+                          {/* Placa Patente Vectorizada */}
+                          <PlacaPatente patente={patente} size="sm" className="shrink-0 shadow-sm" />
 
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span
-                                  className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-black uppercase tracking-wider border ${
-                                    item.tipoDoc === "OT"
-                                      ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                      : "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                                  }`}
-                                >
-                                  {item.tipoDoc} #{item.numero}
-                                </span>
-                                {tiempo && (
-                                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                                    <Clock className="h-3 w-3 inline text-muted-foreground/70" />
-                                    {tiempo}
-                                  </span>
-                                )}
-                              </div>
-
-                              <span className="block truncate text-base font-black tracking-tight text-foreground group-hover:text-accent transition-colors">
-                                {item.modeloTexto}
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-black uppercase tracking-wider border ${
+                                  item.tipoDoc === "OT"
+                                    ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                    : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                                }`}
+                              >
+                                {item.tipoDoc} #{item.numero}
                               </span>
+                              {tiempo && (
+                                <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
+                                  <Clock className="h-3 w-3 inline text-muted-foreground/70" />
+                                  {tiempo}
+                                </span>
+                              )}
+                            </div>
 
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
-                                {item.clienteNombre && (
-                                  <span className="truncate font-semibold text-foreground/80">
-                                    {item.clienteNombre}
-                                  </span>
-                                )}
-                                {item.km != null && Number(item.km) > 0 && (
-                                  <span className="hidden sm:inline tabular-nums">
-                                    · {formatearNumero(Number(item.km), idioma)} km
-                                  </span>
-                                )}
-                              </div>
+                            <span className="block truncate text-base font-black tracking-tight text-foreground group-hover:text-accent transition-colors">
+                              {item.modeloTexto}
+                            </span>
+
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
+                              {item.clienteNombre && (
+                                <span className="truncate font-semibold text-foreground/80">
+                                  {item.clienteNombre}
+                                </span>
+                              )}
+                              {item.km != null && Number(item.km) > 0 && (
+                                <span className="hidden sm:inline tabular-nums">
+                                  · {formatearNumero(Number(item.km), idioma)} km
+                                </span>
+                              )}
                             </div>
                           </div>
+                        </div>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-border/40 sm:border-0">
-                            <span
-                              className={`rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-wider ${estadoTono}`}
-                            >
-                              {estadoTexto}
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-border/40 sm:border-0">
+                          <span
+                            className={`rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-wider ${estadoTono}`}
+                          >
+                            {estadoTexto}
+                          </span>
+                          {esDueno && Number(item.total) > 0 && (
+                            <span className="text-base font-black tabular-nums text-foreground">
+                              {money(Number(item.total))}
                             </span>
-                            {esDueno && Number(item.total) > 0 && (
-                              <span className="text-base font-black tabular-nums text-foreground">
-                                {money(Number(item.total))}
-                              </span>
-                            )}
-                          </div>
-                        </Link>
-                      </MotionCard>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
+                          )}
+                        </div>
+                      </Link>
+                    </MotionCard>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
-          {/* Barra Lateral de Control: Facturación, Stock & Turnos */}
-          <aside className="space-y-6">
+        {/* Sección Inferior de Control: Rendimiento, Turnos de Hoy y Stock Crítico */}
+        <section className="space-y-4 pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Layers className="h-4 w-4 text-accent" />
+              Operación &amp; Control del Taller
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Facturación del Mes */}
-            {esDueno && (
-              <section className="space-y-3">
+            {esDueno ? (
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <TrendingUp className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
                     Rendimiento del Mes
-                  </h2>
+                  </span>
                   <Link
                     href="/reportes"
-                    className="text-xs font-bold text-accent hover:underline flex items-center gap-1"
+                    className="text-[11px] font-bold text-accent hover:underline flex items-center gap-0.5"
                   >
                     Ver métricas →
                   </Link>
@@ -384,43 +390,55 @@ export default async function PaginaTablero() {
                   <MotionCard
                     delay={0.25}
                     interactive
-                    className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 shadow-lg group-hover:border-emerald-500/60 transition-all"
+                    className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 shadow-lg group-hover:border-emerald-500/60 transition-all h-[130px] flex flex-col justify-between"
                   >
-                    <div className="absolute -right-8 -top-8 h-28 w-28 bg-emerald-500/10 blur-2xl rounded-full" />
-                    <p className="text-3xl font-black text-foreground tabular-nums tracking-tight">
+                    <div className="absolute -right-8 -top-8 h-24 w-24 bg-emerald-500/10 blur-2xl rounded-full" />
+                    <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums tracking-tight">
                       {money(facturadoMes)}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground font-semibold">
-                      Facturado en órdenes entregadas este mes · Tocar para ver desglose
+                    <p className="text-[11px] text-muted-foreground font-semibold line-clamp-2">
+                      Facturado en órdenes entregadas este mes · Tocar para ver reporte
                     </p>
                   </MotionCard>
                 </Link>
-              </section>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5 text-accent" />
+                  Estado General
+                </span>
+                <MotionCard delay={0.25} className="rounded-3xl p-5 border border-border/80 bg-card h-[130px] flex flex-col justify-center text-center">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Operando con normalidad.
+                  </p>
+                </MotionCard>
+              </div>
             )}
 
             {/* Turnos de Hoy */}
-            <section className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-accent" />
+                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5 text-accent" />
                   Turnos de Hoy
-                </h2>
+                </span>
                 <Link
                   href="/turnos"
-                  className="text-xs font-bold text-accent hover:underline"
+                  className="text-[11px] font-bold text-accent hover:underline"
                 >
-                  Ver agenda
+                  Ver agenda →
                 </Link>
               </div>
 
               {(turnosHoy ?? []).length === 0 ? (
-                <MotionCard delay={0.3} className="rounded-3xl p-4 text-center">
+                <MotionCard delay={0.3} className="rounded-3xl p-5 text-center border border-border/80 bg-card h-[130px] flex flex-col items-center justify-center">
                   <p className="text-xs text-muted-foreground font-medium">
                     No hay turnos programados para hoy.
                   </p>
                 </MotionCard>
               ) : (
-                <MotionCard delay={0.3} className="overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md">
+                <MotionCard delay={0.3} className="overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md max-h-[130px] overflow-y-auto">
                   <ul className="divide-y divide-border/50">
                     {turnosHoy!.map((t) => {
                       const horaStr = new Date(t.fecha_hora).toLocaleTimeString(localeTablero, {
@@ -428,7 +446,7 @@ export default async function PaginaTablero() {
                         minute: "2-digit",
                       });
                       return (
-                        <li key={t.id} className="flex items-center justify-between gap-3 p-3.5 hover:bg-muted/30 transition-colors">
+                        <li key={t.id} className="flex items-center justify-between gap-3 p-3 hover:bg-muted/30 transition-colors">
                           <div className="min-w-0">
                             <span className="block truncate text-xs font-bold text-foreground">
                               {t.motivo}
@@ -437,7 +455,7 @@ export default async function PaginaTablero() {
                               Confirmado
                             </span>
                           </div>
-                          <span className="rounded-xl bg-accent/10 px-2.5 py-1 text-xs font-black text-accent tabular-nums">
+                          <span className="rounded-lg bg-accent/10 px-2 py-0.5 text-xs font-black text-accent tabular-nums">
                             {horaStr} hs
                           </span>
                         </li>
@@ -446,39 +464,39 @@ export default async function PaginaTablero() {
                   </ul>
                 </MotionCard>
               )}
-            </section>
+            </div>
 
             {/* Repuestos Bajo Mínimo */}
-            <section className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                   Stock Crítico
-                </h2>
+                </span>
                 <Link
                   href="/stock"
-                  className="text-xs font-bold text-accent hover:underline"
+                  className="text-[11px] font-bold text-accent hover:underline"
                 >
-                  Ver stock
+                  Ver stock →
                 </Link>
               </div>
 
               {(bajoStock ?? []).length === 0 ? (
-                <MotionCard delay={0.35} className="rounded-3xl p-4 text-center">
+                <MotionCard delay={0.35} className="rounded-3xl p-5 text-center border border-border/80 bg-card h-[130px] flex flex-col items-center justify-center">
                   <p className="text-xs text-muted-foreground font-medium">
-                    Todos los fluidos y filtros están en nivel óptimo.
+                    Todos los fluidos y filtros en nivel óptimo.
                   </p>
                 </MotionCard>
               ) : (
-                <MotionCard delay={0.35} className="overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md">
+                <MotionCard delay={0.35} className="overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md max-h-[130px] overflow-y-auto">
                   <ul className="divide-y divide-border/50">
                     {bajoStock!.map((p) => (
-                      <li key={p.id} className="flex items-center gap-3 p-3.5 hover:bg-muted/30 transition-colors">
-                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+                      <li key={p.id} className="flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden />
                         <span className="min-w-0 flex-1 truncate text-xs font-bold text-foreground">
                           {p.nombre}
                         </span>
-                        <span className="tabular-nums shrink-0 text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        <span className="tabular-nums shrink-0 text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                           {Number(p.stock)} / {Number(p.stock_min)}
                         </span>
                       </li>
@@ -486,9 +504,9 @@ export default async function PaginaTablero() {
                   </ul>
                 </MotionCard>
               )}
-            </section>
-          </aside>
-        </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );

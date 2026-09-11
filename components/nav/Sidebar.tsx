@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Plus, Shield, Sparkles, Check, X } from "lucide-react";
+import { LogOut, Plus, Shield, FileText, Check, X } from "lucide-react";
 
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { SelectorTema } from "@/components/ui/SelectorTema";
 import { LogoIcono } from "@/components/ui/Logo";
+import { useSidebar } from "./SidebarContext";
+import { BotonHamburguesa } from "./BotonHamburguesa";
 
 export interface SidebarProps {
   taller: string;
@@ -26,6 +28,7 @@ const NOMBRE_ROL: Record<string, string> = {
 export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps) {
   const pathname = usePathname();
   const [confirmandoLogout, setConfirmandoLogout] = useState(false);
+  const { sidebarVisible, toggleSidebar } = useSidebar();
 
   // Si el dueño abre el aviso de "¿Cerrar sesión?" y en vez de responder
   // navega a otra pantalla, el aviso no debe reaparecer ahí — quedaba pegado
@@ -39,7 +42,11 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
   }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border/70 bg-card/95 backdrop-blur-xl lg:flex shadow-lg overflow-hidden rounded-r-3xl">
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border/70 bg-card/95 backdrop-blur-xl lg:flex shadow-lg overflow-hidden rounded-r-3xl transition-transform duration-300 ease-in-out ${
+        sidebarVisible ? "translate-x-0" : "-translate-x-full pointer-events-none"
+      }`}
+    >
       {/* 1. Cabecera Compacta del Taller */}
       <div className="px-3.5 pt-3.5 pb-2.5 border-b border-border/50 space-y-2">
         <div className="flex items-center justify-between gap-2 min-w-0">
@@ -62,9 +69,14 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
             </div>
           </div>
 
-          {/* Modo Claro/Oscuro en Header */}
-          <div className="shrink-0">
+          {/* Selector de tema y Botón para Ocultar con Hamburguesa/X */}
+          <div className="flex items-center gap-1 shrink-0">
             <SelectorTema />
+            <BotonHamburguesa
+              activo={sidebarVisible}
+              onClick={toggleSidebar}
+              ariaLabel="Ocultar menú lateral"
+            />
           </div>
         </div>
       </div>
@@ -82,7 +94,7 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
           href="/presupuestos/nueva"
           className="flex h-8 items-center justify-center gap-1 rounded-xl border border-accent/30 bg-accent/5 px-2 text-[11px] font-bold text-accent transition-all hover:bg-accent/15 active:scale-95"
         >
-          <Sparkles className="h-3 w-3" aria-hidden />
+          <FileText className="h-3 w-3" aria-hidden />
           <span className="truncate">Presupuesto</span>
         </Link>
       </div>

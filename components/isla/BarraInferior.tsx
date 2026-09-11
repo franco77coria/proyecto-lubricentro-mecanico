@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Sparkles, Columns3, CalendarDays, Users } from "lucide-react";
+import { Plus, FileText, Columns3, CalendarDays, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { SidebarDrawer } from "@/components/nav/SidebarDrawer";
@@ -145,7 +145,7 @@ export function BarraInferior({
                 : "border-accent/40 bg-accent/10 text-accent hover:bg-accent/15"
             }`}
           >
-            <Sparkles className="h-4 w-4" aria-hidden />
+            <FileText className="h-4 w-4" aria-hidden />
             <span className="text-[0.625rem] font-bold tracking-tight truncate max-w-full">+ Presup.</span>
           </Link>
 

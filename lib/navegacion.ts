@@ -59,13 +59,6 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     ayuda: "Los autos que están acá, por estado",
   },
   {
-    href: "/turnos",
-    etiqueta: "Turnos",
-    icono: CalendarDays,
-    grupo: "taller",
-    ayuda: "Agenda de clientes y citas",
-  },
-  {
     href: "/vehiculos",
     etiqueta: "Autos",
     icono: Car,
@@ -78,6 +71,20 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     icono: Users,
     grupo: "taller",
     ayuda: "Datos de contacto y autos de cada uno",
+  },
+  {
+    href: "/presupuestos",
+    etiqueta: "Presupuestos",
+    icono: ClipboardList,
+    grupo: "plata",
+    ayuda: "Cotizaciones pendientes y aprobadas",
+  },
+  {
+    href: "/turnos",
+    etiqueta: "Turnos",
+    icono: CalendarDays,
+    grupo: "taller",
+    ayuda: "Agenda de clientes y citas",
   },
   {
     href: "/stock",
@@ -93,13 +100,6 @@ export const ITEMS_NAV: readonly ItemNav[] = [
     sinMecanico: true,
     grupo: "taller",
     ayuda: "A quién le toca el próximo service",
-  },
-  {
-    href: "/presupuestos",
-    etiqueta: "Presupuestos",
-    icono: ClipboardList,
-    grupo: "plata",
-    ayuda: "Cotizaciones pendientes y aprobadas",
   },
   {
     href: "/compras",

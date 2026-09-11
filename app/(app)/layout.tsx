@@ -7,6 +7,8 @@ import { IslaProvider } from "@/components/isla/IslaContext";
 import { I18nProvider } from "@/lib/i18n/I18nContext";
 import type { Idioma, Moneda } from "@/lib/i18n";
 import { Sidebar } from "@/components/nav/Sidebar";
+import { SidebarProvider } from "@/components/nav/SidebarContext";
+import { LayoutPrincipal } from "@/components/nav/LayoutPrincipal";
 import { TrackerActividad } from "@/components/telemetria/TrackerActividad";
 import { BannerTrial } from "@/components/suscripcion/BannerTrial";
 import { calcularEstadoSuscripcion } from "@/lib/suscripcion";
@@ -43,33 +45,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <I18nProvider idiomaInicial={idiomaInicial} monedaInicial={monedaInicial}>
       <IslaProvider>
-        <TrackerActividad />
+        <SidebarProvider>
+          <TrackerActividad />
 
-        <Sidebar
-          taller={taller?.nombre ?? "Mi taller"}
-          usuario={sesion.perfil.nombre || sesion.user.email?.split("@")[0] || ""}
-          rol={sesion.perfil.rol}
-          vistasPermitidas={vistasPermitidas}
-        />
+          <Sidebar
+            taller={taller?.nombre ?? "Mi taller"}
+            usuario={sesion.perfil.nombre || sesion.user.email?.split("@")[0] || ""}
+            rol={sesion.perfil.rol}
+            vistasPermitidas={vistasPermitidas}
+          />
 
-        {/* El margen deja lugar al sidebar sin que el contenido quede debajo. */}
-        <div className="flex min-h-dvh flex-col lg:pl-[var(--sidebar-ancho)]">
-          {estadoSub.enTrial && (
-            <BannerTrial
-              diasRestantes={estadoSub.diasRestantesTrial}
-              esDueno={sesion.perfil.rol === "dueno"}
-            />
-          )}
-          <Isla />
-          {children}
-        </div>
+          <LayoutPrincipal
+            bannerTrial={
+              estadoSub.enTrial ? (
+                <BannerTrial
+                  diasRestantes={estadoSub.diasRestantesTrial}
+                  esDueno={sesion.perfil.rol === "dueno"}
+                />
+              ) : undefined
+            }
+            isla={<Isla />}
+          >
+            {children}
+          </LayoutPrincipal>
 
-        <BarraInferior
-          taller={taller?.nombre ?? "Mi taller"}
-          usuario={sesion.perfil.nombre || sesion.user.email?.split("@")[0] || ""}
-          rol={sesion.perfil.rol}
-          vistasPermitidas={vistasPermitidas}
-        />
+          <BarraInferior
+            taller={taller?.nombre ?? "Mi taller"}
+            usuario={sesion.perfil.nombre || sesion.user.email?.split("@")[0] || ""}
+            rol={sesion.perfil.rol}
+            vistasPermitidas={vistasPermitidas}
+          />
+        </SidebarProvider>
       </IslaProvider>
     </I18nProvider>
   );

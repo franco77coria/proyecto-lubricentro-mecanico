@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LogOut, Plus, Wrench, Shield, Sparkles, Check, X } from "lucide-react";
+import { LogOut, Plus, Wrench, Shield, FileText, Check, X } from "lucide-react";
 
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
@@ -130,7 +130,7 @@ export function SidebarDrawer({
             onClick={onCerrar}
             className="flex min-h-10 items-center justify-center gap-1.5 rounded-2xl border border-accent/30 bg-accent/10 px-2 text-xs font-bold text-accent transition-all hover:bg-accent/20 active:scale-95"
           >
-            <Sparkles className="h-3.5 w-3.5" />
+            <FileText className="h-3.5 w-3.5" />
             <span className="truncate">Presupuesto</span>
           </Link>
         </div>

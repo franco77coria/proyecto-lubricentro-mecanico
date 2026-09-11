@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { useIsla, type EstadoIsla } from "./IslaContext";
+import { useSidebar } from "@/components/nav/SidebarContext";
 import { etiquetaEstado } from "@/lib/estados-ot";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 
@@ -68,6 +69,7 @@ function formatearNumeroCorto(numero: string): string {
 
 export function Isla() {
   const { estado, descartar, limpiarActivo } = useIsla();
+  const { sidebarVisible } = useSidebar();
   const [quiereExpandir, setExpandida] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const reducirMovimiento = useReducedMotion();
@@ -102,7 +104,9 @@ export function Isla() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 lg:left-[var(--sidebar-ancho)] lg:right-0 top-0 z-40 flex justify-center px-3 pt-[calc(var(--safe-top)+0.5rem)]"
+      className={`pointer-events-none fixed inset-x-0 lg:right-0 top-0 z-40 flex justify-center px-3 pt-[calc(var(--safe-top)+0.5rem)] transition-all duration-300 ${
+        sidebarVisible ? "lg:left-[var(--sidebar-ancho)]" : "lg:left-0"
+      }`}
       aria-live={estado.tipo === "error" ? "assertive" : "polite"}
     >
       <motion.div

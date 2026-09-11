@@ -1,16 +1,12 @@
 import { LogOut } from "lucide-react";
 
 import { SuscripcionConfig } from "@/components/config/SuscripcionConfig";
-import { AprobarCatalogo } from "@/components/config/AprobarCatalogo";
 import { AjustesIdiomaMoneda } from "@/components/config/AjustesIdiomaMoneda";
-import { CatalogoServicios } from "@/components/config/CatalogoServicios";
 import { DatosTaller } from "@/components/config/DatosTaller";
 import { EditorChecklist } from "@/components/config/EditorChecklist";
 import { GestionEquipo } from "@/components/config/GestionEquipo";
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { cerrarSesion } from "@/lib/actions/auth";
-import { listarPendientesCatalogo } from "@/lib/actions/catalogo-aprobacion";
-import { listarServicios } from "@/lib/actions/servicios";
 import { obtenerAuditoriaEquipo } from "@/lib/actions/equipo";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
@@ -28,8 +24,6 @@ export default async function Config() {
     { data: plantilla },
     { data: equipo },
     { data: invitaciones },
-    servicios,
-    pendientesCatalogo,
     auditoria,
   ] = await Promise.all([
     supabase
@@ -55,8 +49,6 @@ export default async function Config() {
       .is("aceptada_en", null)
       .gt("expira_en", new Date().toISOString())
       .order("creado_en", { ascending: false }),
-    listarServicios(),
-    listarPendientesCatalogo(),
     esDueno ? obtenerAuditoriaEquipo() : Promise.resolve([]),
   ]);
 
@@ -102,17 +94,7 @@ export default async function Config() {
             )}
           </div>
 
-          <div className="entrar" style={{ "--i": 3 } as React.CSSProperties}>
-            <CatalogoServicios servicios={servicios} editable={esDueno} />
-          </div>
-
-          {/* Solo aparece si hay algo por revisar: el componente devuelve null
-              cuando la lista está vacía. */}
-          <div className="entrar" style={{ "--i": 4 } as React.CSSProperties}>
-            <AprobarCatalogo pendientes={pendientesCatalogo} editable={esDueno} />
-          </div>
-
-          <div className="entrar lg:col-span-2" style={{ "--i": 5 } as React.CSSProperties}>
+          <div className="entrar lg:col-span-2" style={{ "--i": 4 } as React.CSSProperties}>
             <GestionEquipo
               miembros={(equipo || []) as unknown as { user_id: string; nombre: string | null; rol: string; activo: boolean; vistas_permitidas?: string[] | null }[]}
               invitaciones={invitaciones || []}
