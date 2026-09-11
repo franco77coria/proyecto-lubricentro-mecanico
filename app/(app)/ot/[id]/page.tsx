@@ -208,6 +208,9 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         patente={ot.vehiculo.patente}
         estado={ot.estado}
         telefonoCliente={ot.cliente?.telefono}
+        total={Number(ot.total || 0)}
+        vehiculoModelo={[ot.vehiculo.marca?.nombre, ot.vehiculo.modelo?.nombre].filter(Boolean).join(" ")}
+        clienteNombre={[ot.cliente?.nombre, ot.cliente?.apellido].filter(Boolean).join(" ")}
       />
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 md:px-6">
         {/* Nav Back */}

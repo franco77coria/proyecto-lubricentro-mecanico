@@ -1,9 +1,10 @@
-import { Mail, Phone, Users } from "lucide-react";
+import { Mail, Phone, Users, Car } from "lucide-react";
 import Link from "next/link";
 
 import { FormCliente } from "@/components/clientes/FormCliente";
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
@@ -11,13 +12,6 @@ import { escaparParaFiltroOr } from "@/lib/postgrest";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Clientes del taller.
- *
- * Faltaba: se podía buscar un auto por patente pero no una persona. "¿Qué
- * autos tiene Juan Pérez?" no se podía responder, y es una pregunta que se
- * hace todo el tiempo cuando alguien llama por teléfono.
- */
 export default async function PaginaClientes({
   searchParams,
 }: {
@@ -32,7 +26,14 @@ export default async function PaginaClientes({
     .from("cliente")
     .select(
       `id, nombre, apellido, telefono, email, notas,
-       vehiculo_cliente ( hasta, vehiculo:vehiculo_id ( patente ) )`,
+       vehiculo_cliente (
+         hasta,
+         vehiculo:vehiculo_id (
+           id, patente, anio, color,
+           marca:marca_id(nombre),
+           modelo:modelo_id(nombre)
+         )
+       )`,
     )
     .eq("taller_id", sesion.perfil.taller_id)
     .eq("archivado", false)
@@ -41,7 +42,6 @@ export default async function PaginaClientes({
 
   if (q?.trim()) {
     const limpio = escaparParaFiltroOr(q.trim());
-    // También por teléfono: cuando llaman, el número es lo único que se tiene.
     query = query.or(
       `nombre.ilike.%${limpio}%,apellido.ilike.%${limpio}%,telefono.ilike.%${limpio}%`,
     );
@@ -54,6 +54,10 @@ export default async function PaginaClientes({
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
+        <div className="flex items-center gap-3">
+          <BotonVolverTablero />
+        </div>
+
         <EncabezadoPantalla seccion="Clientes" titulo="Clientes" accion={<FormCliente />} />
 
         <Buscador valor={q} placeholder="Buscar por nombre o teléfono" />
@@ -77,9 +81,25 @@ export default async function PaginaClientes({
 
             <ul className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {lista.map((c, i) => {
-                const autos = (c.vehiculo_cliente ?? [])
+                const vinculos = (c.vehiculo_cliente ?? []) as Array<{
+                  hasta?: string | null;
+                  vehiculo?: {
+                    id: string;
+                    patente: string;
+                    anio?: number | null;
+                    marca?: { nombre: string } | null;
+                    modelo?: { nombre: string } | null;
+                  } | null;
+                }>;
+                const autos = vinculos
                   .filter((v) => !v.hasta && v.vehiculo?.patente)
-                  .map((v) => v.vehiculo!.patente);
+                  .map((v) => ({
+                    id: v.vehiculo!.id,
+                    patente: v.vehiculo!.patente,
+                    anio: v.vehiculo!.anio,
+                    marca: v.vehiculo!.marca?.nombre,
+                    modelo: v.vehiculo!.modelo?.nombre,
+                  }));
 
                 return (
                   <li
@@ -101,20 +121,37 @@ export default async function PaginaClientes({
                       <FormCliente cliente={c} />
                     </div>
 
+                    {/* Flota / Vehículos asociados del cliente */}
                     {autos.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {autos.map((p) => (
-                          <Link
-                            key={p}
-                            href={`/vehiculos/${encodeURIComponent(p)}`}
-                            className="inline-block transition-transform hover:scale-105 active:scale-95"
-                          >
-                            <PlacaPatente patente={p} size="sm" />
-                          </Link>
-                        ))}
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                          <Car className="h-3 w-3 text-accent" />
+                          <span>Vehículos ({autos.length}):</span>
+                        </span>
+                        <div className="flex flex-col gap-1.5">
+                          {autos.map((a) => (
+                            <Link
+                              key={a.id}
+                              href={`/vehiculos/${encodeURIComponent(a.patente)}`}
+                              className="flex items-center justify-between gap-2 rounded-xl border border-border/70 bg-muted/40 px-2.5 py-1.5 transition-all hover:border-accent/40 hover:bg-card active:scale-[0.98]"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <PlacaPatente patente={a.patente} size="sm" />
+                                <span className="text-xs font-semibold text-foreground truncate">
+                                  {[a.marca, a.modelo].filter(Boolean).join(" ") || "Sin modelo"}
+                                </span>
+                              </div>
+                              {a.anio && (
+                                <span className="text-[11px] font-mono text-muted-foreground shrink-0">
+                                  {a.anio}
+                                </span>
+                              )}
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-caption text-muted-foreground">Sin autos asignados</p>
+                      <p className="text-caption text-muted-foreground italic">Sin autos asociados</p>
                     )}
 
                     {c.notas && (

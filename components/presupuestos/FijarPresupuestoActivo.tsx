@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useIsla } from "@/components/isla/IslaContext";
 
-export function FijarOTActiva({
-  otId,
+export function FijarPresupuestoActivo({
+  presupuestoId,
   numero,
   patente,
   estado,
@@ -13,7 +13,7 @@ export function FijarOTActiva({
   vehiculoModelo,
   clienteNombre,
 }: {
-  otId: string;
+  presupuestoId: string;
   numero: string;
   patente: string;
   estado: string;
@@ -22,12 +22,12 @@ export function FijarOTActiva({
   vehiculoModelo?: string | null;
   clienteNombre?: string | null;
 }) {
-  const { fijarOT } = useIsla();
+  const { fijarPresupuesto } = useIsla();
 
   useEffect(() => {
-    fijarOT({
-      tipo: "ot",
-      otId,
+    fijarPresupuesto({
+      tipo: "presupuesto",
+      presupuestoId,
       numero,
       patente,
       estado,
@@ -37,7 +37,7 @@ export function FijarOTActiva({
       clienteNombre,
     });
   }, [
-    otId,
+    presupuestoId,
     numero,
     patente,
     estado,
@@ -45,7 +45,7 @@ export function FijarOTActiva({
     total,
     vehiculoModelo,
     clienteNombre,
-    fijarOT,
+    fijarPresupuesto,
   ]);
 
   return null;

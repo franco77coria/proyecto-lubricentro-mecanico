@@ -27,6 +27,23 @@ export const dynamic = "force-dynamic";
 
 /* El formato de plata sale del taller. */
 
+function tiempoRelativo(fechaIso?: string | null): string {
+  if (!fechaIso) return "";
+  const ahora = Date.now();
+  const diffMs = ahora - new Date(fechaIso).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHoras = Math.floor(diffMin / 60);
+  const diffDias = Math.floor(diffHoras / 24);
+
+  if (diffMin < 2) return "hace un momento";
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  if (diffHoras === 1) return "hace 1 hora";
+  if (diffHoras < 24) return `hace ${diffHoras} horas`;
+  if (diffDias === 1) return "ayer";
+  if (diffDias < 7) return `hace ${diffDias} días`;
+  return new Date(fechaIso).toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+}
+
 export default async function PaginaTablero() {
   const sesion = await exigirVista("/tablero");
   const { idioma, moneda } = await obtenerAjustesTaller();
@@ -47,7 +64,7 @@ export default async function PaginaTablero() {
   finHoy.setHours(23, 59, 59, 999);
 
   const [
-    { data: ordenes },
+    { data: ordenesRecientes },
     { data: bajoStock },
     { data: delMes },
     { data: estadosActivos },
@@ -56,13 +73,13 @@ export default async function PaginaTablero() {
     supabase
       .from("orden_trabajo")
       .select(
-        `id, numero, estado, fecha_ingreso, total, km_ingreso, observaciones,
+        `id, numero, estado, fecha_ingreso, creado_en, total, km_ingreso, observaciones,
          vehiculo:vehiculo_id ( patente, notas, marca:marca_id(nombre), modelo:modelo_id(nombre) ),
          cliente:cliente_id ( nombre, apellido, telefono )`,
       )
       .eq("taller_id", tallerId)
-      .order("fecha_ingreso", { ascending: false })
-      .limit(10),
+      .order("creado_en", { ascending: false })
+      .limit(15),
     supabase
       .from("producto")
       .select("id, nombre, stock, stock_min, categoria")
@@ -84,7 +101,25 @@ export default async function PaginaTablero() {
     listarTurnos(hoy, finHoy),
   ]);
 
-  const otList = ordenes ?? [];
+  const flujoReciente = (ordenesRecientes ?? []).map((doc) => {
+    const esPresupuesto = doc.estado === "presupuesto" || doc.numero?.startsWith("PR-");
+    return {
+      id: doc.id,
+      tipoDoc: esPresupuesto ? ("PR" as const) : ("OT" as const),
+      numero: doc.numero || doc.id.slice(0, 8),
+      fecha: doc.creado_en || doc.fecha_ingreso,
+      estado: doc.estado,
+      total: doc.total,
+      km: doc.km_ingreso,
+      patente: doc.vehiculo?.patente || "",
+      modeloTexto:
+        [doc.vehiculo?.marca?.nombre, doc.vehiculo?.modelo?.nombre].filter(Boolean).join(" ") ||
+        doc.vehiculo?.notas ||
+        "Vehículo en taller",
+      clienteNombre: doc.cliente ? `${doc.cliente.nombre} ${doc.cliente.apellido || ""}`.trim() : null,
+      href: esPresupuesto ? `/presupuestos/${doc.id}` : `/ot/${doc.id}`,
+    };
+  });
   const cuenta = (e: string) => (estadosActivos ?? []).filter((o) => o.estado === e).length;
 
   const facturadoMes = (delMes ?? [])
@@ -209,7 +244,7 @@ export default async function PaginaTablero() {
                   Flujo de Vehículos Recientes
                 </h2>
               </div>
-              {otList.length > 0 && (
+              {flujoReciente.length > 0 && (
                 <Link
                   href="/vehiculos"
                   className="flex items-center gap-1 text-xs font-bold text-accent hover:text-accent/80 transition-colors"
@@ -219,60 +254,88 @@ export default async function PaginaTablero() {
               )}
             </div>
 
-            {otList.length === 0 ? (
+            {flujoReciente.length === 0 ? (
               <MotionCard delay={0.2} className="flex flex-col items-center gap-4 rounded-3xl px-6 py-16 text-center border-dashed">
                 <span className="grid h-16 w-16 place-items-center rounded-full bg-accent/10 text-accent ring-8 ring-accent/5">
                   <Car className="h-8 w-8" aria-hidden />
                 </span>
                 <p className="max-w-xs text-sm text-muted-foreground font-medium">
-                  Todavía no hay órdenes registradas. Creá la primera para empezar el circuito.
+                  Todavía no hay órdenes ni presupuestos registrados. Creá uno para comenzar el circuito.
                 </p>
-                <Link
-                  href="/ot/nueva"
-                  className="mt-2 flex min-h-11 items-center gap-2 rounded-2xl bg-accent px-6 py-2 text-sm font-black text-white shadow-md transition-transform hover:brightness-110 active:scale-95"
-                >
-                  <Plus className="h-4 w-4 stroke-[3]" />
-                  Crear la primera orden
-                </Link>
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+                  <Link
+                    href="/ot/nueva"
+                    className="flex min-h-11 items-center gap-2 rounded-2xl bg-accent px-6 py-2 text-sm font-black text-white shadow-md transition-transform hover:brightness-110 active:scale-95"
+                  >
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                    Nueva orden
+                  </Link>
+                  <Link
+                    href="/presupuestos/nueva"
+                    className="flex min-h-11 items-center gap-2 rounded-2xl border border-border bg-card px-5 py-2 text-sm font-bold text-foreground hover:bg-muted active:scale-95"
+                  >
+                    Nuevo presupuesto
+                  </Link>
+                </div>
               </MotionCard>
             ) : (
               <ul className="space-y-3">
-                {otList.map((ot, i) => {
-                  const patente = ot.vehiculo?.patente || "MUN001";
-                  const modeloTexto =
-                    [ot.vehiculo?.marca?.nombre, ot.vehiculo?.modelo?.nombre].filter(Boolean).join(" ") ||
-                    ot.vehiculo?.notas ||
-                    "Vehículo en taller";
+                {flujoReciente.map((item, i) => {
+                  const patente = item.patente || "S/PAT";
+                  const estadoTexto =
+                    ESTADO_LABEL[item.estado] ??
+                    (item.estado ? item.estado.charAt(0).toUpperCase() + item.estado.slice(1) : "En taller");
+                  const estadoTono =
+                    ESTADO_TONO[item.estado] ?? "bg-muted text-foreground border border-border/50";
+                  const tiempo = tiempoRelativo(item.fecha);
 
                   return (
-                    <li key={ot.id}>
+                    <li key={`${item.tipoDoc}-${item.id}`}>
                       <MotionCard
-                        delay={0.15 + i * 0.04}
+                        delay={0.1 + i * 0.03}
                         interactive
                         className="group overflow-hidden rounded-3xl border border-border/80 bg-card p-0 shadow-md transition-all hover:border-accent/50 hover:shadow-xl"
                       >
                         <Link
-                          href={`/ot/${ot.id}`}
+                          href={item.href}
                           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 w-full"
                         >
                           <div className="flex items-center gap-4 min-w-0">
                             {/* Placa Patente Vectorizada */}
                             <PlacaPatente patente={patente} size="sm" className="shrink-0 shadow-sm" />
 
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                              <span className="block truncate text-base font-black tracking-tight text-foreground group-hover:text-accent transition-colors">
-                                {modeloTexto}
-                              </span>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
-                                <span className="font-mono font-bold text-accent">{ot.numero}</span>
-                                {ot.cliente && (
-                                  <span className="truncate">
-                                    · {ot.cliente.nombre} {ot.cliente.apellido || ""}
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-black uppercase tracking-wider border ${
+                                    item.tipoDoc === "OT"
+                                      ? "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                      : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                                  }`}
+                                >
+                                  {item.tipoDoc} #{item.numero}
+                                </span>
+                                {tiempo && (
+                                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
+                                    <Clock className="h-3 w-3 inline text-muted-foreground/70" />
+                                    {tiempo}
                                   </span>
                                 )}
-                                {Number(ot.km_ingreso) > 0 && (
+                              </div>
+
+                              <span className="block truncate text-base font-black tracking-tight text-foreground group-hover:text-accent transition-colors">
+                                {item.modeloTexto}
+                              </span>
+
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-medium">
+                                {item.clienteNombre && (
+                                  <span className="truncate font-semibold text-foreground/80">
+                                    {item.clienteNombre}
+                                  </span>
+                                )}
+                                {item.km != null && Number(item.km) > 0 && (
                                   <span className="hidden sm:inline tabular-nums">
-                                    · {formatearNumero(Number(ot.km_ingreso), idioma)} km
+                                    · {formatearNumero(Number(item.km), idioma)} km
                                   </span>
                                 )}
                               </div>
@@ -281,15 +344,13 @@ export default async function PaginaTablero() {
 
                           <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t border-border/40 sm:border-0">
                             <span
-                              className={`rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-wider ${
-                                ESTADO_TONO[ot.estado] ?? "bg-muted text-foreground"
-                              }`}
+                              className={`rounded-full px-3.5 py-1 text-[11px] font-black uppercase tracking-wider ${estadoTono}`}
                             >
-                              {ESTADO_LABEL[ot.estado] ?? ot.estado}
+                              {estadoTexto}
                             </span>
-                            {esDueno && Number(ot.total) > 0 && (
+                            {esDueno && Number(item.total) > 0 && (
                               <span className="text-base font-black tabular-nums text-foreground">
-                                {money(Number(ot.total))}
+                                {money(Number(item.total))}
                               </span>
                             )}
                           </div>

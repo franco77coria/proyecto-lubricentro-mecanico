@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plus, Sparkles, Columns3, CalendarDays } from "lucide-react";
+import { Plus, Sparkles, Columns3, CalendarDays, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { SidebarDrawer } from "@/components/nav/SidebarDrawer";
@@ -149,18 +149,18 @@ export function BarraInferior({
             <span className="text-[0.625rem] font-bold tracking-tight truncate max-w-full">+ Presup.</span>
           </Link>
 
-          {/* 5. Agenda / Turnos */}
+          {/* 5. Clientes del Taller */}
           <Link
-            href="/turnos"
-            aria-current={esRutaActiva(pathname, "/turnos") ? "page" : undefined}
+            href="/clientes"
+            aria-current={esRutaActiva(pathname, "/clientes") ? "page" : undefined}
             className={`flex min-h-12 min-w-12 flex-1 max-w-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-transform active:scale-95 touch-manipulation ${
-              esRutaActiva(pathname, "/turnos")
+              esRutaActiva(pathname, "/clientes")
                 ? "text-accent font-bold bg-accent/10"
                 : "text-muted-foreground hover:text-foreground font-medium"
             }`}
           >
-            <CalendarDays className="h-5 w-5" strokeWidth={esRutaActiva(pathname, "/turnos") ? 2.5 : 2} aria-hidden />
-            <span className="text-[0.625rem] tracking-tight truncate max-w-full">Turnos</span>
+            <Users className="h-5 w-5" strokeWidth={esRutaActiva(pathname, "/clientes") ? 2.5 : 2} aria-hidden />
+            <span className="text-[0.625rem] tracking-tight truncate max-w-full">Clientes</span>
           </Link>
         </div>
       </nav>

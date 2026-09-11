@@ -1,19 +1,34 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-/**
- * Estado de la isla.
- *
- * Cubre los cuatro tipos de feedback que una interfaz le debe al usuario:
- * estado en curso, finalización, advertencia y error. Tenerlos en un solo
- * canal evita que cada pantalla invente su propio toast.
- */
+export type ItemActivoIsla =
+  | {
+      tipo: "ot";
+      otId: string;
+      numero: string;
+      patente: string;
+      estado: string;
+      telefonoCliente?: string | null;
+      total?: number | null;
+      vehiculoModelo?: string | null;
+      clienteNombre?: string | null;
+    }
+  | {
+      tipo: "presupuesto";
+      presupuestoId: string;
+      numero: string;
+      patente: string;
+      estado: string;
+      telefonoCliente?: string | null;
+      total?: number | null;
+      vehiculoModelo?: string | null;
+      clienteNombre?: string | null;
+    };
+
 export type EstadoIsla =
   | { tipo: "oculta" }
-  /** Persistente: la OT sobre la que se está trabajando. En un taller siempre
-   *  se está adentro de un auto, así que esto casi nunca está vacío. */
-  | { tipo: "ot"; otId: string; numero: string; patente: string; estado: string; telefonoCliente?: string | null }
+  | ItemActivoIsla
   | { tipo: "progreso"; mensaje: string; actual: number; total: number }
   | { tipo: "exito"; mensaje: string }
   | { tipo: "alerta"; mensaje: string }
@@ -21,30 +36,68 @@ export type EstadoIsla =
 
 interface IslaAPI {
   estado: EstadoIsla;
-  /** Fija el contexto persistente (la OT activa). */
+  activo: ItemActivoIsla | null;
+  /** Fija una Orden de Trabajo activa en la isla. */
   fijarOT: (ot: Extract<EstadoIsla, { tipo: "ot" }> | null) => void;
-  /** Muestra algo temporal y después vuelve a la OT activa. */
-  notificar: (estado: Exclude<EstadoIsla, { tipo: "oculta" } | { tipo: "ot" }>) => void;
-  /** Descarta el aviso temporal. Los errores no se van solos: sin esto la
-   *  isla queda tomada por un error que el usuario ya leyó. */
+  /** Fija un Presupuesto activo en la isla. */
+  fijarPresupuesto: (pr: Extract<EstadoIsla, { tipo: "presupuesto" }> | null) => void;
+  /** Fija cualquier ítem activo (OT o Presupuesto). */
+  fijarActivo: (item: ItemActivoIsla | null) => void;
+  /** Limpia el elemento activo de la isla y de localStorage. */
+  limpiarActivo: () => void;
+  /** Muestra una notificación temporal en la isla. */
+  notificar: (estado: Exclude<EstadoIsla, { tipo: "oculta" } | { tipo: "ot" } | { tipo: "presupuesto" }>) => void;
+  /** Descarta el aviso temporal. */
   descartar: () => void;
 }
 
 const Ctx = createContext<IslaAPI | null>(null);
 
-/** Cuánto dura cada aviso antes de volver al estado persistente. */
+const STORAGE_KEY = "taller_isla_activa_v2";
+
 const DURACION: Record<string, number> = {
   exito: 2200,
   alerta: 4000,
-  // El error no se va solo: si algo falló, el usuario tiene que enterarse.
   error: Infinity,
   progreso: Infinity,
 };
 
 export function IslaProvider({ children }: { children: React.ReactNode }) {
-  const [ot, setOt] = useState<Extract<EstadoIsla, { tipo: "ot" }> | null>(null);
+  const [activo, setActivo] = useState<ItemActivoIsla | null>(null);
   const [temporal, setTemporal] = useState<EstadoIsla | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inicializado = useRef(false);
+
+  // 1. Recuperar contexto activo guardado en localStorage al iniciar en el navegador
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem(STORAGE_KEY);
+      if (guardado) {
+        const parseado = JSON.parse(guardado) as ItemActivoIsla;
+        if (parseado && (parseado.tipo === "ot" || parseado.tipo === "presupuesto")) {
+          setActivo(parseado);
+        }
+      }
+    } catch {
+      // Ignorar fallos de acceso o JSON
+    } finally {
+      inicializado.current = true;
+    }
+  }, []);
+
+  // 2. Persistir contexto activo en localStorage ante cualquier cambio
+  useEffect(() => {
+    if (!inicializado.current) return;
+    try {
+      if (activo) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(activo));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // Ignorar en navegadores con cuotas bloqueadas
+    }
+  }, [activo]);
 
   const notificar = useCallback<IslaAPI["notificar"]>((nuevo) => {
     if (timer.current) clearTimeout(timer.current);
@@ -56,7 +109,21 @@ export function IslaProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const fijarOT = useCallback<IslaAPI["fijarOT"]>((nueva) => setOt(nueva), []);
+  const fijarActivo = useCallback((item: ItemActivoIsla | null) => {
+    setActivo(item);
+  }, []);
+
+  const fijarOT = useCallback((nueva: Extract<EstadoIsla, { tipo: "ot" }> | null) => {
+    setActivo(nueva);
+  }, []);
+
+  const fijarPresupuesto = useCallback((nuevo: Extract<EstadoIsla, { tipo: "presupuesto" }> | null) => {
+    setActivo(nuevo);
+  }, []);
+
+  const limpiarActivo = useCallback(() => {
+    setActivo(null);
+  }, []);
 
   const descartar = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -65,12 +132,16 @@ export function IslaProvider({ children }: { children: React.ReactNode }) {
 
   const valor = useMemo<IslaAPI>(
     () => ({
-      estado: temporal ?? ot ?? { tipo: "oculta" },
+      estado: temporal ?? activo ?? { tipo: "oculta" },
+      activo,
       fijarOT,
+      fijarPresupuesto,
+      fijarActivo,
+      limpiarActivo,
       notificar,
       descartar,
     }),
-    [temporal, ot, fijarOT, notificar, descartar],
+    [temporal, activo, fijarOT, fijarPresupuesto, fijarActivo, limpiarActivo, notificar, descartar],
   );
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;

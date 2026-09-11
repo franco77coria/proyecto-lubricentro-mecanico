@@ -8,6 +8,7 @@ import { useState, useTransition, useEffect } from "react";
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
 import { SelectorCliente } from "@/components/clientes/SelectorCliente";
+import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 import { useIsla } from "@/components/isla/IslaContext";
 import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/presupuestos";
@@ -312,31 +313,35 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 pb-32">
-      {/* Encabezado */}
-      <div className="flex items-center justify-between border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/presupuestos"
-            className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-foreground">Nuevo Presupuesto</h1>
-            <p className="text-caption text-muted-foreground">Cotización para el cliente con o sin orden de trabajo.</p>
+      {/* Encabezado con Botón Volver al Tablero */}
+      <div className="flex flex-col gap-3 border-b border-border pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <BotonVolverTablero />
+            <span className="text-border">·</span>
+            <Link
+              href="/presupuestos"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Presupuestos
+            </Link>
           </div>
+          {tieneBorrador && (
+            <button
+              type="button"
+              onClick={limpiarBorrador}
+              className="flex min-h-9 items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-xs font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-all"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Limpiar</span>
+            </button>
+          )}
         </div>
 
-        {tieneBorrador && (
-          <button
-            type="button"
-            onClick={limpiarBorrador}
-            className="flex min-h-9 items-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/10 px-3 text-xs font-semibold text-destructive hover:bg-destructive/20 active:scale-95 transition-all"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Limpiar</span>
-          </button>
-        )}
+        <div>
+          <h1 className="text-xl font-black tracking-tight text-foreground">Nuevo Presupuesto</h1>
+          <p className="text-caption text-muted-foreground">Cotización para el cliente con o sin orden de trabajo.</p>
+        </div>
       </div>
 
       {errorMsg && (
@@ -441,6 +446,19 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
               onSeleccionarVehiculo={(v) => {
                 if (v.patente) setPatente(v.patente);
                 if (v.anio) setAnio(String(v.anio));
+                if (v.vin) setVin(v.vin);
+                if (v.motor) setMotor(v.motor);
+                if (v.marcaId) {
+                  setVehiculo({
+                    marcaId: v.marcaId,
+                    modeloId: v.modeloId || "",
+                    motorizacionId: v.motorizacionId || "",
+                  });
+                }
+                notificar({
+                  tipo: "exito",
+                  mensaje: `✨ Vehículo ${v.patente} (${[v.marca, v.modelo].filter(Boolean).join(" ")}) autocompletado.`,
+                });
               }}
             />
           </div>

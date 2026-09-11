@@ -356,10 +356,16 @@ export interface ClienteOmniResultado {
     id: string;
     patente: string;
     anio?: number | null;
+    marcaId?: string | null;
+    modeloId?: string | null;
+    motorizacionId?: string | null;
     marca?: string | null;
     modelo?: string | null;
+    motorizacion?: string | null;
     color?: string | null;
     km_actual?: number | null;
+    vin?: string | null;
+    motor?: string | null;
   }[];
 }
 
@@ -370,7 +376,7 @@ export interface ClienteOmniResultado {
  * - Nombre o Apellido
  * - Teléfono / WhatsApp
  * - DNI o CUIT
- * - Chapa Patente de cualquier vehículo que haya atendido
+ * - Chapa Patente o Modelo/Marca de cualquier vehículo atendido
  */
 export async function buscarClientesOmni(termino: string): Promise<ClienteOmniResultado[]> {
   const sesion = await obtenerSesion();
@@ -392,21 +398,46 @@ export async function buscarClientesOmni(termino: string): Promise<ClienteOmniRe
       .or(`nombre.ilike.%${qFiltro}%,apellido.ilike.%${qFiltro}%,telefono.ilike.%${qFiltro}%,documento.ilike.%${qFiltro}%`)
       .limit(12);
 
-    // 2. Buscar vehículos por patente para deducir clientes
+    // 2. Buscar vehículos por patente, modelo o marca para deducir clientes
     const patenteNormalizada = normalizarPatente(q);
-    const { data: vehiculosMatch } = await supabase
+    const [{ data: marcasMatch }, { data: modelosMatch }] = await Promise.all([
+      supabase.from("marca").select("id").ilike("nombre", `%${q}%`).limit(10),
+      supabase.from("modelo").select("id").ilike("nombre", `%${q}%`).limit(10),
+    ]);
+
+    const marcaIds = (marcasMatch || []).map((m) => m.id);
+    const modeloIds = (modelosMatch || []).map((m) => m.id);
+
+    let vQuery = supabase
       .from("vehiculo")
       .select(`
-        id, patente, anio, color, km_actual,
-        marca:marca_id(nombre),
-        modelo:modelo_id(nombre),
+        id, patente, anio, color, km_actual, vin, motor,
+        marca_id, modelo_id, motorizacion_id,
+        marca:marca_id(id, nombre),
+        modelo:modelo_id(id, nombre),
+        motorizacion:motorizacion_id(id, nombre),
         vinculos:vehiculo_cliente (
           cliente:cliente_id (id, nombre, apellido, telefono, documento)
         )
       `)
       .eq("taller_id", tallerId)
-      .ilike("patente", `%${patenteNormalizada || q}%`)
-      .limit(8);
+      .limit(12);
+
+    const vFiltros: string[] = [];
+    if (patenteNormalizada || q) {
+      vFiltros.push(`patente.ilike.%${patenteNormalizada || q}%`);
+    }
+    if (marcaIds.length > 0) {
+      vFiltros.push(`marca_id.in.(${marcaIds.join(",")})`);
+    }
+    if (modeloIds.length > 0) {
+      vFiltros.push(`modelo_id.in.(${modeloIds.join(",")})`);
+    }
+    if (vFiltros.length > 0) {
+      vQuery = vQuery.or(vFiltros.join(","));
+    }
+
+    const { data: vehiculosMatch } = await vQuery;
 
     const mapClientes = new Map<string, ClienteOmniResultado>();
 
@@ -443,15 +474,17 @@ export async function buscarClientesOmni(termino: string): Promise<ClienteOmniRe
 
     const idsClientes = Array.from(mapClientes.keys());
 
-    // 3. Cargar los vehículos de los clientes encontrados
+    // 3. Cargar los vehículos de los clientes encontrados con metadata completa
     const { data: vehiculosClientes } = await supabase
       .from("vehiculo_cliente")
       .select(`
         cliente_id,
         vehiculo:vehiculo_id (
-          id, patente, anio, color, km_actual,
-          marca:marca_id(nombre),
-          modelo:modelo_id(nombre)
+          id, patente, anio, color, km_actual, vin, motor,
+          marca_id, modelo_id, motorizacion_id,
+          marca:marca_id(id, nombre),
+          modelo:modelo_id(id, nombre),
+          motorizacion:motorizacion_id(id, nombre)
         )
       `)
       .in("cliente_id", idsClientes);
@@ -463,20 +496,32 @@ export async function buscarClientesOmni(termino: string): Promise<ClienteOmniRe
           id: string;
           patente: string;
           anio?: number | null;
+          marca_id?: string | null;
+          modelo_id?: string | null;
+          motorizacion_id?: string | null;
           color?: string | null;
           km_actual?: number | null;
-          marca?: { nombre: string } | null;
-          modelo?: { nombre: string } | null;
+          vin?: string | null;
+          motor?: string | null;
+          marca?: { id?: string; nombre: string } | null;
+          modelo?: { id?: string; nombre: string } | null;
+          motorizacion?: { id?: string; nombre: string } | null;
         };
         if (!c.vehiculos.some((existente) => existente.id === v.id)) {
           c.vehiculos.push({
             id: v.id,
             patente: v.patente,
             anio: v.anio,
+            marcaId: v.marca_id || v.marca?.id,
+            modeloId: v.modelo_id || v.modelo?.id,
+            motorizacionId: v.motorizacion_id || v.motorizacion?.id,
             color: v.color,
             km_actual: v.km_actual,
+            vin: v.vin,
+            motor: v.motor,
             marca: v.marca?.nombre,
             modelo: v.modelo?.nombre,
+            motorizacion: v.motorizacion?.nombre,
           });
         }
       }

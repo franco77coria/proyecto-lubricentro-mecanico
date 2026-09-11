@@ -2318,6 +2318,10 @@ export type Database = {
       }
       seguimiento_por_patente: { Args: { p_patente: string }; Returns: Json }
       seguimiento_por_token: { Args: { p_token: string }; Returns: Json }
+      siguiente_numero_documento: {
+        Args: { p_prefijo?: string; p_taller: string }
+        Returns: string
+      }
       siguiente_numero_ot: { Args: { p_taller: string }; Returns: string }
       taller_actual: { Args: never; Returns: string }
       tiempo_promedio_taller: { Args: { p_desde?: string }; Returns: number }

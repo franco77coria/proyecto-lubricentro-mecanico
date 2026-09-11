@@ -49,12 +49,18 @@ export async function crearPresupuestoCompleto(datos: DatosPresupuesto): Promise
 
     if (!vehiculoExiste) return { error: "Vehículo no válido para este taller." };
 
-    // 1. Insertar OT en estado 'presupuesto'
+    // 1. Obtener código estandarizado PR-AAAAMMDD-TXX-0000
+    const { data: numeroGenerado } = await supabase.rpc("siguiente_numero_documento", {
+      p_taller: tallerId,
+      p_prefijo: "PR",
+    });
+
+    // 2. Insertar OT en estado 'presupuesto'
     const { data: ot, error } = await supabase
       .from("orden_trabajo")
       .insert({
         taller_id: tallerId,
-        numero: "",
+        numero: numeroGenerado || "",
         vehiculo_id: vehiculoId,
         cliente_id: clienteId || null,
         tipo: "mecanica", // default para presupuestos rápidos
@@ -219,6 +225,17 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
     const supabase = await crearClienteServidor();
     const tallerId = sesion.perfil.taller_id;
 
+    // Obtener nuevo código técnico correlativo de OT
+    const { data: otNumData } = await supabase.rpc("siguiente_numero_documento", {
+      p_taller: tallerId,
+      p_prefijo: "OT",
+    });
+
+    const updatePayload: { estado: "aprobado"; numero?: string } = { estado: "aprobado" };
+    if (otNumData) {
+      updatePayload.numero = otNumData;
+    }
+
     const { data: updated, error } = await supabase
       .from("orden_trabajo")
       // NO se toca `aprobado_cliente_en`: esa columna es la constancia de que
@@ -226,10 +243,10 @@ export async function convertirPresupuestoAOT(id: string): Promise<{ ok?: boolea
       // solo aprobar_presupuesto_publico() con el token en la mano. Que el
       // taller pase el presupuesto a orden es una decisión del taller, no del
       // cliente; escribirla acá convertía la constancia en un campo más.
-      .update({ estado: "aprobado" })
+      .update(updatePayload)
       .eq("id", id)
       .eq("taller_id", tallerId)
-      .select("id")
+      .select("id, numero")
       .maybeSingle();
 
     if (error || !updated) {

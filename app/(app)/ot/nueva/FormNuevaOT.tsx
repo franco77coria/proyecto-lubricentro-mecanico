@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 
 import dynamic from "next/dynamic";
 
@@ -392,13 +393,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
       <form onSubmit={handleSubmit} className="space-y-6 pb-32">
         {/* Header Back & Borrador */}
         <div className="flex items-center justify-between">
-          <Link
-            href="/tablero"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Cancelar</span>
-          </Link>
+          <BotonVolverTablero texto="Volver al Tablero" />
           {tieneBorrador && (
             <button
               type="button"
@@ -634,6 +629,20 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             onSeleccionarVehiculo={(v) => {
               if (v.patente) setPatente(v.patente);
               if (v.anio) setAnio(String(v.anio));
+              if (v.vin) setVin(v.vin);
+              if (v.motor) setMotor(v.motor);
+              if (v.km_actual && !km) setKm(String(v.km_actual));
+              if (v.marcaId) {
+                setVehiculo({
+                  marcaId: v.marcaId,
+                  modeloId: v.modeloId || "",
+                  motorizacionId: v.motorizacionId || "",
+                });
+              }
+              notificar({
+                tipo: "exito",
+                mensaje: `✨ Vehículo ${v.patente} (${[v.marca, v.modelo].filter(Boolean).join(" ")}) autocompletado.`,
+              });
             }}
           />
         </section>

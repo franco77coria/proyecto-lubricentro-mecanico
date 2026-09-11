@@ -26,12 +26,18 @@ export async function crearOrdenTrabajo(datos: DatosCrearOT): Promise<{ otId?: s
   try {
     const supabase = await crearClienteServidor();
 
-    // 1. Insertar la OT (el trigger asignar_numero_ot reescribirá el número si se pasa '')
+    // 1. Obtener código estandarizado OT-AAAAMMDD-TXX-0000
+    const { data: numeroGenerado } = await supabase.rpc("siguiente_numero_documento", {
+      p_taller: tallerId,
+      p_prefijo: "OT",
+    });
+
+    // 2. Insertar la OT
     const { data: ot, error } = await supabase
       .from("orden_trabajo")
       .insert({
         taller_id: tallerId,
-        numero: "",
+        numero: numeroGenerado || "",
         vehiculo_id: vehiculoId,
         cliente_id: clienteId || null,
         tipo,

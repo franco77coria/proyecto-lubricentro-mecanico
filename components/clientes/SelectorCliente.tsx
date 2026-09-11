@@ -19,13 +19,7 @@ export interface SelectorClienteProps {
   onCambioApellido: (val: string) => void;
   onCambioTelefono: (val: string) => void;
   onCambioDocumento?: (val: string) => void;
-  onSeleccionarVehiculo?: (vehiculo: {
-    id: string;
-    patente: string;
-    anio?: number | null;
-    marca?: string | null;
-    modelo?: string | null;
-  }) => void;
+  onSeleccionarVehiculo?: (vehiculo: ClienteOmniResultado["vehiculos"][number]) => void;
 }
 
 export function SelectorCliente({
@@ -47,6 +41,7 @@ export function SelectorCliente({
   const [resultados, setResultados] = useState<ClienteOmniResultado[]>([]);
   const [cargando, setCargando] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteOmniResultado | null>(null);
+  const [mostrarManual, setMostrarManual] = useState(false);
   const [, startTransition] = useTransition();
 
   async function procesarFotoCedula(file: File) {
@@ -110,18 +105,32 @@ export function SelectorCliente({
     return () => clearTimeout(timer);
   }, [termino, clienteSeleccionado]);
 
+  // Abrir formulario manual automáticamente si ya vienen datos cargados externamente (ej. OCR o borrador)
+  useEffect(() => {
+    if ((clienteNombre || clienteApellido || clienteTelefono) && !clienteSeleccionado) {
+      setMostrarManual(true);
+    }
+  }, [clienteNombre, clienteApellido, clienteTelefono, clienteSeleccionado]);
+
   function handleSeleccionar(c: ClienteOmniResultado) {
     setClienteSeleccionado(c);
+    setMostrarManual(false);
     onCambioNombre(c.nombre);
     onCambioApellido(c.apellido || "");
     onCambioTelefono(c.telefono || "");
     if (c.documento) onCambioDocumento?.(c.documento);
     setResultados([]);
     setTermino("");
+
+    // Autocompletar auto con un solo tap si el cliente tiene un único vehículo asignado
+    if (c.vehiculos.length === 1 && onSeleccionarVehiculo) {
+      onSeleccionarVehiculo(c.vehiculos[0]);
+    }
   }
 
   function handleLimpiarSeleccion() {
     setClienteSeleccionado(null);
+    setMostrarManual(false);
     onCambioNombre("");
     onCambioApellido("");
     onCambioTelefono("");
@@ -159,12 +168,12 @@ export function SelectorCliente({
         }}
       />
 
-      {/* 1. Buscador Rápido de Clientes Registrados */}
+      {/* 1. Buscador Predictivo de Clientes Registrados */}
       {!clienteSeleccionado && (
         <div className="relative">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1.5 gap-2">
             <label htmlFor="buscar-cliente" className="block text-caption font-semibold text-muted-foreground">
-              Buscar cliente (por Nombre, Teléfono o Patente)
+              Buscar cliente registrado o vehículo
             </label>
             <div className="flex items-center gap-2">
               <button
@@ -193,36 +202,28 @@ export function SelectorCliente({
                 <span>Galería</span>
               </button>
 
-              <FormCliente
-                onClienteCreado={(c) => {
-                  onCambioNombre(c.nombre);
-                  onCambioApellido(c.apellido);
-                  if (c.telefono) onCambioTelefono(c.telefono);
-                  if (c.documento) onCambioDocumento?.(c.documento);
-                  setClienteSeleccionado({
-                    id: c.id,
-                    nombre: c.nombre,
-                    apellido: c.apellido,
-                    telefono: c.telefono || null,
-                    documento: c.documento || null,
-                    vehiculos: [],
-                  });
-                  setResultados([]);
-                  setTermino("");
-                }}
-                botonTrigger={
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline active:scale-95 cursor-pointer"
-                  >
-                    <UserPlus className="h-3 w-3" />
-                    <span>+ Crear nuevo</span>
-                  </span>
-                }
-              />
+              {!mostrarManual ? (
+                <button
+                  type="button"
+                  onClick={() => setMostrarManual(true)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-accent/10 px-2 py-1 text-[11px] font-bold text-accent hover:bg-accent/20 active:scale-95 transition-all"
+                >
+                  <UserPlus className="h-3 w-3" />
+                  <span>+ Nuevo cliente</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMostrarManual(false)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:scale-95"
+                >
+                  <X className="h-3 w-3" />
+                  <span>Ocultar</span>
+                </button>
+              )}
             </div>
           </div>
+
           <div className="relative flex items-center">
             <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground" aria-hidden />
             <input
@@ -230,7 +231,7 @@ export function SelectorCliente({
               type="text"
               value={termino}
               onChange={(e) => handleCambioTermino(e.target.value)}
-              placeholder="Ej: Juan Pérez, 114455, o AF123..."
+              placeholder="Buscar por Nombre, Apellido, Patente o Modelo..."
               className="min-h-12 w-full rounded-xl border border-border bg-muted/60 pl-10 pr-10 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:border-accent focus:bg-card focus:outline-none transition-all"
             />
             <div className="absolute right-3">
@@ -251,9 +252,37 @@ export function SelectorCliente({
             </div>
           </div>
 
-          {/* Resultados flotantes */}
+          {/* Sin coincidencias: ofrecer botón claro y directo + Nuevo cliente */}
+          {termino.trim().length >= 2 && !cargando && resultados.length === 0 && !mostrarManual && (
+            <div className="mt-2 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 p-3 animate-in fade-in">
+              <div className="text-xs text-muted-foreground">
+                No se encontró &ldquo;<strong className="text-foreground">{termino}</strong>&rdquo;
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarManual(true);
+                  if (!clienteNombre) {
+                    const partes = termino.trim().split(" ");
+                    if (partes.length === 1 && isNaN(Number(partes[0]))) {
+                      onCambioNombre(partes[0]);
+                    } else if (partes.length > 1) {
+                      onCambioNombre(partes[0]);
+                      onCambioApellido(partes.slice(1).join(" "));
+                    }
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition-all"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span>+ Nuevo cliente</span>
+              </button>
+            </div>
+          )}
+
+          {/* Resultados predictivos flotantes */}
           {resultados.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card p-2 shadow-xl space-y-1.5 animate-in fade-in zoom-in-95">
+            <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-border bg-card p-2 shadow-xl space-y-1.5 animate-in fade-in zoom-in-95">
               <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 Clientes encontrados ({resultados.length})
               </p>
@@ -277,13 +306,17 @@ export function SelectorCliente({
                     </div>
                     <button
                       type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSeleccionar(c);
+                      }}
                       className="shrink-0 rounded-lg bg-accent px-2.5 py-1 text-[11px] font-bold text-white shadow-xs hover:brightness-105 active:scale-95 transition-all"
                     >
                       Elegir
                     </button>
                   </div>
 
-                  {/* Vehículos del cliente */}
+                  {/* Vehículos del cliente con 1 tap autocompletar */}
                   {c.vehiculos.length > 0 && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-border/40">
                       <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
@@ -298,8 +331,8 @@ export function SelectorCliente({
                             handleSeleccionar(c);
                             onSeleccionarVehiculo?.(v);
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-0.5 text-[11px] font-bold text-foreground hover:border-accent hover:text-accent transition-colors"
-                          title="Seleccionar cliente y este auto"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-0.5 text-[11px] font-bold text-foreground hover:border-accent hover:text-accent active:scale-95 transition-all"
+                          title="Seleccionar cliente y este auto con 1 tap"
                         >
                           <PlacaPatente patente={v.patente} size="sm" />
                           <span>{[v.marca, v.modelo].filter(Boolean).join(" ")}</span>
@@ -323,7 +356,7 @@ export function SelectorCliente({
             </div>
             <div className="min-w-0">
               <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-600">
-                Cliente Frecuente
+                Cliente Seleccionado
               </span>
               <p className="text-xs font-black text-foreground truncate">
                 {clienteNombre} {clienteApellido}
@@ -342,14 +375,21 @@ export function SelectorCliente({
             Cambiar
           </button>
         </div>
-      ) : (
-        /* 3. Formulario Manual (cuando es cliente nuevo) */
-        <div className="space-y-3 pt-1">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+      ) : mostrarManual ? (
+        /* 3. Formulario Manual (sólo cuando se clickea + Nuevo cliente o tras OCR/borrador) */
+        <div className="space-y-3 rounded-2xl border border-border/80 bg-muted/20 p-3 animate-in fade-in">
+          <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <UserPlus className="h-3.5 w-3.5 text-accent" />
-              <span>O cargá los datos manualmente si es nuevo:</span>
+              <span>Carga manual de cliente nuevo</span>
             </div>
+            <button
+              type="button"
+              onClick={() => setMostrarManual(false)}
+              className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Cancelar
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -363,7 +403,7 @@ export function SelectorCliente({
                 placeholder="Ej: Juan"
                 value={clienteNombre}
                 onChange={(e) => onCambioNombre(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               />
             </div>
             <div>
@@ -376,7 +416,7 @@ export function SelectorCliente({
                 placeholder="Ej: Pérez"
                 value={clienteApellido}
                 onChange={(e) => onCambioApellido(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               />
             </div>
           </div>
@@ -392,7 +432,7 @@ export function SelectorCliente({
                 placeholder="Ej: 11 4455 6677"
                 value={clienteTelefono}
                 onChange={(e) => onCambioTelefono(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               />
             </div>
             <div>
@@ -405,12 +445,12 @@ export function SelectorCliente({
                 placeholder="Ej: 38123456"
                 value={clienteDocumento}
                 onChange={(e) => onCambioDocumento?.(e.target.value)}
-                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+                className="mt-1 min-h-11 w-full rounded-xl border border-border bg-card px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
               />
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

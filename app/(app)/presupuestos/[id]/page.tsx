@@ -4,7 +4,9 @@ import { ArrowLeft, User, Phone, FileText } from "lucide-react";
 import { obtenerPresupuesto } from "@/lib/actions/presupuestos";
 import { BotonCompartirPresupuesto } from "@/components/presupuestos/BotonCompartirPresupuesto";
 import { BotonConvertirOT } from "@/components/presupuestos/BotonConvertirOT";
+import { FijarPresupuestoActivo } from "@/components/presupuestos/FijarPresupuestoActivo";
 import { BotonPDFWhatsApp } from "@/components/ot/BotonPDFWhatsApp";
+import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { listarServicios } from "@/lib/actions/servicios";
@@ -122,16 +124,29 @@ export default async function PaginaDetallePresupuesto({
 
   return (
     <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-24 lg:pb-8">
+      <FijarPresupuestoActivo
+        presupuestoId={presupuesto.id}
+        numero={presupuesto.numero || id.slice(0, 8)}
+        patente={vehiculo?.patente || ""}
+        estado={presupuesto.estado}
+        telefonoCliente={cliente?.telefono}
+        total={total}
+        vehiculoModelo={[vehiculo?.marca?.nombre, vehiculo?.modelo?.nombre].filter(Boolean).join(" ")}
+        clienteNombre={[cliente?.nombre, cliente?.apellido].filter(Boolean).join(" ")}
+      />
       <div className="contenedor-ancho space-y-6 max-w-3xl">
         {/* Navegación y Acciones Rápidas */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/presupuestos"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Volver a Presupuestos</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <BotonVolverTablero />
+            <span className="text-border">·</span>
+            <Link
+              href="/presupuestos"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <span>Ver todos</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             <BotonCompartirPresupuesto
               numero={presupuesto.numero || id.slice(0, 8)}

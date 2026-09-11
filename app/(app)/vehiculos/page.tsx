@@ -1,9 +1,10 @@
-import { Car, CheckCircle2, Gauge, Plus, Wrench } from "lucide-react";
+import { Car, CheckCircle2, Gauge, Plus, Wrench, User, Phone } from "lucide-react";
 import Link from "next/link";
 
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { ModalNuevoVehiculo } from "@/components/vehiculos/ModalNuevoVehiculo";
+import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
@@ -29,7 +30,8 @@ export default async function PaginaVehiculos({
     .from("vehiculo")
     .select(
       `id, patente, anio, color, km_actual,
-       marca:marca_id(nombre), modelo:modelo_id(nombre)`,
+       marca:marca_id(nombre), modelo:modelo_id(nombre),
+       duenos:vehiculo_cliente(hasta, cliente:cliente_id(nombre, apellido, telefono))`,
     )
     .eq("taller_id", sesion.perfil.taller_id)
     .order("creado_en", { ascending: false })
@@ -39,14 +41,29 @@ export default async function PaginaVehiculos({
     const texto = q.trim();
     const limpio = normalizarPatente(texto);
 
-    // Buscar si coincide con marcas o modelos
-    const [{ data: marcas }, { data: modelos }] = await Promise.all([
+    // Buscar si coincide con clientes (nombre, apellido, teléfono), marcas o modelos
+    const [{ data: marcas }, { data: modelos }, { data: clientesMatch }] = await Promise.all([
       supabase.from("marca").select("id").ilike("nombre", `%${texto}%`).limit(10),
       supabase.from("modelo").select("id").ilike("nombre", `%${texto}%`).limit(10),
+      supabase
+        .from("cliente")
+        .select("id")
+        .eq("taller_id", sesion.perfil.taller_id)
+        .or(`nombre.ilike.%${texto}%,apellido.ilike.%${texto}%,telefono.ilike.%${texto}%`)
+        .limit(25),
     ]);
 
     const marcaIds = (marcas ?? []).map((m) => m.id);
     const modeloIds = (modelos ?? []).map((m) => m.id);
+
+    let vehiculosClienteIds: string[] = [];
+    if (clientesMatch && clientesMatch.length > 0) {
+      const { data: vinculos } = await supabase
+        .from("vehiculo_cliente")
+        .select("vehiculo_id")
+        .in("cliente_id", clientesMatch.map((c) => c.id));
+      vehiculosClienteIds = (vinculos ?? []).map((v) => v.vehiculo_id);
+    }
 
     const filtrosOr: string[] = [];
     if (limpio) {
@@ -57,6 +74,9 @@ export default async function PaginaVehiculos({
     }
     if (modeloIds.length > 0) {
       filtrosOr.push(`modelo_id.in.(${modeloIds.join(",")})`);
+    }
+    if (vehiculosClienteIds.length > 0) {
+      filtrosOr.push(`id.in.(${vehiculosClienteIds.join(",")})`);
     }
 
     if (filtrosOr.length > 0) {
@@ -97,6 +117,10 @@ export default async function PaginaVehiculos({
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
+        <div className="flex items-center gap-3">
+          <BotonVolverTablero />
+        </div>
+
         <EncabezadoPantalla
           seccion="Autos"
           titulo={q ? `Resultados de "${q}"` : "Autos del taller"}
@@ -114,7 +138,7 @@ export default async function PaginaVehiculos({
           }
         />
 
-        <Buscador valor={q} placeholder="Buscar por patente, marca o modelo (ej: AF123CD, Hilux, Gol)..." />
+        <Buscador valor={q} placeholder="Buscar por cliente, patente, marca o modelo (ej: Juan Pérez, 114455, AF123, Hilux)..." />
 
         {lista.length === 0 ? (
           <div className="tarjeta entrar flex flex-col items-center gap-3 px-6 py-14 text-center">
@@ -165,6 +189,21 @@ export default async function PaginaVehiculos({
                             )}
                             {v.color && <span className="truncate">{v.color}</span>}
                           </div>
+
+                          {(() => {
+                            const duenos = (v.duenos as Array<{ hasta?: string | null; cliente?: { nombre: string; apellido?: string | null; telefono?: string | null } | null }>) || [];
+                            const duenoActual = duenos.find((d) => !d.hasta)?.cliente || duenos[0]?.cliente;
+                            if (!duenoActual) return null;
+                            return (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                                <User className="h-3.5 w-3.5 text-accent shrink-0" />
+                                <span className="truncate">
+                                  Dueño: <strong className="font-semibold text-foreground">{duenoActual.nombre} {duenoActual.apellido || ""}</strong>
+                                  {duenoActual.telefono && <span className="text-muted-foreground/80 font-normal"> · {duenoActual.telefono}</span>}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
