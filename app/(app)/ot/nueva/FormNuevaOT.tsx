@@ -26,8 +26,7 @@ const LectorCodigo = dynamic(
 import { PatenteInput } from "@/components/campos/PatenteInput";
 import { SelectorVehiculo, type ValorVehiculo } from "@/components/campos/SelectorVehiculo";
 import { useIsla } from "@/components/isla/IslaContext";
-import { interpretarCedula, desglosarTitular } from "@/lib/cedula";
-import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
+import { desglosarTitular } from "@/lib/cedula";
 import { resolverDesdeCedula, type OpcionCatalogo } from "@/lib/actions/catalogo";
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
 import { crearVehiculo, buscarVehiculoPorPatente } from "@/lib/actions/vehiculos";
@@ -279,77 +278,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     }
   };
 
-  /**
-   * Llega el texto crudo del código QR o PDF417 de la cédula.
-   */
-  const handleCedula = async (texto: string) => {
-    const datos = interpretarCedula(texto);
-    setEscaneando(false);
-    setCedulaPayload(datos.crudo);
 
-    if (datos.patente && !patente.trim()) setPatente(datos.patente);
-    if (datos.vin && !vin.trim()) setVin(datos.vin);
-    if (datos.anio && !anio) setAnio(String(datos.anio));
-
-    if (datos.titular && !clienteNombre.trim()) {
-      const desglose = desglosarTitular(datos.titular);
-      setClienteApellido(desglose.apellido);
-      setClienteNombre(desglose.nombre);
-    }
-    if (datos.dni && !clienteDocumento) {
-      setClienteDocumento(datos.dni);
-    }
-
-    // 1. Buscar si ya existe en el taller
-    let encontradoEnTaller = false;
-    if (datos.patente) {
-      encontradoEnTaller = await buscarEnTaller(datos.patente);
-    }
-
-    // 2. Si no estaba en el taller, resolver si el texto trajo datos de vehículo
-    if (!encontradoEnTaller) {
-      if (datos.marca || datos.modelo) {
-        startTransition(async () => {
-          const resuelto = await resolverDesdeCedula(
-            datos.marca ?? datos.crudo,
-            datos.modelo ?? datos.crudo,
-          );
-
-          if (resuelto.marcaId) {
-            setVehiculo((prev) =>
-              prev.marcaId
-                ? prev
-                : {
-                    marcaId: resuelto.marcaId,
-                    modeloId: resuelto.modeloId,
-                    motorizacionId: resuelto.motorizacionId || "",
-                  },
-            );
-          }
-
-          const partes = [
-            datos.patente,
-            resuelto.descripcion || undefined,
-            datos.anio ? String(datos.anio) : undefined,
-            datos.titular ? `Titular: ${datos.titular}` : undefined,
-          ].filter(Boolean);
-
-          const resumen = partes.join(" · ");
-          setCedulaResumen(resumen);
-          setMostrarSugerenciaFoto(false);
-          notificar({ tipo: "exito", mensaje: `Cédula leída: ${resumen}` });
-        });
-      } else {
-        // En Argentina el QR del dorso solo trae la patente
-        setCedulaResumen(datos.patente || null);
-        setMostrarSugerenciaFoto(true);
-        notificar({
-          tipo: "alerta",
-          mensaje: `Patente ${datos.patente} detectada. El QR no contiene modelo ni chasis. Sacá una foto para completar con IA.`,
-        });
-      }
-    }
-  };
 
   const handleAgregarAnomalia = () => {
     if (!anomaliaTexto.trim()) return;
@@ -442,10 +371,8 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
 
       {escaneando && (
         <LectorCodigo
-          titulo="Escanear Cédula Verde"
-          ayuda="Apuntá al código QR del dorso o sacá una foto a la cédula completa para procesar con IA."
-          formatos={FORMATOS_CEDULA}
-          onLeido={handleCedula}
+          titulo="Escanear Cédula Verde (IA)"
+          ayuda="Encuadrá la cédula y presioná el disparador para procesar con IA, o subí una foto de la galería."
           onCapturaFotoIA={async (dataUri) => {
             setEscaneando(false);
             await ejecutarOCR(dataUri);
@@ -512,8 +439,8 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             ) : (
               <>
                 <ScanLine className="h-4.5 w-4.5" aria-hidden />
-                <span>Escanear Cédula Verde</span>
-                <span className="ml-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-extrabold text-accent">Cámara, QR o Galería</span>
+                <span>Escanear Cédula Verde (IA)</span>
+                <span className="ml-1 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-extrabold text-accent">Foto o Galería</span>
               </>
             )}
           </button>

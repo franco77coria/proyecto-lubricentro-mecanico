@@ -10,8 +10,6 @@ const LectorCodigo = dynamic(
   () => import("@/components/campos/LectorCodigo").then((mod) => mod.LectorCodigo),
   { ssr: false },
 );
-import { FORMATOS_CEDULA } from "@/lib/codigo-formatos";
-import { interpretarCedula } from "@/lib/cedula";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
 import { useIsla } from "@/components/isla/IslaContext";
@@ -32,15 +30,6 @@ export function ModalNuevoVehiculo() {
     setVinNuevo("");
     setAnioNuevo("");
     setAbierto(false);
-  };
-
-  const handleCedulaLeida = (texto: string) => {
-    const d = interpretarCedula(texto);
-    setEscaneando(false);
-    if (d.patente) setPatenteNueva(d.patente);
-    if (d.vin) setVinNuevo(d.vin);
-    if (d.anio) setAnioNuevo(String(d.anio));
-    notificar({ tipo: "exito", mensaje: `Cédula escaneada: ${d.patente || "Leída"}` });
   };
 
   const handleCedulaIA = async (dataUri: string) => {
@@ -98,10 +87,8 @@ export function ModalNuevoVehiculo() {
     <>
       {escaneando && (
         <LectorCodigo
-          titulo="Escanear cédula"
-          ayuda="Apuntá al código QR del dorso o sacá una foto a la cédula completa con IA."
-          formatos={FORMATOS_CEDULA}
-          onLeido={handleCedulaLeida}
+          titulo="Escanear cédula (IA)"
+          ayuda="Encuadrá la cédula y presioná Capturar con IA, o elegí una foto de la galería."
           onCapturaFotoIA={handleCedulaIA}
           onCerrar={() => setEscaneando(false)}
         />

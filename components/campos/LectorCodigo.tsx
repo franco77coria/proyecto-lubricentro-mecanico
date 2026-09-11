@@ -33,8 +33,8 @@ export function LectorCodigo({
 }: {
   titulo: string;
   ayuda: string;
-  formatos: FormatosCodigo;
-  onLeido: (texto: string) => void;
+  formatos?: FormatosCodigo;
+  onLeido?: (texto: string) => void;
   onCapturaFotoIA?: (dataUri: string) => Promise<void> | void;
   procesandoIA?: boolean;
   onCerrar: () => void;
@@ -51,10 +51,12 @@ export function LectorCodigo({
   const [procesandoLocalIA, setProcesandoLocalIA] = useState(false);
 
   const esModoIA = Boolean(onCapturaFotoIA);
+  const tieneEscanerQR = Boolean(formatos && onLeido);
   const estaProcesandoIA = procesandoIAProp || procesandoLocalIA;
 
   const procesar = useCallback(
     async (imagen: ImageData | Blob) => {
+      if (!formatos || !onLeido) return false;
       const texto = await leerCodigo(imagen, formatos);
       if (!texto || refCortado.current) return false;
       refCortado.current = true;
@@ -114,7 +116,9 @@ export function LectorCodigo({
           await video.play().catch(() => {});
         }
         setEstado("escaneando");
-        bucle();
+        if (tieneEscanerQR) {
+          bucle();
+        }
       } catch {
         setEstado("sin-camara");
         setAviso(
@@ -130,7 +134,7 @@ export function LectorCodigo({
       if (timer) clearTimeout(timer);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [procesar]);
+  }, [procesar, tieneEscanerQR]);
 
   /**
    * Captura el fotograma actual del video en vivo y lo procesa con IA.
@@ -234,7 +238,7 @@ export function LectorCodigo({
             {esModoIA && (
               <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
                 <Sparkles className="h-3 w-3" />
-                <span>QR + IA</span>
+                <span>{tieneEscanerQR ? "QR + IA" : "Cédula IA"}</span>
               </span>
             )}
           </div>
@@ -251,7 +255,10 @@ export function LectorCodigo({
       </header>
 
       {/* Área del Visor */}
-      <div className="relative flex-1 overflow-hidden bg-black">
+      <div
+        onClick={esModoIA && !estaProcesandoIA && estado === "escaneando" ? capturarFotogramaIA : undefined}
+        className={`relative flex-1 overflow-hidden bg-black ${esModoIA ? "cursor-pointer" : ""}`}
+      >
         <video
           ref={refVideo}
           playsInline
@@ -272,9 +279,9 @@ export function LectorCodigo({
 
               <div className="absolute inset-x-0 -bottom-8 text-center">
                 <p className="text-[11px] font-semibold text-white/80 drop-shadow-md">
-                  {esModoIA
-                    ? "Enfocá el código para lectura rápida o sacá una foto para leer todo con IA"
-                    : "Encuadrá el código dentro de las marcas"}
+                  {tieneEscanerQR
+                    ? "Enfocá el código para lectura rápida o sacá una foto con IA"
+                    : "Encuadrá la cédula y tocá Capturar o cualquier parte de la pantalla"}
                 </p>
               </div>
             </div>
