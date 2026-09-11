@@ -8,7 +8,7 @@
  * 4. Si estado_suscripcion === 'activa', el taller tiene acceso permanente (mientras la suscripción en Mercado Pago esté autorizada).
  */
 
-export type PlanId = "inicial" | "pro" | "premium";
+export type PlanId = "inicial" | "pro";
 
 export interface PlanConfig {
   id: PlanId;
@@ -16,7 +16,6 @@ export interface PlanConfig {
   subtitulo: string;
   precioARS: number;
   destacado?: boolean;
-  limiteMecanicos: number | "ilimitado";
   caracteristicas: string[];
 }
 
@@ -27,9 +26,8 @@ export const PLANES_DISPONIBLES: Record<PlanId, PlanConfig> = {
     subtitulo: "Ideal para lubricentros chicos o talleres unipersonales",
     precioARS: 29900,
     destacado: false,
-    limiteMecanicos: 2,
     caracteristicas: [
-      "Hasta 2 mecánicos / usuarios",
+      "Mecánicos y usuarios ilimitados",
       "Órdenes de trabajo (OT) ilimitadas",
       "Peritaje de recepción con checklist digital",
       "Historial de clientes y vehículos por patente",
@@ -41,39 +39,28 @@ export const PLANES_DISPONIBLES: Record<PlanId, PlanConfig> = {
   pro: {
     id: "pro",
     nombre: "Plan Pro",
-    subtitulo: "El más elegido para talleres mecánicos y lubricentros en crecimiento",
+    subtitulo: "Todo lo del Inicial + Inteligencia Artificial, OCR y herramientas avanzadas",
     precioARS: 44900,
     destacado: true,
-    limiteMecanicos: 5,
     caracteristicas: [
       "Todo lo del Plan Inicial",
-      "Hasta 5 mecánicos con roles y permisos",
+      "Escaneo y OCR de Cédula Verde con IA",
+      "Peritaje fotográfico asistido con IA",
+      "Asistente de diagnóstico con inteligencia artificial",
       "Control de stock de repuestos y equivalencias",
       "Libro mayor inmutable y alertas de faltantes",
       "Turnero web integrado para citas y recepción",
-      "Peritaje fotográfico asistido con IA",
       "Tablero Kanban en vivo para el taller",
       "Reportes de rentabilidad y mano de obra",
-    ],
-  },
-  premium: {
-    id: "premium",
-    nombre: "Plan Premium",
-    subtitulo: "Para talleres de alto volumen, lubricentros grandes y atención de flotas",
-    precioARS: 69900,
-    destacado: false,
-    limiteMecanicos: "ilimitado",
-    caracteristicas: [
-      "Todo lo del Plan Pro",
-      "Usuarios y mecánicos ilimitados",
-      "Escaneo y OCR de Cédula Verde con IA ilimitado",
-      "Módulo de flotas comerciales y cuentas corrientes",
-      "Exportación avanzada a Excel y reportes contables",
-      "Soporte prioritario 24/7 por WhatsApp directo",
-      "Onboarding personalizado y asistencia en inventario",
+      "Soporte prioritario por WhatsApp",
     ],
   },
 };
+
+/** Devuelve true si el plan tiene acceso a funciones de IA / OCR (solo Pro). */
+export function planTieneIA(planId?: string | null): boolean {
+  return planId === "pro";
+}
 
 export function obtenerConfigPlan(planId?: string | null): PlanConfig {
   if (planId && planId in PLANES_DISPONIBLES) {

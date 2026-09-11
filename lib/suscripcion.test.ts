@@ -75,7 +75,7 @@ describe("calcularEstadoSuscripcion", () => {
     assert.equal(res.estado, "cancelada");
   });
 
-  test("soporta los 3 planes con sus respectivos nombres y límites", () => {
+  test("soporta los 2 planes con sus respectivos nombres", () => {
     const ahora = Date.now();
     const suscripcionFin = new Date(ahora + 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -94,13 +94,5 @@ describe("calcularEstadoSuscripcion", () => {
     });
     assert.equal(pro.plan, "pro");
     assert.equal(pro.nombrePlan, "Plan Pro");
-
-    const premium = calcularEstadoSuscripcion({
-      plan: "premium",
-      estado_suscripcion: "activa",
-      suscripcion_fin: suscripcionFin,
-    });
-    assert.equal(premium.plan, "premium");
-    assert.equal(premium.nombrePlan, "Plan Premium");
   });
 });

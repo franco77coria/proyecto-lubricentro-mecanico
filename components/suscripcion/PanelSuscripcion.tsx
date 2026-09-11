@@ -13,9 +13,7 @@ import {
   Loader2,
   Calendar,
   Wallet,
-  Zap,
   Star,
-  Users,
 } from "lucide-react";
 import { iniciarSuscripcionAction, cancelarSuscripcionAction } from "@/lib/actions/suscripcion";
 import {
@@ -263,13 +261,13 @@ export function PanelSuscripcion({
         </div>
       )}
 
-      {/* Grilla de los 3 Planes */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+      {/* Grilla de los 2 Planes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 max-w-4xl mx-auto">
         {planesList.map((plan) => {
           const esPlanActual = estado === "activa" && planActual === plan.id;
           const estaCargando = planCargando === plan.id;
 
-          const PLAN_RANK: Record<string, number> = { inicial: 1, pro: 2, premium: 3 };
+          const PLAN_RANK: Record<string, number> = { inicial: 1, pro: 2 };
           const rankActual = planActual && planActual in PLAN_RANK ? PLAN_RANK[planActual] : 0;
           const rankPlan = PLAN_RANK[plan.id] || 0;
           const esUpgrade = estado === "activa" && rankActual > 0 && rankPlan > rankActual;
@@ -291,13 +289,6 @@ export function PanelSuscripcion({
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1 text-[11px] font-black text-accent-foreground shadow-md">
                   <Star className="h-3 w-3 fill-current" aria-hidden />
                   <span>MÁS ELEGIDO</span>
-                </div>
-              )}
-
-              {plan.id === "premium" && !esPlanActual && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1 text-[11px] font-black text-background shadow-md">
-                  <Zap className="h-3 w-3 fill-current" aria-hidden />
-                  <span>MÁXIMA POTENCIA</span>
                 </div>
               )}
 
@@ -342,16 +333,6 @@ export function PanelSuscripcion({
                       ? "Pagas 1 mes con dinero en cuenta o tarjeta"
                       : "Débito mensual automático con tarjeta"}
                   </p>
-                </div>
-
-                {/* Límite de mecánicos destacado */}
-                <div className="flex items-center gap-2 rounded-xl bg-muted/40 p-2.5 text-xs font-semibold text-foreground">
-                  <Users className="h-4 w-4 text-accent shrink-0" aria-hidden />
-                  <span>
-                    {typeof plan.limiteMecanicos === "number"
-                      ? `Hasta ${plan.limiteMecanicos} mecánicos / usuarios`
-                      : "Mecánicos y usuarios ilimitados"}
-                  </span>
                 </div>
 
                 {/* Lista de Características */}

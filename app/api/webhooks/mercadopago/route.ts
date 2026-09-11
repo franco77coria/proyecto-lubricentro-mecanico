@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         mp_preapproval_id: preapproval.id,
       };
 
-      if (refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium") {
+      if (refPlanId === "inicial" || refPlanId === "pro") {
         updateData.plan = refPlanId;
       }
 
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
           mp_payer_id: pago.payer?.id ? String(pago.payer.id) : null,
         };
 
-        if (refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium") {
+        if (refPlanId === "inicial" || refPlanId === "pro") {
           updateDataPago.plan = refPlanId;
         }
 

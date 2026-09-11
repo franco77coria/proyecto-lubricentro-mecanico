@@ -13,6 +13,7 @@ import {
 import { limitarIA, mensajeLimiteIA } from "@/lib/rate-limit";
 import type { Json } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { calcularEstadoSuscripcion, planTieneIA } from "@/lib/suscripcion";
 
 /**
  * IA-1 diagnóstico asistido e IA-2 traductor de descargos.
@@ -396,9 +397,27 @@ Reglas:
   }
 }
 
-/** Si el taller tiene el asistente habilitado. Lo consulta la pantalla. */
+/** Si el taller tiene el asistente habilitado. Solo Plan Pro o talleres en trial. */
 export async function asistenteHabilitado(): Promise<boolean> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return false;
-  return iaDisponible();
+  if (!iaDisponible()) return false;
+
+  // Consultar plan del taller para gate por suscripción
+  const supabase = await crearClienteServidor();
+  const { data: taller } = await supabase
+    .from("taller")
+    .select("plan, estado_suscripcion, trial_fin, suscripcion_fin, mp_subscription_status")
+    .eq("id", sesion.perfil.taller_id)
+    .single();
+
+  if (!taller) return false;
+
+  const estado = calcularEstadoSuscripcion(taller);
+
+  // En trial → acceso total (para que prueben IA y se convenzan de contratar Pro)
+  if (estado.enTrial) return true;
+
+  // Fuera de trial → solo Plan Pro tiene IA
+  return planTieneIA(taller.plan);
 }

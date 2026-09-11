@@ -36,7 +36,7 @@ export interface ResultadoEstadoSuscripcion {
 }
 
 /**
- * Inicia el proceso de suscripción o pago puntual con Mercado Pago para cualquiera de los 3 planes.
+ * Inicia el proceso de suscripción o pago puntual con Mercado Pago para cualquiera de los 2 planes.
  *
  * Exclusivo para el dueño del taller:
  * - modo 'un_mes': Genera preferencia de Checkout Pro (permite Dinero en Cuenta, Mercado Crédito, Débito y Crédito).
@@ -239,7 +239,7 @@ export async function sincronizarSuscripcionRetornoAction(
 
         const [, refPlanId] = (pago.external_reference || "").split(":");
         const planToSet =
-          refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium"
+          refPlanId === "inicial" || refPlanId === "pro"
             ? refPlanId
             : undefined;
 
@@ -280,7 +280,7 @@ export async function sincronizarSuscripcionRetornoAction(
 
         const [, refPlanId] = (detalle.external_reference || "").split(":");
         const planToSet =
-          refPlanId === "inicial" || refPlanId === "pro" || refPlanId === "premium"
+          refPlanId === "inicial" || refPlanId === "pro"
             ? refPlanId
             : undefined;
 
