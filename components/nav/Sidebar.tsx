@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Plus, Wrench, Shield, Sparkles, Check, X } from "lucide-react";
+import { LogOut, Plus, Shield, Sparkles, Check, X } from "lucide-react";
 
 import { esRutaActiva, itemsVisibles, ITEMS_NAV } from "@/lib/navegacion";
 import { cerrarSesion } from "@/lib/actions/auth";
 import { SelectorTema } from "@/components/ui/SelectorTema";
+import { LogoIcono } from "@/components/ui/Logo";
 
 export interface SidebarProps {
   taller: string;
@@ -26,14 +27,25 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
   const pathname = usePathname();
   const [confirmandoLogout, setConfirmandoLogout] = useState(false);
 
+  // Si el dueño abre el aviso de "¿Cerrar sesión?" y en vez de responder
+  // navega a otra pantalla, el aviso no debe reaparecer ahí — quedaba pegado
+  // porque nada lo reseteaba al cambiar de ruta. Ajustado durante el render
+  // (patrón de React para "resetear estado cuando cambia una prop"), no en un
+  // efecto, que agregaría una vuelta de render extra.
+  const [pathnamePrevio, setPathnamePrevio] = useState(pathname);
+  if (pathname !== pathnamePrevio) {
+    setPathnamePrevio(pathname);
+    setConfirmandoLogout(false);
+  }
+
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border/70 bg-card/95 backdrop-blur-xl lg:flex shadow-lg overflow-hidden">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--sidebar-ancho)] flex-col border-r border-border/70 bg-card/95 backdrop-blur-xl lg:flex shadow-lg overflow-hidden rounded-r-3xl">
       {/* 1. Cabecera Compacta del Taller */}
       <div className="px-3.5 pt-3.5 pb-2.5 border-b border-border/50 space-y-2">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="relative grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-accent to-orange-600 text-white shadow-xs">
-              <Wrench className="h-3.5 w-3.5" aria-hidden />
+            <div className="relative grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-zinc-950 text-white shadow-xs border border-white/10 p-0.5">
+              <LogoIcono size="xs" />
               <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />

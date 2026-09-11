@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { AlertOctagon, Wrench } from "lucide-react";
@@ -21,6 +22,11 @@ export default function Login() {
   const [modo, setModo] = useState<Modo>("login");
   // Cuando se llega desde una invitación, hay que volver ahí al terminar.
   const volver = useSearchParams().get("volver") ?? "";
+  // Un empleado invitado que todavía no tiene cuenta pasa por "Crear taller"
+  // para registrarse — pero no está fundando un taller, se está sumando a
+  // uno que ya existe. Sin esto, el copy le dice lo contrario de lo que va a
+  // pasar cuando confirme.
+  const esInvitacion = volver.startsWith("/invitacion/");
   const [estado, accion, pendiente] = useActionState<ResultadoAuth, FormData>(autenticar, {});
   const reducirMovimiento = useReducedMotion();
 
@@ -44,12 +50,14 @@ export default function Login() {
 
       <div className="hidden space-y-1 lg:block">
         <h1 className="t-pantalla text-foreground">
-          {modo === "login" ? "Entrá al taller" : "Creá tu taller"}
+          {modo === "login" ? "Entrá al taller" : esInvitacion ? "Creá tu cuenta" : "Creá tu taller"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {modo === "login"
             ? "Usá el mail con el que te registraste."
-            : "Se crea con el checklist estándar ya cargado."}
+            : esInvitacion
+              ? "Para sumarte al equipo que te invitó."
+              : "Se crea con el checklist estándar ya cargado."}
         </p>
       </div>
 
@@ -138,8 +146,28 @@ export default function Login() {
           onClick={() => setModo(modo === "login" ? "registro" : "login")}
           className="font-semibold text-accent underline underline-offset-2"
         >
-          {modo === "login" ? "Creá tu taller" : "Iniciá sesión"}
+          {modo === "login" ? (esInvitacion ? "Creá tu cuenta" : "Creá tu taller") : "Iniciá sesión"}
         </button>
+      </p>
+
+      <p className="text-center text-[11px] text-muted-foreground/80 leading-relaxed px-2">
+        Al continuar, declarás conocer y aceptar los{" "}
+        <Link
+          href="/legales/terminos"
+          target="_blank"
+          className="underline underline-offset-2 hover:text-foreground font-medium"
+        >
+          Términos y Condiciones
+        </Link>{" "}
+        y la{" "}
+        <Link
+          href="/legales/privacidad"
+          target="_blank"
+          className="underline underline-offset-2 hover:text-foreground font-medium"
+        >
+          Política de Privacidad
+        </Link>
+        .
       </p>
     </main>
   );

@@ -1,10 +1,12 @@
 "use client";
 
-import { AlertOctagon, AlertTriangle, Check, Minus } from "lucide-react";
+import { AlertOctagon, AlertTriangle, Check, Minus, RefreshCw } from "lucide-react";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
-import { actualizarItemChecklist } from "@/lib/actions/ot";
+import { actualizarItemChecklist, asegurarChecklistOT } from "@/lib/actions/ot";
 import { BotonDictadoVoz } from "@/components/ui/BotonDictadoVoz";
+import { useIsla } from "@/components/isla/IslaContext";
 
 interface ItemChecklist {
   id: string;
@@ -22,28 +24,49 @@ const CHIPS_DIAGNOSTICO = [
   "Lámpara quemada",
 ] as const;
 
-export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[] }) {
+export function ChecklistEditor({ items: initialItems, otId }: { items: ItemChecklist[]; otId: string }) {
+  const router = useRouter();
+  const { notificar } = useIsla();
   const [items, setItems] = useState(initialItems);
   const [, startTransition] = useTransition();
+  const [sembrando, setSembrando] = useState(false);
+
+  // Auto-seed: si no hay ítems, inicializar el checklist estándar
+  const sembrarChecklist = () => {
+    if (sembrando) return;
+    setSembrando(true);
+    startTransition(async () => {
+      const res = await asegurarChecklistOT(otId);
+      setSembrando(false);
+      if (res.error) {
+        notificar({ tipo: "error", mensaje: res.error });
+      } else {
+        router.refresh();
+      }
+    });
+  };
 
   const handleEstado = (id: string, nuevoEstado: "ok" | "observado" | "critico" | "no_aplica") => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, estado: it.estado === nuevoEstado ? null : nuevoEstado } : it)),
-    );
+    const anterior = items.find((it) => it.id === id);
+    if (!anterior) return;
+    const estadoFinal = anterior.estado === nuevoEstado ? null : nuevoEstado;
 
-    const actual = items.find((it) => it.id === id);
-    const estadoFinal = actual?.estado === nuevoEstado ? null : nuevoEstado;
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, estado: estadoFinal } : it)));
 
     startTransition(async () => {
-      await actualizarItemChecklist(id, estadoFinal, actual?.nota);
+      const res = await actualizarItemChecklist(id, estadoFinal, anterior.nota);
+      if (res.error) {
+        setItems((prev) => prev.map((it) => (it.id === id ? anterior : it)));
+        notificar({ tipo: "error", mensaje: res.error });
+      }
     });
   };
 
   const handleToggleChip = (id: string, chip: string) => {
-    const item = items.find((it) => it.id === id);
-    if (!item) return;
+    const anterior = items.find((it) => it.id === id);
+    if (!anterior) return;
 
-    let nuevaNota = item.nota || "";
+    let nuevaNota = anterior.nota || "";
     const partes = nuevaNota
       .split(",")
       .map((p) => p.trim())
@@ -58,7 +81,11 @@ export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, nota: nuevaNota } : it)));
 
     startTransition(async () => {
-      await actualizarItemChecklist(id, item.estado, nuevaNota);
+      const res = await actualizarItemChecklist(id, anterior.estado, nuevaNota);
+      if (res.error) {
+        setItems((prev) => prev.map((it) => (it.id === id ? anterior : it)));
+        notificar({ tipo: "error", mensaje: res.error });
+      }
     });
   };
 
@@ -70,13 +97,36 @@ export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[
     const item = items.find((it) => it.id === id);
     if (!item) return;
     startTransition(async () => {
-      await actualizarItemChecklist(id, item.estado, item.nota);
+      const res = await actualizarItemChecklist(id, item.estado, item.nota);
+      if (res.error) notificar({ tipo: "error", mensaje: res.error });
     });
   };
 
   return (
     <div className="space-y-3">
+      {items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center space-y-3">
+          <RefreshCw className="mx-auto h-8 w-8 text-muted-foreground/50" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Checklist no inicializado</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Este vehículo no tiene ítems de inspección. Iniciá el checklist estándar con los 11 puntos de revisión.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={sembrarChecklist}
+            disabled={sembrando}
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-accent px-5 text-xs font-bold text-white shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-60 transition-all"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${sembrando ? "animate-spin" : ""}`} />
+            {sembrando ? "Inicializando..." : "Inicializar checklist estándar"}
+          </button>
+        </div>
+      ) : (
+      <>
       {items.map((item) => (
+
         <div
           key={item.id}
           className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-sm transition-all"
@@ -188,7 +238,8 @@ export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[
                     const actual = item.nota ? `${item.nota} ${texto}` : texto;
                     handleNotaChange(item.id, actual);
                     startTransition(async () => {
-                      await actualizarItemChecklist(item.id, item.estado, actual);
+                      const res = await actualizarItemChecklist(item.id, item.estado, actual);
+                      if (res.error) notificar({ tipo: "error", mensaje: res.error });
                     });
                   }}
                 />
@@ -197,7 +248,8 @@ export function ChecklistEditor({ items: initialItems }: { items: ItemChecklist[
           )}
         </div>
       ))}
+      </>
+      )}
     </div>
   );
 }
-

@@ -26,6 +26,14 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Taller",
   },
+  icons: {
+    icon: [
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

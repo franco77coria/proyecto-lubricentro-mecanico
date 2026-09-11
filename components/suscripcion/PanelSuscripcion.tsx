@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   Clock,
@@ -252,33 +253,58 @@ export function PanelSuscripcion({
         </div>
       </div>
 
+      {/* Aviso de cambio de plan si ya tiene suscripción activa */}
+      {estado === "activa" && (
+        <div className="flex items-start sm:items-center gap-2.5 rounded-2xl bg-muted/40 border border-border/80 px-4 py-3 text-xs text-muted-foreground">
+          <Sparkles className="h-4 w-4 text-accent shrink-0 mt-0.5 sm:mt-0" aria-hidden />
+          <span>
+            <strong className="text-foreground">Cambio de plan inmediato:</strong> Al cambiarte de plan con débito automático, Mercado Pago actualiza tu cuenta y cancela automáticamente el plan previo para que nunca tengas cobros duplicados.
+          </span>
+        </div>
+      )}
+
       {/* Grilla de los 3 Planes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
         {planesList.map((plan) => {
           const esPlanActual = estado === "activa" && planActual === plan.id;
           const estaCargando = planCargando === plan.id;
 
+          const PLAN_RANK: Record<string, number> = { inicial: 1, pro: 2, premium: 3 };
+          const rankActual = planActual && planActual in PLAN_RANK ? PLAN_RANK[planActual] : 0;
+          const rankPlan = PLAN_RANK[plan.id] || 0;
+          const esUpgrade = estado === "activa" && rankActual > 0 && rankPlan > rankActual;
+          const esDowngrade = estado === "activa" && rankActual > 0 && rankPlan < rankActual;
+
           return (
             <div
               key={plan.id}
               className={`relative flex flex-col justify-between rounded-3xl border transition-all duration-200 bg-card p-6 sm:p-7 shadow-lg ${
-                plan.destacado
+                esPlanActual
+                  ? "border-emerald-500/50 shadow-emerald-500/5 ring-2 ring-emerald-500/20"
+                  : plan.destacado
                   ? "border-accent shadow-accent/10 shadow-2xl ring-2 ring-accent/20 md:-translate-y-2"
                   : "border-border/80 hover:border-accent/40"
               }`}
             >
               {/* Badge destacado superior */}
-              {plan.destacado && (
+              {plan.destacado && !esPlanActual && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1 text-[11px] font-black text-accent-foreground shadow-md">
                   <Star className="h-3 w-3 fill-current" aria-hidden />
                   <span>MÁS ELEGIDO</span>
                 </div>
               )}
 
-              {plan.id === "premium" && (
+              {plan.id === "premium" && !esPlanActual && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-1 text-[11px] font-black text-background shadow-md">
                   <Zap className="h-3 w-3 fill-current" aria-hidden />
                   <span>MÁXIMA POTENCIA</span>
+                </div>
+              )}
+
+              {esPlanActual && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1 text-[11px] font-black text-white shadow-md">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  <span>PLAN EN USO</span>
                 </div>
               )}
 
@@ -286,11 +312,19 @@ export function PanelSuscripcion({
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-xl font-black text-foreground">{plan.nombre}</h3>
-                  {esPlanActual && (
+                  {esPlanActual ? (
                     <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                      Plan Actual
+                      Activo
                     </span>
-                  )}
+                  ) : esUpgrade ? (
+                    <span className="rounded-full bg-accent/15 border border-accent/30 px-2.5 py-0.5 text-[10px] font-bold text-accent">
+                      Upgrade
+                    </span>
+                  ) : esDowngrade ? (
+                    <span className="rounded-full bg-muted border border-border px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground">
+                      Downgrade
+                    </span>
+                  ) : null}
                 </div>
 
                 <p className="text-xs text-muted-foreground min-h-[32px] leading-relaxed">
@@ -336,35 +370,50 @@ export function PanelSuscripcion({
                 </div>
               </div>
 
-              {/* Botón de Contratación */}
+              {/* Botón de Contratación o Estado */}
               <div className="pt-6 mt-6 border-t border-border/50">
                 {esDueno ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSuscribir(plan.id)}
-                    disabled={Boolean(planCargando) || cargandoCancelar}
-                    className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-xs font-black shadow-lg transition-all active:scale-98 disabled:opacity-50 cursor-pointer ${
-                      plan.destacado
-                        ? "bg-accent text-accent-foreground hover:brightness-110 shadow-accent/20"
-                        : "bg-foreground text-background hover:opacity-90"
-                    }`}
-                  >
-                    {estaCargando ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                        <span>Conectando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4" aria-hidden />
-                        <span>
-                          {modalidad === "un_mes"
-                            ? `Pagar 1 Mes ${plan.nombre.replace("Plan ", "")}`
-                            : `Suscribirme a ${plan.nombre.replace("Plan ", "")}`}
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  esPlanActual ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 cursor-default opacity-90 shadow-xs"
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden />
+                      <span>✓ Plan Actual en Uso</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSuscribir(plan.id)}
+                      disabled={Boolean(planCargando) || cargandoCancelar}
+                      className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-xs font-black shadow-lg transition-all active:scale-98 disabled:opacity-50 cursor-pointer ${
+                        plan.destacado
+                          ? "bg-accent text-accent-foreground hover:brightness-110 shadow-accent/20"
+                          : "bg-foreground text-background hover:opacity-90"
+                      }`}
+                    >
+                      {estaCargando ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          <span>Conectando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4" aria-hidden />
+                          <span>
+                            {esUpgrade
+                              ? `Mejorar a ${plan.nombre}`
+                              : esDowngrade
+                              ? `Cambiar a ${plan.nombre}`
+                              : modalidad === "un_mes"
+                              ? `Pagar 1 Mes ${plan.nombre.replace("Plan ", "")}`
+                              : `Suscribirme a ${plan.nombre.replace("Plan ", "")}`}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )
                 ) : (
                   <p className="text-center text-[11px] text-muted-foreground italic">
                     Acción reservada al dueño
@@ -395,6 +444,29 @@ export function PanelSuscripcion({
         <p className="text-[11px] text-muted-foreground/80 max-w-md mx-auto">
           Podés cambiar de plan o cancelar en cualquier momento desde esta misma pantalla sin cargos adicionales.
         </p>
+
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-[11px] text-muted-foreground/70 border-t border-border/40">
+          <Link
+            href="/legales/baja"
+            className="text-red-400 hover:text-red-300 underline underline-offset-2 font-semibold"
+          >
+            Botón de Baja (Ley 24.240)
+          </Link>
+          <span>•</span>
+          <Link
+            href="/legales/arrepentimiento"
+            className="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-semibold"
+          >
+            Botón de Arrepentimiento (Res. 424/2020)
+          </Link>
+          <span>•</span>
+          <Link
+            href="/legales/terminos"
+            className="hover:text-foreground underline underline-offset-2"
+          >
+            Términos y Privacidad
+          </Link>
+        </div>
       </div>
     </div>
   );

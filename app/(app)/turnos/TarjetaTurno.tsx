@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useOptimistic } from "react";
+import { useRouter } from "next/navigation";
 import { Clock, CheckCircle2, User, Phone, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { type Turno, cambiarEstadoTurno, type EstadoTurno } from "@/lib/actions/turnos";
@@ -17,6 +18,7 @@ const COLORES_ESTADO: Record<EstadoTurno, string> = {
 };
 
 export function TarjetaTurno({ turno }: { turno: Turno }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { notificar } = useIsla();
 
@@ -31,11 +33,16 @@ export function TarjetaTurno({ turno }: { turno: Turno }) {
   const formatterDia = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short" });
 
   const cambiarEstado = (nuevoEstado: EstadoTurno) => {
+    if (nuevoEstado === "cancelado" && !confirm("¿Cancelar este turno? El cliente lo tenía reservado.")) {
+      return;
+    }
+
     startTransition(async () => {
       setEstadoOptimista(nuevoEstado);
       const res = await cambiarEstadoTurno(turno.id, nuevoEstado);
       if (res.success) {
         notificar({ tipo: "exito", mensaje: `Turno marcado como ${nuevoEstado}` });
+        router.refresh();
       } else {
         notificar({ tipo: "alerta", mensaje: res.error || "No se pudo actualizar el turno" });
       }

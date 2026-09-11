@@ -108,17 +108,19 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
         >
           <Tornillo className="top-[2px] left-[15%] h-1 w-1" />
           <Tornillo className="top-[2px] right-[15%] h-1 w-1" />
-          <div className="flex w-full items-center justify-between bg-[#0038A8] px-1 py-[0.5px] text-[6px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)]">
+          <div className="flex w-full items-center justify-between bg-[#0038A8] px-1 py-[0.5px] text-[6px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)] shrink-0">
             <MercosurEmblem className="w-2.5 h-1.5" />
             <span className="text-[5.5px] font-black uppercase tracking-wider text-white">REPÚBLICA ARGENTINA</span>
             <BanderaArgentina className="w-2.5 h-1.5" />
           </div>
-          <span
-            className="text-display font-black text-zinc-950 pb-0.5 leading-none text-[12px] tracking-[0.12em]"
-            style={{ textShadow: "0 0.5px 0 rgba(255,255,255,0.8), 0 0.5px 1px rgba(0,0,0,0.35)" }}
-          >
-            {textoFormateado}
-          </span>
+          <div className="flex flex-1 w-full items-center justify-center text-center">
+            <span
+              className="text-display font-black text-zinc-950 text-center leading-none text-[12px] tracking-[0.12em] pl-[0.12em]"
+              style={{ textShadow: "0 0.5px 0 rgba(255,255,255,0.8), 0 0.5px 1px rgba(0,0,0,0.35)" }}
+            >
+              {textoFormateado}
+            </span>
+          </div>
         </div>
       );
     }
@@ -133,19 +135,21 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
         >
           <Tornillo className="top-[4px] left-[16%] h-2 w-2" />
           <Tornillo className="top-[4px] right-[16%] h-2 w-2" />
-          <div className="flex w-full items-center justify-between bg-[#0038A8] px-2.5 py-[2.5px] text-[9px] font-black tracking-widest text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.4)]">
+          <div className="flex w-full items-center justify-between bg-[#0038A8] px-2.5 py-[2.5px] text-[9px] font-black tracking-widest text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.4)] shrink-0">
             <MercosurEmblem className="w-4 h-2.5" />
             <span className="text-[8px] font-black uppercase tracking-widest text-white drop-shadow-[0_0.5px_0.5px_rgba(0,0,0,0.5)]">
               REPÚBLICA ARGENTINA
             </span>
             <BanderaArgentina className="w-4 h-2.5" />
           </div>
-          <span
-            className="text-display font-black text-zinc-950 pb-1 leading-none text-[22px] tracking-[0.16em]"
-            style={{ textShadow: "0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.4)" }}
-          >
-            {textoFormateado}
-          </span>
+          <div className="flex flex-1 w-full items-center justify-center text-center">
+            <span
+              className="text-display font-black text-zinc-950 text-center leading-none text-[22px] tracking-[0.16em] pl-[0.16em]"
+              style={{ textShadow: "0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(0,0,0,0.4)" }}
+            >
+              {textoFormateado}
+            </span>
+          </div>
         </div>
       );
     }
@@ -160,19 +164,21 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
       >
         <Tornillo className="top-[2.5px] left-[16%] h-1.5 w-1.5" />
         <Tornillo className="top-[2.5px] right-[16%] h-1.5 w-1.5" />
-        <div className="flex w-full items-center justify-between bg-[#0038A8] px-1.5 py-[1.5px] text-[7px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)]">
+        <div className="flex w-full items-center justify-between bg-[#0038A8] px-1.5 py-[1.5px] text-[7px] font-black tracking-widest text-white shadow-[inset_0_-0.5px_0_rgba(0,0,0,0.3)] shrink-0">
           <MercosurEmblem className="w-3 h-2" />
           <span className="text-[6.5px] font-black uppercase tracking-wider text-white drop-shadow-[0_0.5px_0.5px_rgba(0,0,0,0.5)]">
             REPÚBLICA ARGENTINA
           </span>
           <BanderaArgentina className="w-3 h-2" />
         </div>
-        <span
-          className="text-display font-black text-zinc-950 pb-0.5 leading-none text-[15px] tracking-[0.14em]"
-          style={{ textShadow: "0 0.75px 0 rgba(255,255,255,0.85), 0 0.5px 1.5px rgba(0,0,0,0.35)" }}
-        >
-          {textoFormateado}
-        </span>
+        <div className="flex flex-1 w-full items-center justify-center text-center">
+          <span
+            className="text-display font-black text-zinc-950 text-center leading-none text-[15px] tracking-[0.14em] pl-[0.14em]"
+            style={{ textShadow: "0 0.75px 0 rgba(255,255,255,0.85), 0 0.5px 1.5px rgba(0,0,0,0.35)" }}
+          >
+            {textoFormateado}
+          </span>
+        </div>
       </div>
     );
   }
@@ -322,14 +328,16 @@ export function PlacaPatente({ patente, className, size = "md" }: PlacaPatentePr
       >
         <Tornillo className="top-[2.5px] left-[15%] h-1.5 w-1.5" />
         <Tornillo className="top-[2.5px] right-[15%] h-1.5 w-1.5" />
-        <div className={cn("flex w-full items-center justify-between bg-[#0038A8] px-1.5 text-white font-black tracking-widest", sizeConfig.bar)}>
+        <div className={cn("flex w-full items-center justify-between bg-[#0038A8] px-1.5 text-white font-black tracking-widest shrink-0", sizeConfig.bar)}>
           <MercosurEmblem className="w-3 h-2" />
           <span className="uppercase font-extrabold tracking-wider">BRASIL</span>
           <span className="text-[9px]">🇧🇷</span>
         </div>
-        <span className={cn("text-display font-black text-zinc-950 pb-0.5 tracking-[0.14em]", sizeConfig.text)}>
-          {textoFormateado}
-        </span>
+        <div className="flex flex-1 w-full items-center justify-center text-center">
+          <span className={cn("text-display font-black text-zinc-950 tracking-[0.14em] pl-[0.14em]", sizeConfig.text)}>
+            {textoFormateado}
+          </span>
+        </div>
       </div>
     );
   }

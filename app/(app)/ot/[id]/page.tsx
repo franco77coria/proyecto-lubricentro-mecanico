@@ -17,6 +17,7 @@ import { ItemsEditor } from "@/components/ot/ItemsEditor";
 import { PanelFicha } from "@/components/ot/PanelFicha";
 import { SeccionPagos } from "@/components/ot/SeccionPagos";
 import { SelectorMecanico } from "@/components/ot/SelectorMecanico";
+import { ValoresManoObraRepuestos } from "@/components/ot/ValoresManoObraRepuestos";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { FijarOTActiva } from "@/components/ot/FijarOTActiva";
 import { PeritajeVehiculoIA } from "@/components/ot/PeritajeVehiculoIA";
@@ -200,7 +201,7 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
   const miembrosOpcion = (miembros ?? []) as { user_id: string; nombre: string | null; rol: string }[];
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-8 scroll-inset">
       <FijarOTActiva
         otId={ot.id}
         numero={ot.numero}
@@ -208,9 +209,9 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
         estado={ot.estado}
         telefonoCliente={ot.cliente?.telefono}
       />
-      <div className="contenedor-angosto space-y-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 md:px-6">
         {/* Nav Back */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/tablero"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
@@ -302,113 +303,123 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {/* El link para el cliente. Va arriba del detalle porque en una orden en
-            presupuesto es la acción que sigue: mandarlo para que apruebe. */}
-        <CompartirSeguimiento
-          otId={ot.id}
-          patente={ot.vehiculo.patente}
-          tokenExistente={ot.token_publico}
-          telefonoCliente={ot.cliente?.telefono ?? null}
-          nombreCliente={ot.cliente?.nombre ?? null}
-          tallerNombre={taller?.nombre ?? "el taller"}
-        />
+        {/* En desktop se aprovecha el ancho con dos columnas: la principal
+            (trabajo técnico) más ancha, y una lateral con lo administrativo
+            (seguimiento, pagos, firma). En mobile se apilan en el mismo orden. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
+          <div className="space-y-6 lg:col-span-2">
+            {/* Los tres bloques de texto de la orden. Antes las anomalías eran
+                de solo lectura y no había forma de cargar el diagnóstico ni un
+                presupuesto de lo no autorizado desde la ficha. */}
+            <EditorNotas otId={ot.id} tipo="anomalia" notas={notasEditor} />
+            <EditorNotas otId={ot.id} tipo="descargo" notas={notasEditor} />
+            <EditorNotas otId={ot.id} tipo="recomendado" notas={notasEditor} />
 
-        {/* Registro de Pagos (Solo dueño) */}
-        {esDueno && (
-          <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
-        )}
+            {/* El asistente solo aparece si el taller tiene la clave configurada:
+                un botón que falla siempre es peor que no tenerlo. */}
+            {hayIA && (
+              <AsistenteIA
+                otId={ot.id}
+                patente={ot.vehiculo.patente}
+                telefonoCliente={ot.cliente?.telefono ?? null}
+                nombreCliente={ot.cliente?.nombre ?? null}
+                tallerNombre={taller?.nombre ?? "el taller"}
+              />
+            )}
 
-        {/* Los tres bloques de texto de la orden. Antes las anomalías eran
-            de solo lectura y no había forma de cargar el diagnóstico ni un
-            presupuesto de lo no autorizado desde la ficha. */}
-        <EditorNotas otId={ot.id} tipo="anomalia" notas={notasEditor} />
-        <EditorNotas otId={ot.id} tipo="descargo" notas={notasEditor} />
-        <EditorNotas otId={ot.id} tipo="recomendado" notas={notasEditor} />
+            {/* Lo que lleva este motor. Va antes de los ítems porque es lo que se
+                consulta para armarlos. */}
+            <PanelFicha ficha={ficha} otId={ot.id} vehiculoId={ot.vehiculo.id} />
 
-        {/* El asistente solo aparece si el taller tiene la clave configurada:
-            un botón que falla siempre es peor que no tenerlo. */}
-        {hayIA && (
-          <AsistenteIA
-            otId={ot.id}
-            patente={ot.vehiculo.patente}
-            telefonoCliente={ot.cliente?.telefono ?? null}
-            nombreCliente={ot.cliente?.nombre ?? null}
-            tallerNombre={taller?.nombre ?? "el taller"}
-          />
-        )}
+            {/* Trabajos y Repuestos */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-accent" />
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                    Trabajos y Repuestos
+                  </h2>
+                </div>
+              </div>
+              <ItemsEditor
+                otId={ot.id}
+                items={itemsMapeados}
+                servicios={servicios}
+                productos={productosOpcion}
+              />
+            </section>
 
-        {/* Lo que lleva este motor. Va antes de los ítems porque es lo que se
-            consulta para armarlos. */}
-        <PanelFicha ficha={ficha} otId={ot.id} vehiculoId={ot.vehiculo.id} />
-
-        {/* Trabajos y Repuestos */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-accent" />
+            {/* Inspección / Checklist — el panel que se completa antes de cerrar */}
+            <section className="space-y-3 pt-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
-                Trabajos y Repuestos
+                Checklist de Inspección
               </h2>
-            </div>
+              <ChecklistEditor items={checklist || []} otId={ot.id} />
+              <ValoresManoObraRepuestos otId={ot.id} />
+            </section>
+
+            {/* Recepción: fotos del estado del auto y conformidad del cliente.
+                Van juntas porque son las dos caras de lo mismo: dejar constancia
+                de cómo entró el vehículo. */}
+            <CapturaFotos otId={ot.id} tallerId={sesion.perfil.taller_id} fotos={fotos} />
+
+            {/* Peritaje IA de Carrocería, Daños y Color */}
+            <PeritajeVehiculoIA
+              otId={ot.id}
+              tallerId={sesion.perfil.taller_id}
+              fotos={fotos}
+              peritajeIA={ot.peritaje_ia}
+              inspeccionRecepcion={ot.inspeccion_recepcion}
+              vehiculo={{
+                id: ot.vehiculo.id,
+                patente: ot.vehiculo.patente,
+                marca: ot.vehiculo.marca?.nombre,
+                modelo: ot.vehiculo.modelo?.nombre,
+                anio: ot.vehiculo.anio,
+                color: ot.vehiculo.color,
+              }}
+            />
           </div>
-          <ItemsEditor
-            otId={ot.id}
-            items={itemsMapeados}
-            servicios={servicios}
-            productos={productosOpcion}
-          />
-        </section>
 
-        {/* Inspección / Checklist */}
-        <section className="space-y-3 pt-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
-            Checklist de Inspección
-          </h2>
-          <ChecklistEditor items={checklist || []} />
-        </section>
+          <div className="space-y-6 lg:col-span-1">
+            {/* El link para el cliente. Va arriba del detalle porque en una orden en
+                presupuesto es la acción que sigue: mandarlo para que apruebe. */}
+            <CompartirSeguimiento
+              otId={ot.id}
+              patente={ot.vehiculo.patente}
+              tokenExistente={ot.token_publico}
+              telefonoCliente={ot.cliente?.telefono ?? null}
+              nombreCliente={ot.cliente?.nombre ?? null}
+              tallerNombre={taller?.nombre ?? "el taller"}
+            />
 
-        {/* Recepción: fotos del estado del auto y conformidad del cliente.
-            Van juntas porque son las dos caras de lo mismo: dejar constancia
-            de cómo entró el vehículo. */}
-        <CapturaFotos otId={ot.id} tallerId={sesion.perfil.taller_id} fotos={fotos} />
+            {/* Registro de Pagos (Solo dueño) */}
+            {esDueno && (
+              <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
+            )}
 
-        {/* Peritaje IA de Carrocería, Daños y Color */}
-        <PeritajeVehiculoIA
-          otId={ot.id}
-          tallerId={sesion.perfil.taller_id}
-          fotos={fotos}
-          peritajeIA={ot.peritaje_ia}
-          inspeccionRecepcion={ot.inspeccion_recepcion}
-          vehiculo={{
-            id: ot.vehiculo.id,
-            patente: ot.vehiculo.patente,
-            marca: ot.vehiculo.marca?.nombre,
-            modelo: ot.vehiculo.modelo?.nombre,
-            anio: ot.vehiculo.anio,
-            color: ot.vehiculo.color,
-          }}
-        />
+            {ot.estado === "anulado" ? (
+              <p className="tarjeta flex items-start gap-2.5 border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                <Ban className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  <strong>Orden anulada.</strong>{" "}
+                  {ot.motivo_anulacion || "Sin motivo registrado."}
+                </span>
+              </p>
+            ) : (
+              <div className="flex lg:justify-end">
+                <AnularOrden otId={ot.id} estadoActual={ot.estado} />
+              </div>
+            )}
 
-        {ot.estado === "anulado" ? (
-          <p className="tarjeta flex items-start gap-2.5 border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-            <Ban className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            <span>
-              <strong>Orden anulada.</strong>{" "}
-              {ot.motivo_anulacion || "Sin motivo registrado."}
-            </span>
-          </p>
-        ) : (
-          <div className="flex justify-end">
-            <AnularOrden otId={ot.id} estadoActual={ot.estado} />
+            <FirmaCliente
+              otId={ot.id}
+              tallerId={sesion.perfil.taller_id}
+              momento="recepcion"
+              yaFirmada={Boolean(recepcion?.firma_recepcion_url)}
+            />
           </div>
-        )}
-
-        <FirmaCliente
-          otId={ot.id}
-          tallerId={sesion.perfil.taller_id}
-          momento="recepcion"
-          yaFirmada={Boolean(recepcion?.firma_recepcion_url)}
-        />
+        </div>
       </div>
     </main>
   );

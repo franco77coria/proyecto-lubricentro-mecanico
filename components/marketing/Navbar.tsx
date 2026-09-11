@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { LogoIcono } from "@/components/ui/Logo";
 
 const LINKS = [
   { href: "#caracteristicas", label: "Funciones" },
@@ -49,19 +50,22 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4 pt-safe-top">
         <div
-          className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between gap-4 rounded-full pl-5 sm:pl-6 pr-2 transition-all duration-300 ${
+          className={`pointer-events-auto flex w-full max-w-5xl items-center justify-between gap-4 rounded-full pl-4 sm:pl-5 pr-2 transition-all duration-300 ${
             scrolled || menuAbierto
               ? "border border-black/[0.08] bg-white/85 py-2 backdrop-blur-xl shadow-lg shadow-black/[0.04]"
               : "border border-transparent bg-transparent py-3"
           }`}
         >
-          {/* Marca sola */}
+          {/* Marca con Logotipo de llave técnica */}
           <Link
             href="/"
             onClick={cerrarMenu}
-            className="flex min-h-11 items-center text-[1.125rem] font-bold tracking-[-0.04em] text-zinc-950"
+            className="flex min-h-11 items-center gap-2.5 text-[1.125rem] font-black tracking-[-0.03em] text-zinc-950 group"
           >
-            Fierros
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 p-1 shadow-sm border border-black/10 group-hover:scale-105 transition-transform">
+              <LogoIcono size="xs" />
+            </div>
+            <span>Fierros</span>
           </Link>
 
           {/* Enlaces Desktop */}
@@ -152,7 +156,7 @@ export function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
                   onClick={cerrarMenu}
                   className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-accent text-sm font-bold text-accent-foreground hover:opacity-90 transition-opacity"
                 >
-                  <span>{isLoggedIn ? "Ir al Tablero del Taller" : "Probar Gratis 14 Días"}</span>
+                  <span>{isLoggedIn ? "Ir al Tablero del Taller" : "Probar Gratis 7 Días"}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

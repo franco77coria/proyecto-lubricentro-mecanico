@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, Droplets, CheckCircle, Car } from "lucide-react";
+import { Search, Droplets, CheckCircle, Car, SearchX } from "lucide-react";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
 
 interface FichaVehiculo {
@@ -78,17 +78,12 @@ export function InteractivePlateLookup() {
   const [patenteInput, setPatenteInput] = useState("AE789CD");
   const [patenteActiva, setPatenteActiva] = useState("AE789CD");
 
-  const datos = BASE_DEMO[patenteActiva.replace(/\s+/g, "").toUpperCase()] || BASE_DEMO["AE789CD"];
+  const datos = BASE_DEMO[patenteActiva.replace(/\s+/g, "").toUpperCase()] ?? null;
 
   const handleBuscar = (chapa: string) => {
     const limpia = chapa.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     setPatenteInput(limpia);
-    if (BASE_DEMO[limpia]) {
-      setPatenteActiva(limpia);
-    } else {
-      // Fallback a Hilux pero mostrando la chapa escrita
-      setPatenteActiva(limpia);
-    }
+    setPatenteActiva(limpia);
   };
 
   return (
@@ -145,6 +140,26 @@ export function InteractivePlateLookup() {
 
             {/* Resultado Dinámico */}
             <AnimatePresence mode="wait">
+              {!datos ? (
+                <motion.div
+                  key="no-encontrado"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-black/10 bg-slate-50 py-8 px-4 text-center"
+                >
+                  <SearchX className="h-8 w-8 text-zinc-400" aria-hidden />
+                  <div>
+                    <p className="text-sm font-bold text-zinc-800">
+                      &quot;{patenteActiva}&quot; no está en esta demo
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Probá con una de las patentes de ejemplo de la izquierda — en tu taller, cualquier auto que hayas atendido antes va a aparecer así de rápido.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
               <motion.div
                 key={patenteActiva}
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -169,7 +184,7 @@ export function InteractivePlateLookup() {
                   </div>
                   <div className="self-start sm:self-center shrink-0">
                     <PlacaPatente patente={patenteActiva} size="sm" className="sm:hidden" />
-                    <PlacaPatente patente={patenteActiva} size="md" className="hidden sm:block" />
+                    <PlacaPatente patente={patenteActiva} size="md" className="hidden sm:inline-flex" />
                   </div>
                 </div>
 
@@ -225,6 +240,7 @@ export function InteractivePlateLookup() {
                   </div>
                 </div>
               </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>

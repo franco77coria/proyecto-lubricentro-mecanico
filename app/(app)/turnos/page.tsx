@@ -45,7 +45,7 @@ export default async function PaginaTurnos() {
   }, {} as Record<string, typeof turnos>);
 
   return (
-    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8 relative">
+    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-24 lg:pb-8 relative">
       <div className="contenedor-ancho space-y-8">
         <header className="flex items-center justify-between">
           <div>

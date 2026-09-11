@@ -426,7 +426,7 @@ export function FormCompra({
             </p>
 
             {lineas.map((l, i) => (
-              <div key={i} className="grid grid-cols-[1fr_4.5rem_6.5rem_2.5rem] gap-2">
+              <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_4.5rem_6.5rem_2.5rem]">
                 <select
                   value={l.productoId}
                   onChange={(e) => setLinea(i, "productoId", e.target.value)}
@@ -440,34 +440,36 @@ export function FormCompra({
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  value={l.cantidad}
-                  onChange={(e) => setLinea(i, "cantidad", e.target.value)}
-                  aria-label={`Cantidad de la línea ${i + 1}`}
-                  className="min-h-12 w-full rounded-xl border border-border bg-card px-2 text-sm text-foreground focus:border-accent focus:outline-none"
-                />
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  placeholder="Costo $"
-                  value={l.costoUnitario}
-                  onChange={(e) => setLinea(i, "costoUnitario", e.target.value)}
-                  aria-label={`Costo unitario de la línea ${i + 1}`}
-                  className="min-h-12 w-full rounded-xl border border-border bg-card px-2 text-sm text-foreground focus:border-accent focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setLineas((prev) => prev.filter((_, j) => j !== i))}
-                  disabled={lineas.length === 1}
-                  aria-label={`Quitar la línea ${i + 1}`}
-                  className="grid min-h-12 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden />
-                </button>
+                <div className="grid grid-cols-[1fr_1fr_2.75rem] gap-2 sm:contents">
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0.001"
+                    value={l.cantidad}
+                    onChange={(e) => setLinea(i, "cantidad", e.target.value)}
+                    aria-label={`Cantidad de la línea ${i + 1}`}
+                    className="min-h-12 w-full rounded-xl border border-border bg-card px-2 text-sm text-foreground focus:border-accent focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="Costo $"
+                    value={l.costoUnitario}
+                    onChange={(e) => setLinea(i, "costoUnitario", e.target.value)}
+                    aria-label={`Costo unitario de la línea ${i + 1}`}
+                    className="min-h-12 w-full rounded-xl border border-border bg-card px-2 text-sm text-foreground focus:border-accent focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setLineas((prev) => prev.filter((_, j) => j !== i))}
+                    disabled={lineas.length === 1}
+                    aria-label={`Quitar la línea ${i + 1}`}
+                    className="grid min-h-12 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </button>
+                </div>
               </div>
             ))}
 

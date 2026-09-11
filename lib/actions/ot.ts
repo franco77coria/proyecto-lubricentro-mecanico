@@ -426,3 +426,93 @@ export async function asignarMecanicoOT(
     return { error: "No se pudo conectar con el servidor." };
   }
 }
+
+/**
+ * Siembra el checklist estándar de la OT si todavía no tiene ningún ítem.
+ * Se llama desde el cliente cuando la página de OT detecta 0 ítems en el
+ * checklist: así el taller ve los 11 puntos desde la primera apertura sin
+ * necesidad de configurar nada.
+ */
+export async function asegurarChecklistOT(otId: string): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  const tallerId = sesion.perfil.taller_id;
+
+  try {
+    const supabase = await crearClienteServidor();
+
+    // Verificar si ya tiene ítems
+    const { count } = await supabase
+      .from("ot_checklist")
+      .select("id", { count: "exact", head: true })
+      .eq("ot_id", otId)
+      .eq("taller_id", tallerId);
+
+    if ((count ?? 0) > 0) return { ok: true }; // Ya tiene, nada que hacer
+
+    // Traer plantilla activa del taller
+    const { data: plantilla } = await supabase
+      .from("checklist_plantilla")
+      .select("id")
+      .eq("taller_id", tallerId)
+      .eq("activa", true)
+      .maybeSingle();
+
+    if (!plantilla) {
+      // Si no hay plantilla, crear items genéricos directamente
+      const ITEMS_DEFECTO = [
+        { etiqueta: "Tren delantero", orden: 1 },
+        { etiqueta: "Tren trasero", orden: 2 },
+        { etiqueta: "Neumáticos", orden: 3 },
+        { etiqueta: "Luces", orden: 4 },
+        { etiqueta: "Aceite", orden: 5 },
+        { etiqueta: "Filtro de aire", orden: 6 },
+        { etiqueta: "Filtro de nafta", orden: 7 },
+        { etiqueta: "Filtro de aceite", orden: 8 },
+        { etiqueta: "Filtro habitáculo", orden: 9 },
+        { etiqueta: "Grasas y aditivos", orden: 10 },
+        { etiqueta: "Otros", orden: 11 },
+      ];
+
+      await supabase.from("ot_checklist").insert(
+        ITEMS_DEFECTO.map((item) => ({
+          taller_id: tallerId,
+          ot_id: otId,
+          etiqueta_snapshot: item.etiqueta,
+          orden: item.orden,
+        })),
+      );
+
+      revalidatePath(`/ot/${otId}`);
+      return { ok: true };
+    }
+
+    // Hay plantilla — traer sus ítems
+    const { data: itemsPlantilla } = await supabase
+      .from("checklist_plantilla_item")
+      .select("id, etiqueta, orden")
+      .eq("plantilla_id", plantilla.id)
+      .eq("taller_id", tallerId)
+      .eq("activo", true)
+      .order("orden", { ascending: true });
+
+    if (!itemsPlantilla || itemsPlantilla.length === 0) return { ok: true };
+
+    await supabase.from("ot_checklist").insert(
+      itemsPlantilla.map((item) => ({
+        taller_id: tallerId,
+        ot_id: otId,
+        item_id: item.id,
+        etiqueta_snapshot: item.etiqueta,
+        orden: item.orden,
+      })),
+    );
+
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "No se pudo inicializar el checklist." };
+  }
+}

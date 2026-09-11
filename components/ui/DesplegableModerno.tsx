@@ -21,6 +21,7 @@ export interface DesplegableModernoProps {
   botonClassName?: string;
   alineacion?: "izquierda" | "derecha";
   disabled?: boolean;
+  name?: string;
 }
 
 export function DesplegableModerno({
@@ -33,6 +34,7 @@ export function DesplegableModerno({
   botonClassName = "",
   alineacion = "izquierda",
   disabled = false,
+  name,
 }: DesplegableModernoProps) {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -59,7 +61,8 @@ export function DesplegableModerno({
   }, []);
 
   return (
-    <div className={`relative inline-block ${className}`} ref={ref}>
+    <div className={`relative ${className}`} ref={ref}>
+      {name && <input type="hidden" name={name} value={valor} />}
       {etiquetaLabel && (
         <label className="block text-caption font-semibold text-muted-foreground mb-1">
           {etiquetaLabel}

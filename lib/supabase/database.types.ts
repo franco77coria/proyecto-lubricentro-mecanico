@@ -1886,6 +1886,59 @@ export type Database = {
           },
         ]
       }
+      solicitud_legal: {
+        Row: {
+          id: string
+          tipo: "baja" | "arrepentimiento" | "derecho_arco"
+          codigo_tramite: string
+          taller_id: string | null
+          email: string
+          nombre: string
+          telefono: string | null
+          motivo: string | null
+          estado: "registrada" | "procesada" | "rechazada"
+          metadata: Json
+          ip_hash: string | null
+          creado_en: string
+        }
+        Insert: {
+          id?: string
+          tipo: "baja" | "arrepentimiento" | "derecho_arco"
+          codigo_tramite: string
+          taller_id?: string | null
+          email: string
+          nombre: string
+          telefono?: string | null
+          motivo?: string | null
+          estado?: "registrada" | "procesada" | "rechazada"
+          metadata?: Json
+          ip_hash?: string | null
+          creado_en?: string
+        }
+        Update: {
+          id?: string
+          tipo?: "baja" | "arrepentimiento" | "derecho_arco"
+          codigo_tramite?: string
+          taller_id?: string | null
+          email?: string
+          nombre?: string
+          telefono?: string | null
+          motivo?: string | null
+          estado?: "registrada" | "procesada" | "rechazada"
+          metadata?: Json
+          ip_hash?: string | null
+          creado_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitud_legal_taller_id_fkey"
+            columns: ["taller_id"]
+            isOneToOne: false
+            referencedRelation: "taller"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       taller_suscripcion_evento: {
         Row: {
           creado_en: string

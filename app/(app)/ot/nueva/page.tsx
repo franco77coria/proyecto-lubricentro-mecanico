@@ -13,7 +13,7 @@ export default async function PaginaNuevaOT() {
   const marcas = await listarMarcas();
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor-angosto">
         <FormNuevaOT marcas={marcas} />
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 
@@ -14,7 +15,14 @@ export interface SheetProps {
   children: React.ReactNode;
 }
 
+const emptySubscribe = () => () => {};
+
 export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
+  const montado = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const reducirMovimiento = useReducedMotion();
 
   useEffect(() => {
@@ -35,11 +43,13 @@ export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
     ? { duration: 0.05 }
     : { type: "spring" as const, damping: 30, stiffness: 340 };
 
-  return (
+  if (!montado) return null;
+
+  return createPortal(
     <AnimatePresence>
       {abierto && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label={titulo || "Panel emergente"}
@@ -54,7 +64,7 @@ export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
             className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs cursor-pointer"
           />
 
-          {/* Panel Sheet */}
+          {/* Panel Sheet / Modal */}
           <motion.div
             initial={{ y: "100%", opacity: 0.95 }}
             animate={{ y: 0, opacity: 1 }}
@@ -68,13 +78,13 @@ export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
                 onCerrar();
               }
             }}
-            className="relative z-10 w-full max-w-xl max-h-[92dvh] flex flex-col rounded-t-3xl border-t border-x border-border/80 bg-card/98 backdrop-blur-2xl shadow-2xl overflow-hidden pb-[var(--safe-bottom)]"
+            className="relative z-10 w-full max-w-xl max-h-[92dvh] sm:max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border/80 bg-card/98 backdrop-blur-2xl shadow-2xl overflow-hidden pb-[var(--safe-bottom)] sm:pb-0"
           >
             {/* Zona de agarre / Drag handle y título */}
-            <div className="flex cursor-grab touch-none items-center justify-between px-5 pt-3 pb-2.5 active:cursor-grabbing border-b border-border/40 shrink-0">
+            <div className="flex cursor-grab touch-none items-center justify-between px-5 pt-3.5 pb-3 active:cursor-grabbing border-b border-border/40 shrink-0">
               <div className="w-8" />
               <div className="flex flex-col items-center gap-1.5 min-w-0">
-                <div className="h-1.5 w-10 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors" />
+                <div className="h-1.5 w-10 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 transition-colors sm:hidden" />
                 {titulo && (
                   <h2 className="text-sm sm:text-base font-bold text-foreground truncate text-center">
                     {titulo}
@@ -92,12 +102,13 @@ export function Sheet({ abierto, onCerrar, titulo, children }: SheetProps) {
             </div>
 
             {/* Contenido scrollable sin rotura de layout */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-2">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5 pt-3">
               {children}
             </div>
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

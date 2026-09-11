@@ -7,6 +7,7 @@ import { PlacaPatente } from "@/components/ui/PlacaPatente";
 import { formatearTelefono, paraWhatsApp } from "@/lib/telefono";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
+import { escaparParaFiltroOr } from "@/lib/postgrest";
 
 export const dynamic = "force-dynamic";
 
@@ -39,18 +40,19 @@ export default async function PaginaClientes({
     .limit(100);
 
   if (q?.trim()) {
-    const limpio = q.trim();
+    const limpio = escaparParaFiltroOr(q.trim());
     // También por teléfono: cuando llaman, el número es lo único que se tiene.
     query = query.or(
       `nombre.ilike.%${limpio}%,apellido.ilike.%${limpio}%,telefono.ilike.%${limpio}%`,
     );
   }
 
-  const { data: clientes } = await query;
+  const { data: clientes, error: errorClientes } = await query;
+  if (errorClientes) console.error("[PaginaClientes] Error buscando clientes:", errorClientes.message);
   const lista = clientes ?? [];
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
         <EncabezadoPantalla seccion="Clientes" titulo="Clientes" accion={<FormCliente />} />
 

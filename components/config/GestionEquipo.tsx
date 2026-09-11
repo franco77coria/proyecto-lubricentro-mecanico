@@ -7,9 +7,12 @@ import {
   Copy,
   Eye,
   MessageCircle,
+  ShieldCheck,
+  Store,
   Trash2,
   UserPlus,
   Users,
+  Wrench,
 } from "lucide-react";
 
 import { useIsla } from "@/components/isla/IslaContext";
@@ -23,6 +26,7 @@ import {
 import { CrearUsuarioModal } from "./CrearUsuarioModal";
 import { EditarVistasModal } from "./EditarVistasModal";
 import { PanelAuditoriaEquipo } from "./PanelAuditoriaEquipo";
+import { DesplegableModerno, type OpcionDesplegable } from "@/components/ui/DesplegableModerno";
 import { useFormato } from "@/lib/i18n/I18nContext";
 
 export interface Miembro {
@@ -58,6 +62,12 @@ const ROLES = [
     d: "Recepción de clientes, presupuestos, órdenes y cobros. Sin reportes del dueño.",
   },
 ] as const;
+
+const OPCIONES_ROLES: OpcionDesplegable[] = [
+  { valor: "dueno", etiqueta: "Dueño / Encargado", icono: ShieldCheck },
+  { valor: "mecanico", etiqueta: "Mecánico / Fosa", icono: Wrench },
+  { valor: "mostrador", etiqueta: "Mostrador / Recepción", icono: Store },
+];
 
 const NOMBRE_ROL: Record<string, string> = {
   dueno: "Dueño / Encargado",
@@ -249,15 +259,15 @@ export function GestionEquipo({
 
                   {esDueno && (
                     <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t border-border/40 sm:border-0">
-                      {/* Selector de Rol Instantáneo */}
-                      <select
-                        value={m.rol}
+                      {/* Selector de Rol Moderno */}
+                      <DesplegableModerno
+                        valor={m.rol}
                         disabled={pendiente}
-                        onChange={(e) =>
+                        onChange={(nuevoRol) =>
                           iniciar(async () => {
                             const res = await cambiarRolMiembro(
                               m.user_id,
-                              e.target.value as "dueno" | "mostrador" | "mecanico",
+                              nuevoRol as "dueno" | "mostrador" | "mecanico",
                               m.activo,
                             );
                             if (res.error) {
@@ -268,15 +278,11 @@ export function GestionEquipo({
                             router.refresh();
                           })
                         }
-                        aria-label={`Rol de ${m.nombre || "usuario"}`}
-                        className="min-h-10 rounded-xl border border-border/80 bg-card px-3 text-xs font-bold text-foreground outline-none focus:border-accent shadow-sm"
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r.v} value={r.v}>
-                            {r.t}
-                          </option>
-                        ))}
-                      </select>
+                        opciones={OPCIONES_ROLES}
+                        className="w-48"
+                        botonClassName="min-h-10 rounded-xl bg-card border-border/80 text-xs font-bold"
+                        alineacion="derecha"
+                      />
 
                       {/* Botón Activar / Suspender */}
                       {!esYo && (
@@ -383,9 +389,13 @@ export function GestionEquipo({
                         type="button"
                         onClick={() =>
                           iniciar(async () => {
-                            await cancelarInvitacion(inv.id);
-                            notificar({ tipo: "exito", mensaje: "Invitación cancelada" });
-                            router.refresh();
+                            const res = await cancelarInvitacion(inv.id);
+                            if (res.error) {
+                              notificar({ tipo: "error", mensaje: res.error });
+                            } else {
+                              notificar({ tipo: "exito", mensaje: "Invitación cancelada" });
+                              router.refresh();
+                            }
                           })
                         }
                         title="Cancelar invitación"

@@ -7,13 +7,16 @@ import { useRouter } from "next/navigation";
 import { useIsla } from "@/components/isla/IslaContext";
 import { realizarCierreCaja } from "@/lib/actions/caja";
 
-export function BotonCierreCaja() {
+export function BotonCierreCaja({ yaCerradoHoy = false }: { yaCerradoHoy?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { notificar } = useIsla();
 
   const handleCierre = () => {
-    if (!confirm("¿Deseás realizar el cierre de caja de la jornada actual?")) return;
+    const mensaje = yaCerradoHoy
+      ? "Hoy ya se hizo un cierre de caja. Si seguís, el nuevo total recalculado va a reemplazar al cierre existente. ¿Continuar?"
+      : "¿Deseás realizar el cierre de caja de la jornada actual?";
+    if (!confirm(mensaje)) return;
 
     startTransition(async () => {
       const res = await realizarCierreCaja();

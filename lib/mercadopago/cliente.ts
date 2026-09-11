@@ -295,24 +295,41 @@ export async function cancelarPreapproval(preapprovalId: string): Promise<boolea
   return true;
 }
 
+export type ResultadoFirmaWebhookMP =
+  | { ok: true }
+  | { ok: false; motivo: "sin_secret_en_produccion" | "firma_invalida" };
+
 /**
  * Valida la firma criptográfica HMAC SHA-256 enviada por Mercado Pago en el webhook.
  *
  * Formato del header x-signature:
  * ts=1710000000,v1=abcdef0123456789...
+ *
+ * Si falta el secret en producción, falla CERRADO (`sin_secret_en_produccion`,
+ * no una firma válida): sin secret no hay forma de verificar quién manda la
+ * notificación, y un despliegue con la env var mal cargada no puede terminar
+ * aceptando cualquier POST sin firma. En desarrollo/staging, sin secret
+ * configurado, se permite para poder probar el webhook antes de tener la
+ * credencial real.
  */
 export function validarFirmaWebhookMP(
   xSignature: string | null,
   xRequestId: string | null,
   dataId: string | null
-): boolean {
+): ResultadoFirmaWebhookMP {
   const secret =
     process.env.MERCADOPAGO_WEBHOOK_SECRET ||
     process.env.MERCADO_PAGO_WEBHOOK_SECRET ||
     process.env.MP_WEBHOOK_SECRET;
-  // Si no se configuró secret en desarrollo/staging, se permite la invocación para pruebas controladas
-  if (!secret) return true;
-  if (!xSignature || !dataId) return false;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return { ok: false, motivo: "sin_secret_en_produccion" };
+    }
+    return { ok: true };
+  }
+
+  if (!xSignature || !dataId) return { ok: false, motivo: "firma_invalida" };
 
   try {
     const partes = xSignature.split(",");
@@ -325,7 +342,7 @@ export function validarFirmaWebhookMP(
       if (clave.trim() === "v1") v1 = valor.trim();
     }
 
-    if (!ts || !v1) return false;
+    if (!ts || !v1) return { ok: false, motivo: "firma_invalida" };
 
     // Plantilla de manifiesto según documentación oficial de Mercado Pago
     const manifest = `id:${dataId};request-id:${xRequestId || ""};ts:${ts};`;
@@ -333,11 +350,13 @@ export function validarFirmaWebhookMP(
 
     const bufHmac = Buffer.from(hmac);
     const bufV1 = Buffer.from(v1);
-    if (bufHmac.length !== bufV1.length) return false;
+    if (bufHmac.length !== bufV1.length) return { ok: false, motivo: "firma_invalida" };
 
-    return crypto.timingSafeEqual(bufHmac, bufV1);
+    return crypto.timingSafeEqual(bufHmac, bufV1)
+      ? { ok: true }
+      : { ok: false, motivo: "firma_invalida" };
   } catch (err) {
     console.error("[validarFirmaWebhookMP] Error:", err);
-    return false;
+    return { ok: false, motivo: "firma_invalida" };
   }
 }

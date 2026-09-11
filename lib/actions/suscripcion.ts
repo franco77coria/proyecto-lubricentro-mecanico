@@ -284,6 +284,21 @@ export async function sincronizarSuscripcionRetornoAction(
             ? refPlanId
             : undefined;
 
+        // Si cambió de plan y tenía un débito automático previo, cancelarlo para evitar doble cobro
+        if (taller?.mp_preapproval_id && taller.mp_preapproval_id !== detalle.id) {
+          try {
+            console.log(
+              `[sincronizarSuscripcionRetornoAction] Cancelando preapproval anterior ${taller.mp_preapproval_id} por cambio de plan`
+            );
+            await cancelarPreapproval(taller.mp_preapproval_id);
+          } catch (errCancel) {
+            console.warn(
+              "[sincronizarSuscripcionRetornoAction] Error cancelando preapproval previo:",
+              errCancel
+            );
+          }
+        }
+
         await admin
           .from("taller")
           .update({

@@ -2,6 +2,7 @@
 
 import { CheckCircle, ChevronDown } from "lucide-react";
 import { useState, useTransition, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import { cambiarEstadoOT } from "@/lib/actions/ot";
 import { ESTADOS_OT, EstadoOT } from "@/lib/schemas/ot";
@@ -20,6 +21,7 @@ const DB_TO_LABEL: Record<string, EstadoOT> = {
 };
 
 export function EstadoSwitcher({ otId, estadoActual }: { otId: string; estadoActual: string }) {
+  const router = useRouter();
   const { notificar } = useIsla();
   const [isPending, startTransition] = useTransition();
   const [desplegado, setDesplegado] = useState(false);
@@ -48,6 +50,7 @@ export function EstadoSwitcher({ otId, estadoActual }: { otId: string; estadoAct
         notificar({ tipo: "error", mensaje: res.error });
       } else {
         notificar({ tipo: "exito", mensaje: `Estado cambiado a: ${nuevo}` });
+        router.refresh();
       }
     });
   };

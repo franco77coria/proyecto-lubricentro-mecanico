@@ -2,31 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { z } from "zod";
 
 import { hoyEnZona, inicioDelDiaEnZona } from "@/lib/fechas";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { pagoSchema, type DatosPagoOT } from "@/lib/schemas/pago";
 
-export const METODOS_PAGO = [
-  "efectivo",
-  "transferencia",
-  "tarjeta_credito",
-  "tarjeta_debito",
-  "mercado_pago",
-  "otro",
-] as const;
+export async function registrarPagoOT(datos: DatosPagoOT): Promise<{ ok?: boolean; error?: string }> {
 
-export type MetodoPago = (typeof METODOS_PAGO)[number];
-
-export const pagoSchema = z.object({
-  otId: z.string().uuid(),
-  metodo: z.enum(METODOS_PAGO, { message: "Método de pago inválido" }),
-  monto: z.coerce.number().min(0.01, { message: "El monto debe ser mayor a 0" }),
-  notas: z.string().trim().max(200).optional(),
-});
-
-export async function registrarPagoOT(datos: z.infer<typeof pagoSchema>): Promise<{ ok?: boolean; error?: string }> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
   if (sesion.perfil.rol === "mecanico") {

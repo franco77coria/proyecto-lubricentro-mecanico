@@ -20,6 +20,14 @@ import { resolverDesdeCedula, type OpcionCatalogo } from "@/lib/actions/catalogo
 import { crearOrdenTrabajo } from "@/lib/actions/ot";
 import { crearVehiculo } from "@/lib/actions/vehiculos";
 import { SelectorCliente } from "@/components/clientes/SelectorCliente";
+import { DesplegableModerno, type OpcionDesplegable } from "@/components/ui/DesplegableModerno";
+import { Fuel, Layers, Wrench } from "lucide-react";
+
+const OPCIONES_TIPO_OT: OpcionDesplegable[] = [
+  { valor: "lubricentro", etiqueta: "Lubricentro / Service Rápido", descripcion: "Filtros, fluidos y lubricación", icono: Fuel },
+  { valor: "mecanica", etiqueta: "Mecánica General", descripcion: "Tren delantero, frenos, motor", icono: Wrench },
+  { valor: "mixto", etiqueta: "Mixto (Mecánica + Lubricentro)", descripcion: "Service completo integral", icono: Layers },
+];
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 const DRAFT_KEY = "draft_nueva_ot";
@@ -461,16 +469,16 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
           <h2 className="text-sm font-bold text-foreground">Tipo de Servicio y Observaciones</h2>
 
           <div>
-            <label className="text-caption text-muted-foreground">Tipo de OT</label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as typeof tipo)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-semibold text-foreground focus:border-accent focus:outline-none"
-            >
-              <option value="lubricentro">Lubricentro / Service Rápido</option>
-              <option value="mecanica">Mecánica General</option>
-              <option value="mixto">Mixto (Mecánica + Lubricentro)</option>
-            </select>
+            <label className="text-caption font-semibold text-muted-foreground block mb-1">
+              Tipo de Servicio / Orden
+            </label>
+            <DesplegableModerno
+              valor={tipo}
+              onChange={(v) => setTipo(v as typeof tipo)}
+              opciones={OPCIONES_TIPO_OT}
+              className="w-full"
+              botonClassName="min-h-12 rounded-xl bg-card border-border text-xs font-bold"
+            />
           </div>
 
           <div>

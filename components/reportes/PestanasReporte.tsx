@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AlertTriangle,
   BarChart3,
   CalendarDays,
   CalendarRange,
@@ -14,6 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { DatosReporteCompleto } from "@/lib/reportes-fechas";
+import { useFormato } from "@/lib/i18n/I18nContext";
 import { GraficoBarrasSemanas } from "./GraficoBarrasSemanas";
 import { TablaMecanicos } from "./TablaMecanicos";
 import { TablaVehiculosPeriodo } from "./TablaVehiculosPeriodo";
@@ -22,17 +24,13 @@ type VistaReporte = "resumen" | "semanas" | "meses" | "mecanicos" | "vehiculos";
 
 interface PestanasReporteProps {
   datos: DatosReporteCompleto;
-  formatearDinero: (monto: number) => string;
 }
 
-export function PestanasReporte({
-  datos,
-  formatearDinero,
-}: PestanasReporteProps) {
+export function PestanasReporte({ datos }: PestanasReporteProps) {
   const [vistaActiva, setVistaActiva] = useState<VistaReporte>("resumen");
+  const { money } = useFormato();
 
   const r = datos.resumen;
-  const money = formatearDinero;
 
   const PESTANAS: { id: VistaReporte; etiqueta: string; icono: typeof BarChart3; badge?: string }[] = [
     { id: "resumen", etiqueta: "Resumen & Ganancias", icono: DollarSign },
@@ -85,6 +83,15 @@ export function PestanasReporte({
       {/* Contenido de la Pestaña Activa */}
       {vistaActiva === "resumen" && (
         <div className="space-y-6 animate-in fade-in duration-200">
+          {datos.margenesParciales && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
+              <span>
+                No se pudo calcular el costo de repuestos para este período: la ganancia real y el margen de abajo no son datos confirmados. La facturación total sí lo es.
+              </span>
+            </div>
+          )}
+
           {/* Tarjetas Principales de Alto Impacto */}
           <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {/* 1. Facturado Total */}
@@ -299,6 +306,11 @@ export function PestanasReporte({
             </h3>
           </div>
 
+          {datos.meses.length === 0 ? (
+            <div className="rounded-3xl border border-border/80 bg-card/60 p-8 text-center text-xs font-semibold text-muted-foreground">
+              No hay órdenes cerradas registradas para desglosar por mes en este período.
+            </div>
+          ) : (
           <div className="space-y-3">
             {datos.meses.map((m) => {
               const pctManoObra = m.facturado > 0 ? Math.round((m.manoObra / m.facturado) * 100) : 0;
@@ -354,6 +366,7 @@ export function PestanasReporte({
               );
             })}
           </div>
+          )}
         </div>
       )}
 

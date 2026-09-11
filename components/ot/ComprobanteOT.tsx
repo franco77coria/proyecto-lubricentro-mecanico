@@ -49,34 +49,29 @@ export interface DatosComprobante {
   recomendados: NotaComprobante[];
 }
 
-/* El comprobante se lo lleva el cliente en la mano: los importes y la fecha
-   salen del idioma y la moneda del taller, no de "es-AR"/"ARS" fijos. */
-
-/** Los tipos de ítem se agrupan en dos bloques con subtotal propio: es lo que
- *  el cliente quiere saber, cuánto es trabajo y cuánto es material. */
 const BLOQUES = [
   { titulo: "Mano de obra", tipos: ["mano_obra", "servicio"] },
   { titulo: "Repuestos y materiales", tipos: ["repuesto", "insumo", "tercero"] },
 ] as const;
 
 const ESTADO_CHECK: Record<string, { texto: string; clase: string }> = {
-  ok: { texto: "Correcto", clase: "estado-ok" },
-  observado: { texto: "A revisar", clase: "estado-observado" },
+  ok: { texto: "OK", clase: "estado-ok" },
+  observado: { texto: "Observado", clase: "estado-observado" },
   critico: { texto: "Urgente", clase: "estado-critico" },
-  no_aplica: { texto: "No aplica", clase: "estado-na" },
+  no_aplica: { texto: "N/A", clase: "estado-na" },
 };
 
-/**
- * Comprobante de la orden de trabajo.
- *
- * Es lo que se lleva el cliente, así que está pensado para leerse sin conocer
- * el sistema: primero qué auto es, después qué se hizo y por último cuánto
- * costó, con el trabajo separado de los materiales.
- *
- * Se imprime con el diálogo del navegador en lugar de generar un PDF con una
- * librería: sale el mismo archivo, en el celular aparece "Guardar como PDF" y
- * evita sumar medio megabyte de dependencia al bundle.
- */
+const ESTADO_LABEL: Record<string, string> = {
+  presupuesto: "Presupuesto",
+  aprobado: "Aprobado",
+  recibido: "Recibido",
+  en_trabajo: "En Trabajo",
+  esperando_repuesto: "Esperando repuesto",
+  listo: "Listo para entregar",
+  entregado: "Entregado",
+  cerrado: "Cerrado",
+};
+
 export function ComprobanteOT({
   ot,
 }: {
@@ -87,11 +82,13 @@ export function ComprobanteOT({
   const { idioma } = useI18n();
   const totalRecomendado = ot.recomendados.reduce((s, r) => s + Number(r.precio_estimado ?? 0), 0);
   const observados = ot.checklist.filter((c) => c.estado === "observado" || c.estado === "critico");
+  const esPresupuesto = ot.estado === "presupuesto";
 
   return (
     <article className="comprobante">
+      {/* ───────────────────────── CABECERA ───────────────────────── */}
       <header className="cmp-cabecera">
-        <div className="cmp-cabecera-datos">
+        <div className="cmp-cabecera-izq">
           {ot.taller.logo_url && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -102,52 +99,81 @@ export function ComprobanteOT({
           )}
           <div>
             <h1 className="cmp-taller">{ot.taller.nombre}</h1>
-            <p className="cmp-taller-datos">
-              {[ot.taller.direccion, ot.taller.telefono ? formatearTelefono(ot.taller.telefono) : null]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
+            {(ot.taller.direccion || ot.taller.telefono) && (
+              <p className="cmp-taller-datos">
+                {[ot.taller.direccion, ot.taller.telefono ? formatearTelefono(ot.taller.telefono) : null]
+                  .filter(Boolean)
+                  .join("  ·  ")}
+              </p>
+            )}
             {ot.taller.cuit && <p className="cmp-taller-datos">CUIT {ot.taller.cuit}</p>}
           </div>
         </div>
+
         <div className="cmp-numero-caja">
-          <span className="cmp-etiqueta">
-            {ot.estado === "presupuesto" ? "Presupuesto" : "Orden de trabajo"}
+          <span className="cmp-doc-tipo">
+            {esPresupuesto ? "Presupuesto" : "Orden de Trabajo"}
           </span>
           <span className="cmp-numero">{ot.numero}</span>
-          <span className="cmp-fecha">{fechaLarga(ot.fecha_ingreso, { day: "2-digit", month: "long", year: "numeric" })}</span>
+          <span className="cmp-fecha">
+            {fechaLarga(ot.fecha_ingreso, { day: "2-digit", month: "long", year: "numeric" })}
+          </span>
+          <span className="cmp-estado-badge">{ESTADO_LABEL[ot.estado] ?? ot.estado}</span>
         </div>
       </header>
 
-      <section className="cmp-grid-2">
+      {/* ───────────────────────── DATOS PRINCIPALES ───────────────────────── */}
+      <section className="cmp-grid-3">
+        {/* Vehículo */}
         <div className="cmp-caja">
           <span className="cmp-etiqueta">Vehículo</span>
           <span className="cmp-patente">{formatearPatente(ot.vehiculo.patente)}</span>
-          <span className="cmp-dato">
-            {[ot.vehiculo.marca, ot.vehiculo.modelo, ot.vehiculo.anio].filter(Boolean).join(" ") ||
-              "Sin datos de modelo"}
+          <span className="cmp-dato-fuerte">
+            {[ot.vehiculo.marca, ot.vehiculo.modelo].filter(Boolean).join(" ") || "Sin datos de modelo"}
           </span>
           <span className="cmp-dato-tenue">
             {[
+              ot.vehiculo.anio ? String(ot.vehiculo.anio) : null,
               ot.vehiculo.color,
-              ot.km_ingreso != null ? formatearDistancia(ot.km_ingreso, idioma) : null,
             ]
               .filter(Boolean)
               .join(" · ")}
           </span>
+          {ot.km_ingreso != null && (
+            <span className="cmp-dato-tenue">{formatearDistancia(ot.km_ingreso, idioma)} de ingreso</span>
+          )}
         </div>
 
+        {/* Cliente */}
         <div className="cmp-caja">
           <span className="cmp-etiqueta">Cliente</span>
           <span className="cmp-dato-fuerte">
-            {ot.cliente ? `${ot.cliente.nombre} ${ot.cliente.apellido ?? ""}`.trim() : "Sin asignar"}
+            {ot.cliente ? `${ot.cliente.nombre} ${ot.cliente.apellido ?? ""}`.trim() : "Consumidor Final"}
           </span>
           {ot.cliente?.telefono && (
             <span className="cmp-dato-tenue">{formatearTelefono(ot.cliente.telefono)}</span>
           )}
         </div>
+
+        {/* Resumen económico */}
+        <div className="cmp-caja cmp-caja-total">
+          <span className="cmp-etiqueta">Resumen</span>
+          <div className="cmp-resumen-fila">
+            <span>Mano de obra</span>
+            <span>{money(Number(ot.total_mano_obra))}</span>
+          </div>
+          <div className="cmp-resumen-fila">
+            <span>Repuestos</span>
+            <span>{money(Number(ot.total_repuestos))}</span>
+          </div>
+          <div className="cmp-resumen-total-fila">
+            <span>TOTAL</span>
+            <span>{money(Number(ot.total))}</span>
+          </div>
+        </div>
       </section>
 
+      {/* ───────────────────────── DIAGNÓSTICO DEL CLIENTE ───────────────────────── */}
       {ot.anomalias.length > 0 && (
         <section className="cmp-bloque">
           <h2 className="cmp-titulo">Lo que nos comentó</h2>
@@ -159,6 +185,7 @@ export function ComprobanteOT({
         </section>
       )}
 
+      {/* ───────────────────────── DIAGNÓSTICO DEL TALLER ───────────────────────── */}
       {ot.descargos.length > 0 && (
         <section className="cmp-bloque">
           <h2 className="cmp-titulo">Lo que encontramos</h2>
@@ -170,9 +197,9 @@ export function ComprobanteOT({
         </section>
       )}
 
-      {/* --- Detalle valorizado, con subtotal por bloque --- */}
+      {/* ───────────────────────── DETALLE VALORIZADO ───────────────────────── */}
       <section className="cmp-bloque">
-        <h2 className="cmp-titulo">Detalle</h2>
+        <h2 className="cmp-titulo">Detalle de trabajos y materiales</h2>
 
         {BLOQUES.map((bloque) => {
           const items = ot.items.filter((i) => bloque.tipos.includes(i.tipo as never));
@@ -183,20 +210,29 @@ export function ComprobanteOT({
             <div key={bloque.titulo} className="cmp-bloque-items">
               <div className="cmp-subtitulo">{bloque.titulo}</div>
               <table className="cmp-tabla">
+                <thead>
+                  <tr>
+                    <th className="cmp-th-desc">Descripción</th>
+                    <th className="cmp-th-cant">Cant.</th>
+                    <th className="cmp-th-precio">P. Unit.</th>
+                    <th className="cmp-th-precio">Subtotal</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {items.map((i, idx) => (
                     <tr key={idx}>
                       <td className="cmp-td-desc">{i.descripcion}</td>
                       <td className="cmp-td-cant">
-                        {Number(i.cantidad) !== 1 ? `${Number(i.cantidad)} ×` : ""}
+                        {Number(i.cantidad) !== 1 ? Number(i.cantidad) : "—"}
                       </td>
-                      <td className="cmp-td-precio">{money(Number(i.subtotal))}</td>
+                      <td className="cmp-td-precio">{money(Number(i.precio_unitario))}</td>
+                      <td className="cmp-td-precio cmp-td-bold">{money(Number(i.subtotal))}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan={2} className="cmp-td-subtotal-label">
+                    <td colSpan={3} className="cmp-td-subtotal-label">
                       Subtotal {bloque.titulo.toLowerCase()}
                     </td>
                     <td className="cmp-td-subtotal">{money(subtotal)}</td>
@@ -215,20 +251,18 @@ export function ComprobanteOT({
         </div>
       </section>
 
-      {/* --- Presupuesto de lo no autorizado --- */}
+      {/* ───────────────────────── PRESUPUESTO SUGERIDO ───────────────────────── */}
       {ot.recomendados.length > 0 && (
         <section className="cmp-bloque cmp-recomendado">
-          <h2 className="cmp-titulo">Presupuesto sugerido</h2>
+          <h2 className="cmp-titulo">Trabajos adicionales sugeridos (no incluidos)</h2>
           <p className="cmp-nota-bloque">
-            Trabajos que detectamos y que <strong>no están incluidos</strong> en el total de arriba.
+            Detectamos los siguientes trabajos que <strong>no están incluidos</strong> en el total de arriba.
           </p>
           <table className="cmp-tabla">
             <tbody>
               {ot.recomendados.map((r, i) => (
                 <tr key={i}>
-                  <td className="cmp-td-desc" colSpan={2}>
-                    {r.texto}
-                  </td>
+                  <td className="cmp-td-desc">{r.texto}</td>
                   <td className="cmp-td-precio">
                     {r.precio_estimado != null ? money(Number(r.precio_estimado)) : "A confirmar"}
                   </td>
@@ -238,9 +272,7 @@ export function ComprobanteOT({
             {totalRecomendado > 0 && (
               <tfoot>
                 <tr>
-                  <td colSpan={2} className="cmp-td-subtotal-label">
-                    Total presupuestado
-                  </td>
+                  <td className="cmp-td-subtotal-label">Total presupuestado</td>
                   <td className="cmp-td-subtotal">{money(totalRecomendado)}</td>
                 </tr>
               </tfoot>
@@ -249,11 +281,11 @@ export function ComprobanteOT({
         </section>
       )}
 
-      {/* --- Inspección Pericial de Seguridad (Checklist) --- */}
+      {/* ───────────────────────── CHECKLIST DE INSPECCIÓN ───────────────────────── */}
       {ot.checklist.length > 0 && (
         <section className="cmp-bloque">
           <h2 className="cmp-titulo">
-            Inspección Pericial de Seguridad ({ot.checklist.length} Puntos)
+            Inspección de seguridad — {ot.checklist.length} puntos
           </h2>
           <div className="cmp-checklist">
             {ot.checklist.map((c, i) => (
@@ -264,78 +296,66 @@ export function ComprobanteOT({
                   }`}
                 />
                 <span className="cmp-check-texto">{c.etiqueta_snapshot}</span>
-                <span className="cmp-check-estado">
-                  {c.estado ? ESTADO_CHECK[c.estado]?.texto : "[ Pendiente ]"}
+                <span className={`cmp-check-estado ${c.estado === "critico" ? "cmp-check-critico" : c.estado === "observado" ? "cmp-check-obs" : ""}`}>
+                  {c.estado ? ESTADO_CHECK[c.estado]?.texto : "Pend."}
                 </span>
               </div>
             ))}
           </div>
+
           {observados.length > 0 && (
             <div className="cmp-observaciones-caja">
-              <span className="cmp-etiqueta" style={{ margin: "2mm 0 1mm" }}>
-                Anomalías observadas en fosa / Pendientes de reparación
+              <span className="cmp-etiqueta" style={{ margin: "2mm 0 1.5mm" }}>
+                Ítems observados — requieren atención
               </span>
               <ul className="cmp-lista cmp-observaciones">
                 {observados.map((o, i) => (
                   <li key={i}>
-                    <strong>{o.etiqueta_snapshot}:</strong> {o.nota || "Requiere intervención mecánica"}
+                    <strong>{o.etiqueta_snapshot}:</strong>{" "}
+                    {o.nota || "Requiere intervención mecánica"}
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          <div className="cmp-diagnostico-lineas">
-            <span className="cmp-etiqueta">Anotaciones Técnicas / Diagnóstico de Fosa</span>
-            <div className="cmp-linea-punteada" />
-            <div className="cmp-linea-punteada" />
-          </div>
         </section>
       )}
 
+      {/* ───────────────────────── OBSERVACIONES ───────────────────────── */}
       {ot.observaciones && (
         <section className="cmp-bloque">
-          <h2 className="cmp-titulo">Observaciones</h2>
+          <h2 className="cmp-titulo">Observaciones del taller</h2>
           <p className="cmp-parrafo">{ot.observaciones}</p>
         </section>
       )}
 
-      <div className="cmp-qr-box">
-        <p className="cmp-etiqueta" style={{ textAlign: "center", marginBottom: "1mm" }}>
-          Seguimiento en Vivo
-        </p>
-        <p style={{ fontSize: "8pt", textAlign: "center", margin: 0, color: "var(--cmp-tinta)" }}>
-          Consultá el avance y fotos de tu vehículo desde tu celular:
-        </p>
-        <p style={{ fontSize: "9pt", fontWeight: "bold", textAlign: "center", margin: "1mm 0 0", color: "var(--cmp-acento)" }}>
-          /seguimiento/{ot.vehiculo.patente}
-        </p>
-      </div>
-
-      {/* --- Descargo Técnico y Garantía del Taller --- */}
+      {/* ───────────────────────── CONSTANCIAS LEGALES ───────────────────────── */}
       <section className="cmp-descargo-legal">
-        <span className="cmp-descargo-titulo">Constancia de Recepción, Garantía y Descargo Técnico</span>
-        <p className="cmp-descargo-texto">
-          1. <strong>Custodia de Bienes:</strong> El taller no se responsabiliza por dinero, herramientas ni objetos de valor que no hayan sido formalmente declarados e inventariados al momento de la recepción del vehículo.
-          <br />
-          2. <strong>Pruebas de Rodaje:</strong> El titular/cliente autoriza expresamente la realización de pruebas dinámicas de rodaje en vía pública para diagnóstico preventivo y control de calidad post-reparación.
-          <br />
-          3. <strong>Garantía Oficial:</strong> Todo trabajo de mano de obra y repuestos provistos por el taller cuenta con 90 días corridos de garantía legal bajo condiciones normales de uso.
-        </p>
+        <div className="cmp-descargo-grid">
+          <div>
+            <span className="cmp-descargo-titulo">Garantía y Condiciones</span>
+            <p className="cmp-descargo-texto">
+              Todo trabajo de mano de obra y repuestos provistos por el taller cuenta con <strong>90 días corridos</strong> de garantía legal bajo condiciones normales de uso.
+              El taller no se responsabiliza por objetos de valor no declarados al ingreso del vehículo.
+              El titular autoriza la realización de pruebas de rodaje para diagnóstico y control de calidad.
+            </p>
+          </div>
+          <div className="cmp-descargo-firma-caja">
+            <div className="cmp-firma-mini">
+              <span className="cmp-firma-linea" />
+              <span className="cmp-firma-label">Firma cliente</span>
+            </div>
+            <div className="cmp-firma-mini">
+              <span className="cmp-firma-linea" />
+              <span className="cmp-firma-label">Responsable técnico</span>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <footer className="cmp-pie">
-        <div className="cmp-firma">
-          <span className="cmp-firma-linea" />
-          <span className="cmp-firma-label">Firma del cliente / Titular</span>
-        </div>
-        <div className="cmp-firma">
-          <span className="cmp-firma-linea" />
-          <span className="cmp-firma-label">Responsable Técnico · {ot.taller.nombre}</span>
-        </div>
-      </footer>
-
+      {/* ───────────────────────── PIE LEGAL ───────────────────────── */}
       <p className="cmp-legal">
-        Comprobante técnico y comercial sobre dominio {formatearPatente(ot.vehiculo.patente)}. Conservar este ejemplar como constancia de servicio y garantía.
+        Comprobante técnico sobre dominio {formatearPatente(ot.vehiculo.patente)} · {ot.taller.nombre} · Conservar como constancia de servicio.
       </p>
     </article>
   );

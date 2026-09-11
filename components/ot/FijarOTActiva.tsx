@@ -27,10 +27,6 @@ export function FijarOTActiva({
       estado,
       telefonoCliente,
     });
-
-    return () => {
-      fijarOT(null);
-    };
   }, [otId, numero, patente, estado, telefonoCliente, fijarOT]);
 
   return null;

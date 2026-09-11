@@ -670,7 +670,6 @@ select,
   -webkit-appearance: none;
   background-color: var(--card);
   color: var(--foreground);
-  color-scheme: dark;
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23f97316%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
@@ -678,22 +677,81 @@ select,
   padding-right: 2.5rem;
 }
 
-select option {
-  background-color: #18181b;
-  color: #f4f4f5;
-  padding: 12px;
+.light select,
+[data-theme="light"] select,
+.light .select-moderno,
+[data-theme="light"] .select-moderno {
+  color-scheme: light;
 }
 
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"] {
+.light select option,
+[data-theme="light"] select option {
+  background-color: #ffffff;
+  color: #09090b;
+  padding: 10px 12px;
+}
+
+.dark select,
+[data-theme="dark"] select,
+:root:not(.light) select,
+.dark .select-moderno,
+[data-theme="dark"] .select-moderno,
+:root:not(.light) .select-moderno {
+  color-scheme: dark;
+}
+
+.dark select option,
+[data-theme="dark"] select option,
+:root:not(.light) select option,
+:root:not([data-theme="light"]) select option {
+  background-color: #18181b;
+  color: #f4f4f5;
+  padding: 10px 12px;
+}
+
+.light input[type="date"],
+.light input[type="time"],
+.light input[type="datetime-local"],
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] input[type="datetime-local"] {
+  color-scheme: light;
+  position: relative;
+}
+
+.light input[type="date"]::-webkit-calendar-picker-indicator,
+.light input[type="time"]::-webkit-calendar-picker-indicator,
+.light input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 4px;
+}
+
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="datetime-local"],
+:root:not(.light) input[type="date"],
+:root:not(.light) input[type="time"],
+:root:not(.light) input[type="datetime-local"] {
   color-scheme: dark;
   position: relative;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+:root:not(.light) input[type="date"]::-webkit-calendar-picker-indicator,
+:root:not(.light) input[type="time"]::-webkit-calendar-picker-indicator,
+:root:not(.light) input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   filter: invert(0.8) sepia(1) saturate(5) hue-rotate(340deg);
   opacity: 0.85;

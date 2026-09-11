@@ -35,6 +35,7 @@ export const productoSchema = z.object({
   precioVenta: z.coerce.number().min(0).default(0),
   costoUnitario: z.coerce.number().min(0).default(0),
   stockInicial: z.coerce.number().min(0).default(0),
+  forzar: z.boolean().optional().default(false),
 });
 
 export type DatosProducto = z.infer<typeof productoSchema>;

@@ -123,12 +123,23 @@ export function FormCliente({
       const res = editando ? await actualizarCliente(cliente!.id!, f) : await crearCliente(f);
       if (res.error) return setError(res.error);
 
-      notificar({ tipo: "exito", mensaje: editando ? "Cliente actualizado" : "Cliente agregado" });
+      if (!editando && res.reconciliado) {
+        // Ya había un cliente con ese teléfono: se usó esa ficha en vez de
+        // crear una nueva. Avisado, no silencioso — si no, parece que se
+        // perdieron los datos que se acababan de tipear.
+        notificar({
+          tipo: "alerta",
+          mensaje: `Ya existe un cliente con ese teléfono: ${[res.reconciliado.nombre, res.reconciliado.apellido].filter(Boolean).join(" ")}. Se usó esa ficha.`,
+        });
+      } else {
+        notificar({ tipo: "exito", mensaje: editando ? "Cliente actualizado" : "Cliente agregado" });
+      }
+
       if (!editando && res.id) {
         onClienteCreado?.({
           id: res.id,
-          nombre: f.nombre,
-          apellido: f.apellido,
+          nombre: res.reconciliado?.nombre ?? f.nombre,
+          apellido: res.reconciliado?.apellido ?? f.apellido,
           telefono: f.telefono,
           documento: f.documento,
         });

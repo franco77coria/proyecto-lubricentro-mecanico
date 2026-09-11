@@ -3,6 +3,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import {
   obtenerDetallePreapproval,
   obtenerDetallePago,
+  cancelarPreapproval,
   validarFirmaWebhookMP,
 } from "@/lib/mercadopago/cliente";
 
@@ -30,9 +31,13 @@ export async function POST(request: NextRequest) {
     // 1. Validar firma criptográfica del webhook
     const xSignature = request.headers.get("x-signature");
     const xRequestId = request.headers.get("x-request-id");
-    const firmaValida = validarFirmaWebhookMP(xSignature, xRequestId, dataId);
+    const resultadoFirma = validarFirmaWebhookMP(xSignature, xRequestId, dataId);
 
-    if (!firmaValida) {
+    if (!resultadoFirma.ok) {
+      if (resultadoFirma.motivo === "sin_secret_en_produccion") {
+        console.error("[Webhook MercadoPago] MERCADOPAGO_WEBHOOK_SECRET no está configurado en producción — rechazando todo");
+        return NextResponse.json({ error: "Webhook no configurado" }, { status: 503 });
+      }
       console.warn("[Webhook MercadoPago] Firma inválida rechazada");
       return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
     }
@@ -61,6 +66,32 @@ export async function POST(request: NextRequest) {
       }
 
       const admin = crearClienteAdmin();
+
+      // Si es una autorización de suscripción, verificar si el taller tenía otro débito previo para cancelarlo (upgrade/downgrade de plan)
+      if (preapproval.status === "authorized") {
+        const { data: tallerPrevio } = await admin
+          .from("taller")
+          .select("mp_preapproval_id")
+          .eq("id", tallerId)
+          .single();
+
+        if (
+          tallerPrevio?.mp_preapproval_id &&
+          tallerPrevio.mp_preapproval_id !== preapproval.id
+        ) {
+          try {
+            console.log(
+              `[Webhook MercadoPago] Cancelando preapproval anterior ${tallerPrevio.mp_preapproval_id} para taller ${tallerId} por cambio de plan`
+            );
+            await cancelarPreapproval(tallerPrevio.mp_preapproval_id);
+          } catch (errCancel) {
+            console.warn(
+              `[Webhook MercadoPago] Error cancelando preapproval anterior ${tallerPrevio.mp_preapproval_id}:`,
+              errCancel
+            );
+          }
+        }
+      }
 
       // Mapear estado de Mercado Pago a nuestro dominio
       let nuevoEstadoSuscripcion = "trial";
@@ -135,6 +166,30 @@ export async function POST(request: NextRequest) {
         const [tallerId, refPlanId] = (pago.external_reference || "").split(":");
         const admin = crearClienteAdmin();
 
+        // Reclamar el evento ANTES de aplicar ningún efecto. Mercado Pago
+        // reintrega webhooks "al menos una vez" por contrato: un reintento
+        // normal (no un bug) hacía que este mismo pago sumara 30 días de
+        // vigencia más de una vez. El unique (mp_id, tipo) de la migración
+        // 0050 es lo que hace que el segundo insert falle — el chequeo acá
+        // es solo para no seguir de largo cuando eso pasa.
+        const { error: errClaim } = await admin.from("taller_suscripcion_evento").insert({
+          taller_id: tallerId,
+          mp_id: String(pago.id),
+          tipo: "payment_approved",
+          estado: pago.status,
+          monto: pago.transaction_amount || null,
+          payload: JSON.parse(JSON.stringify(pago)),
+        });
+
+        if (errClaim) {
+          if (errClaim.code === "23505") {
+            console.log(`[Webhook MercadoPago] Pago ${pago.id} ya había sido procesado, se ignora el reintento`);
+          } else {
+            console.error("[Webhook MercadoPago] Error registrando evento de pago:", errClaim);
+          }
+          return NextResponse.json({ ok: true }, { status: 200 });
+        }
+
         const { data: taller } = await admin
           .from("taller")
           .select("suscripcion_fin")
@@ -166,15 +221,6 @@ export async function POST(request: NextRequest) {
           .from("taller")
           .update(updateDataPago)
           .eq("id", tallerId);
-
-        await admin.from("taller_suscripcion_evento").insert({
-          taller_id: tallerId,
-          mp_id: String(pago.id),
-          tipo: "payment_approved",
-          estado: pago.status,
-          monto: pago.transaction_amount || null,
-          payload: JSON.parse(JSON.stringify(pago)),
-        });
 
         console.log(`[Webhook MercadoPago] Pago aprobado registrado para taller ${tallerId}, nueva vigencia: ${nuevaFin}`);
       }

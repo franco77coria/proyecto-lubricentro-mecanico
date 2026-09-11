@@ -27,7 +27,7 @@ export default async function PaginaKanban() {
   const lista = (ordenes || []) as unknown as OTKanban[];
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
         <EncabezadoPantalla
           seccion="Tablero de fosa"

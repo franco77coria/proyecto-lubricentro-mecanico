@@ -41,7 +41,7 @@ export default function MarketingPage() {
   };
 
   return (
-    <div className="relative flex flex-col items-center w-full max-w-full overflow-x-hidden">
+    <div className="relative flex flex-col items-center w-full max-w-full overflow-x-clip">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

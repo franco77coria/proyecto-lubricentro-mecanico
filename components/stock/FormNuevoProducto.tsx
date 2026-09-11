@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, ScanBarcode } from "lucide-react";
+import { Box, Droplets, Layers, Plus, Scale, ScanBarcode } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import dynamic from "next/dynamic";
@@ -12,12 +12,26 @@ const LectorCodigo = dynamic(
 import { Sheet } from "@/components/sheet/Sheet";
 import { FORMATOS_PRODUCTO } from "@/lib/codigo-formatos";
 import { crearProducto } from "@/lib/actions/stock";
+import { DesplegableModerno, type OpcionDesplegable } from "@/components/ui/DesplegableModerno";
+
+const OPCIONES_UNIDAD: OpcionDesplegable[] = [
+  { valor: "unidad", etiqueta: "Unidades", descripcion: "Bidón / Caja / Pieza", icono: Box },
+  { valor: "litro", etiqueta: "Litros", descripcion: "Aceite a granel / Tambor", icono: Droplets },
+  { valor: "kg", etiqueta: "Kilos", descripcion: "Grasa / Granel / Aditivos", icono: Scale },
+  { valor: "juego", etiqueta: "Juego", descripcion: "Pastillas / Bujías / Kit", icono: Layers },
+];
 
 export function FormNuevoProducto() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [escaneando, setEscaneando] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [duplicadoDetectado, setDuplicadoDetectado] = useState<{
+    id: string;
+    nombre: string;
+    stock: number;
+    unidad?: string;
+  } | null>(null);
 
   const [codigoBarras, setCodigoBarras] = useState("");
   const [nombre, setNombre] = useState("");
@@ -29,9 +43,24 @@ export function FormNuevoProducto() {
   const [stockInicial, setStockInicial] = useState("");
   const [stockMin, setStockMin] = useState("5");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const limpiarFormulario = () => {
+    setCodigoBarras("");
+    setNombre("");
+    setMarca("");
+    setCategoria("");
+    setPrecioVenta("");
+    setCostoUnitario("");
+    setStockInicial("");
     setErrorMsg(null);
+    setDuplicadoDetectado(null);
+    setModalAbierto(false);
+  };
+
+  const ejecutarGuardado = (forzar = false) => {
+    setErrorMsg(null);
+    if (!forzar) {
+      setDuplicadoDetectado(null);
+    }
 
     startTransition(async () => {
       const res = await crearProducto({
@@ -44,21 +73,22 @@ export function FormNuevoProducto() {
         costoUnitario: costoUnitario ? Number(costoUnitario) : 0,
         stockInicial: stockInicial ? Number(stockInicial) : 0,
         stockMin: stockMin ? Number(stockMin) : 0,
+        forzar,
       });
 
       if (res.error) {
         setErrorMsg(res.error);
+      } else if (res.duplicado) {
+        setDuplicadoDetectado(res.duplicado);
       } else {
-        setCodigoBarras("");
-        setNombre("");
-        setMarca("");
-        setCategoria("");
-        setPrecioVenta("");
-        setCostoUnitario("");
-        setStockInicial("");
-        setModalAbierto(false);
+        limpiarFormulario();
       }
     });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    ejecutarGuardado(false);
   };
 
   return (
@@ -87,7 +117,7 @@ export function FormNuevoProducto() {
 
       <Sheet
         abierto={modalAbierto}
-        onCerrar={() => setModalAbierto(false)}
+        onCerrar={limpiarFormulario}
         titulo="Agregar Producto a Stock"
       >
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
@@ -95,6 +125,31 @@ export function FormNuevoProducto() {
             <p className="rounded-xl bg-red-500/15 border border-red-500/30 p-3 text-xs font-bold text-red-400">
               {errorMsg}
             </p>
+          )}
+
+          {duplicadoDetectado && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-foreground space-y-2.5">
+              <p className="font-semibold text-amber-400">
+                Ya existe «{duplicadoDetectado.nombre}» con {duplicadoDetectado.stock} {duplicadoDetectado.unidad || unidad} en stock.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={limpiarFormulario}
+                  className="flex-1 min-h-10 rounded-xl border border-border bg-card px-3 font-semibold text-foreground hover:bg-muted active:scale-95 transition-all"
+                >
+                  Ver ese producto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => ejecutarGuardado(true)}
+                  disabled={isPending}
+                  className="flex-1 min-h-10 rounded-xl bg-accent px-3 font-semibold text-white hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isPending ? "Guardando..." : "Crear igual"}
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Código de barras con escáner */}
@@ -132,7 +187,10 @@ export function FormNuevoProducto() {
               placeholder="Ej: Aceite Elaion F50 5W-40 4L"
               required
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                if (duplicadoDetectado) setDuplicadoDetectado(null);
+              }}
               className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base text-foreground focus:border-accent focus:outline-none"
             />
           </div>
@@ -161,20 +219,16 @@ export function FormNuevoProducto() {
           </div>
 
           <div>
-            <label htmlFor="unidad-producto" className="text-caption font-semibold text-muted-foreground block mb-1">
+            <label className="text-caption font-semibold text-muted-foreground block mb-1.5">
               Unidad de Medida
             </label>
-            <select
-              id="unidad-producto"
-              value={unidad}
-              onChange={(e) => setUnidad(e.target.value)}
-              className="min-h-12 w-full rounded-xl border border-border bg-card px-3.5 text-base font-semibold text-foreground focus:border-accent focus:outline-none"
-            >
-              <option value="unidad">Unidades (Bidón / Caja / Pieza)</option>
-              <option value="litro">Litros (Aceite a granel / Tambor)</option>
-              <option value="kg">Kilos (Grasa / Aditivos)</option>
-              <option value="juego">Juego (Pastillas / Bujías)</option>
-            </select>
+            <DesplegableModerno
+              valor={unidad}
+              onChange={setUnidad}
+              opciones={OPCIONES_UNIDAD}
+              className="w-full"
+              botonClassName="min-h-12 rounded-xl text-sm font-semibold"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

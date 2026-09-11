@@ -8,6 +8,7 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { formatearMoneda } from "@/lib/i18n";
+import { escaparParaFiltroOr } from "@/lib/postgrest";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function PaginaStock({
     .limit(120);
 
   if (q?.trim()) {
-    const limpio = q.trim();
+    const limpio = escaparParaFiltroOr(q.trim());
     // `codigo_barras` va acá para que escanear un bidón deje el producto solo en
     // la lista, con sus botones de stock al lado.
     query = query.or(
@@ -46,14 +47,15 @@ export default async function PaginaStock({
     );
   }
 
-  const { data: productos } = await query;
+  const { data: productos, error: errorProductos } = await query;
+  if (errorProductos) console.error("[PaginaStock] Error buscando productos:", errorProductos.message);
   // El mecánico ve el stock para saber si hay repuesto, pero no lo mueve.
   const puedeMover = sesion.perfil.rol !== "mecanico";
   const lista = productos ?? [];
   const bajos = lista.filter((p) => p.bajo_stock).length;
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
         <EncabezadoPantalla
           seccion="Inventario"
@@ -109,52 +111,56 @@ export default async function PaginaStock({
               return (
                 <li
                   key={p.id}
-                  className={`tarjeta entrar flex items-center gap-3 p-4 rounded-3xl border border-border/80 transition-all ${
+                  className={`tarjeta entrar flex flex-col gap-2 p-4 rounded-3xl border border-border/80 transition-all sm:flex-row sm:items-center sm:gap-3 ${
                     bajo ? "border-amber-500/40 bg-amber-500/[0.04]" : ""
                   }`}
                   style={{ "--i": i + 3 } as React.CSSProperties}
                 >
-                  <span
-                    className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border ${
-                      bajo
-                        ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                        : "bg-muted text-muted-foreground border-border/60"
-                    }`}
-                  >
-                    {bajo ? (
-                      <AlertTriangle className="h-5 w-5" aria-hidden />
-                    ) : (
-                      <Package className="h-5 w-5" aria-hidden />
+                  <div className="flex items-center gap-3 min-w-0 sm:flex-1">
+                    <span
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border ${
+                        bajo
+                          ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                          : "bg-muted text-muted-foreground border-border/60"
+                      }`}
+                    >
+                      {bajo ? (
+                        <AlertTriangle className="h-5 w-5" aria-hidden />
+                      ) : (
+                        <Package className="h-5 w-5" aria-hidden />
+                      )}
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-black text-foreground">{p.nombre}</span>
+                      <span className="block truncate text-xs text-muted-foreground font-medium">
+                        {[p.marca, p.categoria].filter(Boolean).join(" · ") || "Sin categoría"}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 sm:justify-end sm:shrink-0">
+                    <span className="shrink-0 text-left sm:text-right">
+                      <span className={`tabular block text-base font-black ${bajo ? "text-amber-400" : "text-foreground"}`}>
+                        {stock}
+                        <span className="ml-1 text-xs font-semibold text-muted-foreground">{p.unidad}</span>
+                      </span>
+                      <span className="tabular block text-xs text-muted-foreground font-medium">
+                        {money(Number(p.precio_venta ?? 0))}
+                      </span>
+                    </span>
+
+                    {puedeMover && (
+                      <AccionesProducto
+                        productoId={p.id}
+                        nombre={p.nombre}
+                        stock={stock}
+                        unidad={p.unidad}
+                        precioVenta={Number(p.precio_venta ?? 0)}
+                        marca={p.marca ?? undefined}
+                      />
                     )}
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-black text-foreground">{p.nombre}</span>
-                    <span className="block truncate text-xs text-muted-foreground font-medium">
-                      {[p.marca, p.categoria].filter(Boolean).join(" · ") || "Sin categoría"}
-                    </span>
-                  </span>
-
-                  <span className="shrink-0 text-right">
-                    <span className={`tabular block text-base font-black ${bajo ? "text-amber-400" : "text-foreground"}`}>
-                      {stock}
-                      <span className="ml-1 text-xs font-semibold text-muted-foreground">{p.unidad}</span>
-                    </span>
-                    <span className="tabular block text-xs text-muted-foreground font-medium">
-                      {money(Number(p.precio_venta ?? 0))}
-                    </span>
-                  </span>
-
-                  {puedeMover && (
-                    <AccionesProducto
-                      productoId={p.id}
-                      nombre={p.nombre}
-                      stock={stock}
-                      unidad={p.unidad}
-                      precioVenta={Number(p.precio_venta ?? 0)}
-                      marca={p.marca ?? undefined}
-                    />
-                  )}
+                  </div>
                 </li>
               );
             })}

@@ -1,28 +1,31 @@
 /* ==========================================================================
-   Comprobante de la orden de trabajo
+   Comprobante A4 — Orden de Trabajo / Presupuesto
 
-   Es el único documento que sale del sistema hacia afuera, así que se diseña
-   como papel y no como pantalla: medidas en milímetros, negro sobre blanco y
-   una sola columna. El acento aparece solo en el número de orden y en el
-   total, que es lo que el cliente busca con la vista.
+   Diseñado para impresión y PDF. Medidas en milímetros.
+   Paleta: negro sobre blanco, acento naranja solo en importes clave.
    ========================================================================== */
 
 .comprobante {
-  --cmp-tinta: #0f172a;
-  --cmp-tenue: #64748b;
-  --cmp-linea: #e2e8f0;
-  --cmp-acento: #c2410c;
+  --cmp-tinta:   #0f172a;
+  --cmp-tenue:   #64748b;
+  --cmp-linea:   #e2e8f0;
+  --cmp-linea2:  #cbd5e1;
+  --cmp-acento:  #c2410c;
+  --cmp-fondo:   #f8fafc;
 
   max-width: 190mm;
   margin-inline: auto;
-  padding: 10mm;
+  padding: 10mm 12mm;
   background: #fff;
   color: var(--cmp-tinta);
-  font-size: 10.5pt;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 9.5pt;
   line-height: 1.45;
 }
 
-/* --- Cabecera --- */
+/* ══════════════════════════════════
+   CABECERA
+   ══════════════════════════════════ */
 
 .cmp-cabecera {
   display: flex;
@@ -30,34 +33,39 @@
   align-items: flex-start;
   gap: 8mm;
   padding-bottom: 5mm;
-  border-bottom: 2px solid var(--cmp-tinta);
+  margin-bottom: 5mm;
+  border-bottom: 2.5px solid var(--cmp-tinta);
 }
 
-.cmp-cabecera-datos {
+.cmp-cabecera-izq {
   display: flex;
   align-items: center;
   gap: 4mm;
+  flex: 1;
+  min-width: 0;
 }
 
 .cmp-logo {
-  max-height: 18mm;
-  max-width: 50mm;
+  max-height: 16mm;
+  max-width: 45mm;
   object-fit: contain;
-  border-radius: 1mm;
+  border-radius: 1.5mm;
+  flex-shrink: 0;
 }
 
 .cmp-taller {
-  font-size: 18pt;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 17pt;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1.1;
-  margin: 0;
+  margin: 0 0 1mm;
 }
 
 .cmp-taller-datos {
-  margin: 1mm 0 0;
-  font-size: 8.5pt;
+  margin: 0.5mm 0 0;
+  font-size: 8pt;
   color: var(--cmp-tenue);
+  line-height: 1.4;
 }
 
 .cmp-numero-caja {
@@ -66,89 +74,152 @@
   align-items: flex-end;
   text-align: right;
   flex-shrink: 0;
+  gap: 1mm;
 }
 
-.cmp-numero {
-  font-size: 17pt;
-  font-weight: 700;
-  color: var(--cmp-acento);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-
-.cmp-fecha {
-  font-size: 8.5pt;
-  color: var(--cmp-tenue);
-}
-
-/* --- Bloques --- */
-
-.cmp-etiqueta {
-  display: block;
+.cmp-doc-tipo {
   font-size: 7.5pt;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--cmp-tenue);
 }
 
-.cmp-grid-2 {
+.cmp-numero {
+  font-size: 16pt;
+  font-weight: 800;
+  color: var(--cmp-acento);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.cmp-fecha {
+  font-size: 8pt;
+  color: var(--cmp-tenue);
+}
+
+.cmp-estado-badge {
+  display: inline-block;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border: 1px solid var(--cmp-linea2);
+  border-radius: 2mm;
+  padding: 0.5mm 2mm;
+  color: var(--cmp-tinta);
+  background: var(--cmp-fondo);
+}
+
+/* ══════════════════════════════════
+   GRID 3 COLUMNAS — datos principales
+   ══════════════════════════════════ */
+
+.cmp-grid-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5mm;
-  margin-top: 5mm;
+  grid-template-columns: 1fr 1fr 1.1fr;
+  gap: 4mm;
+  margin-bottom: 6mm;
 }
 
 .cmp-caja {
   display: flex;
   flex-direction: column;
-  gap: 0.5mm;
-  padding: 3.5mm 4mm;
+  gap: 0.6mm;
+  padding: 3mm 4mm;
   border: 1px solid var(--cmp-linea);
-  border-radius: 2mm;
+  border-radius: 2.5mm;
+  background: var(--cmp-fondo);
+}
+
+.cmp-caja-total {
+  background: #fff;
+  border-color: var(--cmp-linea2);
+}
+
+.cmp-etiqueta {
+  display: block;
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cmp-tenue);
+  margin-bottom: 1mm;
 }
 
 .cmp-patente {
-  font-size: 15pt;
-  font-weight: 700;
+  font-size: 14pt;
+  font-weight: 800;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .cmp-dato {
-  font-size: 10pt;
+  font-size: 9pt;
 }
 .cmp-dato-fuerte {
-  font-size: 11.5pt;
-  font-weight: 600;
+  font-size: 10pt;
+  font-weight: 700;
 }
 .cmp-dato-tenue {
-  font-size: 9pt;
+  font-size: 8pt;
   color: var(--cmp-tenue);
 }
 
+/* Resumen económico dentro de caja */
+.cmp-resumen-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9pt;
+  color: var(--cmp-tenue);
+  padding: 0.5mm 0;
+  border-bottom: 1px dotted var(--cmp-linea);
+}
+.cmp-resumen-total-fila {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11pt;
+  font-weight: 800;
+  color: var(--cmp-acento);
+  margin-top: 1.5mm;
+  padding-top: 1.5mm;
+  border-top: 1.5px solid var(--cmp-tinta);
+}
+
+/* ══════════════════════════════════
+   BLOQUES DE SECCIÓN
+   ══════════════════════════════════ */
+
 .cmp-bloque {
-  margin-top: 6mm;
-  /* Un bloque partido entre dos hojas se lee pésimo: el título en una página
-     y los importes en la otra. */
+  margin-top: 5mm;
   break-inside: avoid;
 }
 
 .cmp-titulo {
-  font-size: 8pt;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 7.5pt;
+  font-weight: 800;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--cmp-tenue);
-  margin: 0 0 2mm;
-  padding-bottom: 1.5mm;
-  border-bottom: 1px solid var(--cmp-linea);
+  color: var(--cmp-tente);
+  background: var(--cmp-fondo);
+  margin: 0 0 3mm;
+  padding: 1.5mm 3mm;
+  border-left: 2.5px solid var(--cmp-acento);
+  border-radius: 0 1mm 1mm 0;
+}
+
+.cmp-bloque-items {
+  break-inside: avoid;
 }
 
 .cmp-subtitulo {
-  font-size: 9.5pt;
+  font-size: 9pt;
   font-weight: 700;
+  color: var(--cmp-tinta);
   margin-top: 3mm;
+  margin-bottom: 1mm;
 }
 
 .cmp-lista {
@@ -157,30 +228,58 @@
 }
 .cmp-lista li {
   margin-bottom: 1mm;
+  font-size: 9pt;
 }
 
 .cmp-parrafo {
   margin: 0;
+  font-size: 9.5pt;
 }
 
 .cmp-nota-bloque {
   margin: 0 0 2mm;
-  font-size: 9pt;
+  font-size: 8.5pt;
   color: var(--cmp-tenue);
 }
 
 .cmp-vacio {
-  font-size: 9.5pt;
+  font-size: 9pt;
   color: var(--cmp-tenue);
   font-style: italic;
 }
 
-/* --- Tablas de importes --- */
+/* ══════════════════════════════════
+   TABLA DE ÍTEMS
+   ══════════════════════════════════ */
 
 .cmp-tabla {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1mm;
+  font-size: 9pt;
+}
+
+.cmp-tabla thead tr {
+  border-bottom: 1px solid var(--cmp-linea2);
+}
+
+.cmp-th-desc,
+.cmp-th-cant,
+.cmp-th-precio {
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cmp-tenue);
+  padding: 1.5mm 1mm 1.5mm 0;
+  text-align: left;
+}
+
+.cmp-th-cant,
+.cmp-th-precio {
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 0;
 }
 
 .cmp-tabla td {
@@ -198,19 +297,24 @@
   color: var(--cmp-tenue);
   font-variant-numeric: tabular-nums;
   text-align: right;
+  font-size: 8.5pt;
 }
 
 .cmp-td-precio {
   white-space: nowrap;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  padding-left: 3mm;
+}
+.cmp-td-bold {
+  font-weight: 700;
 }
 
 .cmp-td-subtotal-label,
 .cmp-td-subtotal {
   border-top: 1px solid var(--cmp-linea);
   padding-top: 1.5mm;
-  font-size: 9.5pt;
+  font-size: 8.5pt;
   color: var(--cmp-tenue);
 }
 
@@ -232,44 +336,51 @@
   justify-content: space-between;
   align-items: baseline;
   margin-top: 4mm;
-  padding-top: 3mm;
+  padding: 3mm 4mm;
   border-top: 2px solid var(--cmp-tinta);
-  font-size: 11pt;
-  font-weight: 700;
+  background: var(--cmp-fondo);
+  border-radius: 0 0 2mm 2mm;
+  font-size: 10.5pt;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .cmp-total-valor {
-  font-size: 17pt;
+  font-size: 18pt;
   color: var(--cmp-acento);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-/* El presupuesto sugerido va enmarcado para que no se confunda con lo que
-   se está cobrando: es la diferencia entre una cuenta y una propuesta. */
 .cmp-recomendado {
-  border: 1px dashed var(--cmp-acento);
+  border: 1.5px dashed var(--cmp-acento);
   border-radius: 2mm;
   padding: 4mm;
   background: #fff8f4;
 }
 
-/* --- Inspección --- */
+/* ══════════════════════════════════
+   CHECKLIST DE INSPECCIÓN
+   ══════════════════════════════════ */
 
 .cmp-checklist {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1mm 6mm;
+  background: var(--cmp-fondo);
+  border: 1px solid var(--cmp-linea);
+  border-radius: 2mm;
+  padding: 2.5mm 4mm;
 }
 
 .cmp-check {
   display: flex;
   align-items: center;
   gap: 2mm;
-  padding: 1mm 0;
-  font-size: 9.5pt;
+  padding: 0.8mm 0;
+  font-size: 9pt;
+  border-bottom: 1px dotted var(--cmp-linea);
 }
 
 .cmp-punto {
@@ -279,12 +390,10 @@
   flex-shrink: 0;
 }
 
-/* Cada estado lleva además su palabra al lado: en una impresión en blanco y
-   negro el color desaparece por completo. */
-.cmp-punto.estado-ok { background: #15803d; }
+.cmp-punto.estado-ok       { background: #15803d; }
 .cmp-punto.estado-observado { background: #b45309; }
-.cmp-punto.estado-critico { background: #dc2626; }
-.cmp-punto.estado-na { background: #94a3b8; }
+.cmp-punto.estado-critico  { background: #dc2626; }
+.cmp-punto.estado-na       { background: #94a3b8; }
 .cmp-punto.estado-pendiente { background: transparent; border: 1px dashed #64748b; }
 
 .cmp-check-texto {
@@ -292,49 +401,60 @@
 }
 
 .cmp-check-estado {
-  font-size: 8.5pt;
+  font-size: 7.5pt;
   color: var(--cmp-tenue);
   white-space: nowrap;
+  font-weight: 600;
+}
+
+.cmp-check-critico {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.cmp-check-obs {
+  color: #b45309;
+  font-weight: 700;
 }
 
 .cmp-observaciones-caja {
   margin-top: 3mm;
-  padding: 2.5mm 3mm;
-  background: #f8fafc;
-  border: 1px solid var(--cmp-linea);
+  padding: 2.5mm 3.5mm;
+  background: #fff8f4;
+  border: 1px solid #fed7aa;
   border-radius: 1.5mm;
 }
 
 .cmp-observaciones {
   margin-top: 1.5mm;
-  font-size: 9pt;
+  font-size: 8.5pt;
 }
 
-.cmp-diagnostico-lineas {
-  margin-top: 4mm;
-}
+/* ══════════════════════════════════
+   DESCARGO LEGAL + FIRMAS
+   ══════════════════════════════════ */
 
-.cmp-linea-punteada {
-  border-bottom: 1px dotted #94a3b8;
-  height: 5.5mm;
-  width: 100%;
-}
-
-/* --- Descargo Técnico y Garantía --- */
 .cmp-descargo-legal {
   margin-top: 6mm;
-  padding: 3mm 3.5mm;
+  padding: 3.5mm 4mm;
   border: 1px solid var(--cmp-linea);
-  background: #f8fafc;
-  border-radius: 1.5mm;
+  background: var(--cmp-fondo);
+  border-radius: 2mm;
   break-inside: avoid;
+}
+
+.cmp-descargo-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6mm;
+  align-items: start;
 }
 
 .cmp-descargo-titulo {
   display: block;
   font-size: 7.5pt;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cmp-tinta);
   margin-bottom: 1.5mm;
@@ -342,55 +462,60 @@
 
 .cmp-descargo-texto {
   font-size: 7.5pt;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--cmp-tenue);
   margin: 0;
 }
 
-/* --- Pie --- */
-
-.cmp-pie {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12mm;
-  margin-top: 14mm;
-  break-inside: avoid;
-}
-
-.cmp-firma {
+.cmp-descargo-firma-caja {
   display: flex;
   flex-direction: column;
-  gap: 1.5mm;
+  gap: 4mm;
+  min-width: 55mm;
+  flex-shrink: 0;
+}
+
+.cmp-firma-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 1mm;
 }
 
 .cmp-firma-linea {
+  display: block;
   border-top: 1px solid var(--cmp-tinta);
+  width: 100%;
 }
 
 .cmp-firma-label {
-  font-size: 8.5pt;
-  color: var(--cmp-tenue);
-}
-
-.cmp-legal {
-  margin-top: 6mm;
-  font-size: 8pt;
+  font-size: 7.5pt;
   color: var(--cmp-tenue);
   text-align: center;
 }
 
-/* ==========================================================================
-   Impresión
-   ========================================================================== */
+/* ══════════════════════════════════
+   PIE DE PÁGINA
+   ══════════════════════════════════ */
+
+.cmp-legal {
+  margin-top: 4mm;
+  font-size: 7.5pt;
+  color: var(--cmp-tenue);
+  text-align: center;
+  border-top: 1px solid var(--cmp-linea);
+  padding-top: 2mm;
+}
+
+/* ══════════════════════════════════
+   IMPRESIÓN / PDF
+   ══════════════════════════════════ */
 
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm;
+    margin: 8mm;
   }
 
-  /* Solo el comprobante llega al papel o al PDF: el resto de la app (sidebar, barra,
-     botones) se esconde en lugar de imprimirse en la primera hoja. */
   body * {
     visibility: hidden;
   }
@@ -406,13 +531,7 @@
     max-width: none;
     padding: 0;
     margin: 0;
-  }
-
-  /* Sin esto los fondos y colores no salen en el PDF en Chrome, y el bloque
-     del presupuesto sugerido pierde el recuadro que lo distingue. */
-  .comprobante {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 }
-

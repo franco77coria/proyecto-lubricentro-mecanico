@@ -80,6 +80,8 @@ export function ListaAvisos({
   }
 
   function descartar(a: RecordatorioAContactar) {
+    if (!confirm("¿Descartar este aviso? No se puede deshacer.")) return;
+
     setDescartadosIds((curr) => [...curr, a.id]);
     iniciar(async () => {
       const res = await descartarRecordatorio(a.id);

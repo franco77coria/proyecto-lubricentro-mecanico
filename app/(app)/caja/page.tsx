@@ -6,20 +6,24 @@ import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { formatearMoneda, localeDe } from "@/lib/i18n";
+import { hoyEnZona, inicioDelDiaEnZona } from "@/lib/fechas";
 
 export const dynamic = "force-dynamic";
 
 export default async function PaginaCaja() {
   const sesion = await exigirVista("/caja");
-  const { idioma, moneda } = await obtenerAjustesTaller();
+  const { idioma, moneda, zonaHoraria } = await obtenerAjustesTaller();
   const money = (n: number) => formatearMoneda(n, moneda, idioma);
   const localeCaja = localeDe(idioma);
 
   const supabase = await crearClienteServidor();
   const tallerId = sesion.perfil.taller_id;
 
-  const inicioHoy = new Date();
-  inicioHoy.setHours(0, 0, 0, 0);
+  // La misma zona horaria que usa `realizarCierreCaja`: `new Date()` crudo es
+  // la hora del servidor (UTC), no la del taller — sin esto, "hoy" se corre
+  // hasta 3 horas cerca de la medianoche argentina.
+  const fechaHoy = hoyEnZona(zonaHoraria);
+  const inicioHoy = inicioDelDiaEnZona(zonaHoraria, fechaHoy);
 
   // 1. Obtener pagos del día
   const { data: pagos } = await supabase
@@ -58,8 +62,10 @@ export default async function PaginaCaja() {
     .order("fecha", { ascending: false })
     .limit(7);
 
+  const cierreDeHoy = cierres?.find((c) => c.fecha === fechaHoy) ?? null;
+
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -67,14 +73,22 @@ export default async function PaginaCaja() {
             <p className="text-caption font-semibold text-muted-foreground">Gestión Financiera</p>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Caja Diaria</h1>
           </div>
-          <BotonCierreCaja />
+          <BotonCierreCaja yaCerradoHoy={Boolean(cierreDeHoy)} />
         </div>
+
+        {cierreDeHoy && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs font-semibold text-amber-600 dark:text-amber-400">
+            Ya se registró un cierre de caja hoy, por {money(Number(cierreDeHoy.total || 0))}. Si los ingresos de arriba no coinciden, es porque hubo cobros después del cierre — volvé a cerrar para actualizarlo.
+          </div>
+        )}
 
         {/* Resumen Total */}
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-caption font-bold uppercase tracking-wider text-muted-foreground">Ingresos de Hoy</span>
-            <span className="text-caption text-muted-foreground">{new Date().toLocaleDateString(localeCaja)}</span>
+            <span className="text-caption text-muted-foreground">
+              {new Intl.DateTimeFormat(localeCaja, { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${fechaHoy}T12:00:00`))}
+            </span>
           </div>
           <p className="text-display text-4xl font-black text-accent tabular">
             {money(totalGeneral)}

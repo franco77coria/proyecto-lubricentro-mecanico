@@ -125,7 +125,7 @@ export default async function PaginaTablero() {
   ];
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-12 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-12 scroll-inset">
       <div className="contenedor space-y-8">
         {/* HUD Header Automotor */}
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border/80 bg-gradient-to-r from-card via-card/90 to-card-elevada p-5 sm:p-7 shadow-xl">

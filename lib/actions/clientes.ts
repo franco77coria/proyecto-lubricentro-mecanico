@@ -8,11 +8,16 @@ import { normalizarTelefono } from "@/lib/telefono";
 import { hoyEnZona } from "@/lib/fechas";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { escaparParaFiltroOr } from "@/lib/postgrest";
+import { normalizarPatente } from "@/lib/patente";
 
 export interface ResultadoCliente {
   error?: string;
   id?: string;
   ok?: boolean;
+  /** El teléfono ya pertenecía a otro cliente: se devolvió esa ficha en vez
+   *  de crear una nueva. La UI lo tiene que avisar, no tratarlo como alta. */
+  reconciliado?: { nombre: string; apellido: string };
 }
 
 const clienteSchema = z.object({
@@ -57,16 +62,38 @@ export async function crearCliente(datos: unknown): Promise<ResultadoCliente> {
 
   try {
     const supabase = await crearClienteServidor();
+    const fila = armarFila(parseado.data);
+
+    // Reconciliar por teléfono antes de crear: es el mismo criterio que ya
+    // usa el alta de vehículo (resolverOCrearCliente) para no partir el
+    // historial de un cliente en dos fichas por cargarlo dos veces.
+    if (fila.telefono) {
+      const { data: existente } = await supabase
+        .from("cliente")
+        .select("id, nombre, apellido")
+        .eq("taller_id", sesion.perfil.taller_id)
+        .eq("telefono", fila.telefono)
+        .eq("archivado", false)
+        .maybeSingle();
+
+      if (existente) {
+        return {
+          id: existente.id,
+          reconciliado: { nombre: existente.nombre, apellido: existente.apellido },
+        };
+      }
+    }
+
     const { data, error } = await supabase
       .from("cliente")
-      .insert({ taller_id: sesion.perfil.taller_id, ...armarFila(parseado.data) })
+      .insert({ taller_id: sesion.perfil.taller_id, ...fila })
       .select("id")
       .single();
 
     if (error) {
       console.error("[crearCliente]", error.code, error.message);
       if (error.code === "23505") {
-        return { error: "Ya existe un cliente con esos datos." };
+        return { error: "Ya existe un cliente con ese teléfono." };
       }
       return { error: "No se pudo guardar el cliente en el sistema." };
     }
@@ -349,6 +376,7 @@ export async function buscarClientesOmni(termino: string): Promise<ClienteOmniRe
 
   const q = termino.trim();
   if (q.length < 2) return [];
+  const qFiltro = escaparParaFiltroOr(q);
 
   try {
     const supabase = await crearClienteServidor();
@@ -359,11 +387,11 @@ export async function buscarClientesOmni(termino: string): Promise<ClienteOmniRe
       .from("cliente")
       .select("id, nombre, apellido, telefono, documento")
       .eq("taller_id", tallerId)
-      .or(`nombre.ilike.%${q}%,apellido.ilike.%${q}%,telefono.ilike.%${q}%,documento.ilike.%${q}%`)
+      .or(`nombre.ilike.%${qFiltro}%,apellido.ilike.%${qFiltro}%,telefono.ilike.%${qFiltro}%,documento.ilike.%${qFiltro}%`)
       .limit(12);
 
     // 2. Buscar vehículos por patente para deducir clientes
-    const patenteNormalizada = q.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const patenteNormalizada = normalizarPatente(q);
     const { data: vehiculosMatch } = await supabase
       .from("vehiculo")
       .select(`

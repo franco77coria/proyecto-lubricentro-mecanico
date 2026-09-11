@@ -2,9 +2,11 @@
 
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
+import { obtenerAjustesTaller } from "@/lib/taller";
 import {
   calcularRangoFechas,
   aFechaISO,
+  fechaLocalDelTaller,
   type FiltroReporte,
   type DatosReporteCompleto,
   type DesgloseSemana,
@@ -19,7 +21,8 @@ export async function obtenerReporteCompleto(
   const sesion = await exigirVista("/reportes");
   const tallerId = sesion.perfil.taller_id;
 
-  const { periodo, desdeStr, hastaStr, etiqueta } = calcularRangoFechas(filtro);
+  const { zonaHoraria } = await obtenerAjustesTaller();
+  const { periodo, desdeStr, hastaStr, etiqueta } = calcularRangoFechas(filtro, zonaHoraria);
   const supabase = await crearClienteServidor();
 
   // 1. Llamar función nativa de Postgres para métricas globales seguras
@@ -37,44 +40,82 @@ export async function obtenerReporteCompleto(
   }
 
   // 2. Traer órdenes cerradas/entregadas en el período para armar desgloses por semana y por mecánico
-  const fechaFinFiltro = new Date(hastaStr);
-  fechaFinFiltro.setDate(fechaFinFiltro.getDate() + 1);
+  const fechaFinFiltro = new Date(`${hastaStr}T12:00:00Z`);
+  fechaFinFiltro.setUTCDate(fechaFinFiltro.getUTCDate() + 1);
   const fechaFinFiltroISO = aFechaISO(fechaFinFiltro);
 
-  const { data: ordenesData, error: errorOrdenes } = await supabase
-    .from("orden_trabajo")
-    .select(`
-      id,
-      numero,
-      total,
-      total_mano_obra,
-      total_repuestos,
-      fecha_ingreso,
-      fecha_entrega,
-      estado,
-      asignado_a,
-      mecanico:asignado_a ( user_id, nombre, rol ),
-      vehiculo:vehiculo_id ( patente, anio, marca:marca_id(nombre), modelo:modelo_id(nombre) ),
-      cliente:cliente_id ( nombre, apellido, telefono )
-    `)
-    .eq("taller_id", tallerId)
-    .in("estado", ["entregado", "cerrado"])
-    .gte("fecha_ingreso", desdeStr)
-    .lt("fecha_ingreso", fechaFinFiltroISO)
-    .order("fecha_ingreso", { ascending: false });
+  // PostgREST corta en 1000 filas por defecto y no avisa (lección #39 del
+  // CLAUDE.md): un rango "personalizado" amplio, o simplemente un taller con
+  // suficiente historial, puede superarlo. Sin paginar acá, el desglose por
+  // semana/mes y el ranking de mecánicos quedarían truncados en silencio —
+  // el total grande (que sale de la RPC) seguiría bien, pero el reparto no.
+  const TAMANO_PAGINA = 1000;
+  type FilaOrdenReporte = {
+    id: string;
+    numero: string;
+    total: number;
+    total_mano_obra: number;
+    total_repuestos: number;
+    fecha_ingreso: string;
+    fecha_entrega: string | null;
+    estado: string;
+    asignado_a: string | null;
+    mecanico: { user_id?: string; nombre?: string; rol?: string } | null;
+    vehiculo: { patente?: string; anio?: number; marca?: { nombre: string } | null; modelo?: { nombre: string } | null } | null;
+    cliente: { nombre?: string; apellido?: string; telefono?: string } | null;
+  };
+  const ordenes: FilaOrdenReporte[] = [];
+  let errorOrdenes: { message: string } | null = null;
+
+  for (let pagina = 0; ; pagina++) {
+    const desde = pagina * TAMANO_PAGINA;
+    const { data: tanda, error } = await supabase
+      .from("orden_trabajo")
+      .select(`
+        id,
+        numero,
+        total,
+        total_mano_obra,
+        total_repuestos,
+        fecha_ingreso,
+        fecha_entrega,
+        estado,
+        asignado_a,
+        mecanico:asignado_a ( user_id, nombre, rol ),
+        vehiculo:vehiculo_id ( patente, anio, marca:marca_id(nombre), modelo:modelo_id(nombre) ),
+        cliente:cliente_id ( nombre, apellido, telefono )
+      `)
+      .eq("taller_id", tallerId)
+      .in("estado", ["entregado", "cerrado"])
+      .gte("fecha_ingreso", desdeStr)
+      .lt("fecha_ingreso", fechaFinFiltroISO)
+      .order("fecha_ingreso", { ascending: false })
+      .range(desde, desde + TAMANO_PAGINA - 1);
+
+    if (error) {
+      errorOrdenes = error;
+      break;
+    }
+
+    ordenes.push(...((tanda as unknown as FilaOrdenReporte[]) ?? []));
+
+    if (!tanda || tanda.length < TAMANO_PAGINA) break;
+  }
 
   if (errorOrdenes) {
     console.error("[obtenerReporteCompleto] Error órdenes:", errorOrdenes);
   }
-
-  const ordenes = ordenesData ?? [];
 
   // 3. Resumen financiero seguro
   const rpcResumen = (metricasRpc as { resumen?: Record<string, number> })?.resumen ?? {};
   const totalFacturado = Number(rpcResumen.facturado ?? ordenes.reduce((s, o) => s + Number(o.total || 0), 0));
   const totalManoObra = Number(rpcResumen.mano_obra ?? ordenes.reduce((s, o) => s + Number(o.total_mano_obra || 0), 0));
   const totalRepuestos = Number(rpcResumen.repuestos ?? ordenes.reduce((s, o) => s + Number(o.total_repuestos || 0), 0));
+  // Sin la RPC no hay forma de saber el costo real de los repuestos vendidos
+  // (esa cuenta no se puede rearmar en JS: el costo unitario ni siquiera es
+  // legible desde acá). Si falló, es mejor no simular un margen del 100%.
   const costoRepuestos = Number(rpcResumen.costo_repuestos ?? 0);
+  const margenesParciales = Boolean(errorRpc);
   const vehiculosAtendidos = Number(rpcResumen.ordenes ?? ordenes.length);
 
   const margenRepuestos = Math.max(0, totalRepuestos - costoRepuestos);
@@ -89,21 +130,21 @@ export async function obtenerReporteCompleto(
   const mapaSemanas = new Map<string, DesgloseSemana>();
 
   for (const ot of ordenes) {
-    const d = new Date(ot.fecha_ingreso);
+    const d = fechaLocalDelTaller(ot.fecha_ingreso, zonaHoraria);
     // Hallar lunes de esa semana
-    const day = d.getDay();
+    const day = d.getUTCDay();
     const diff = day === 0 ? -6 : 1 - day;
     const lunes = new Date(d);
-    lunes.setDate(d.getDate() + diff);
+    lunes.setUTCDate(d.getUTCDate() + diff);
     const domingo = new Date(lunes);
-    domingo.setDate(lunes.getDate() + 6);
+    domingo.setUTCDate(lunes.getUTCDate() + 6);
 
     const lunesStr = aFechaISO(lunes);
     const domingoStr = aFechaISO(domingo);
     const semKey = `${lunesStr}`;
 
-    const formatoLunes = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(lunes);
-    const formatoDomingo = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(domingo);
+    const formatoLunes = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", timeZone: "UTC" }).format(lunes);
+    const formatoDomingo = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", timeZone: "UTC" }).format(domingo);
 
     const existente = mapaSemanas.get(semKey) ?? {
       semanaKey: semKey,
@@ -139,9 +180,9 @@ export async function obtenerReporteCompleto(
   // 5. Desglose Mensual
   const mapaMeses = new Map<string, DesgloseMes>();
   for (const ot of ordenes) {
-    const d = new Date(ot.fecha_ingreso);
-    const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const etiquetaMes = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(d);
+    const d = fechaLocalDelTaller(ot.fecha_ingreso, zonaHoraria);
+    const mesKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const etiquetaMes = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" }).format(d);
 
     const existente = mapaMeses.get(mesKey) ?? {
       mesKey,
@@ -216,8 +257,10 @@ export async function obtenerReporteCompleto(
     esLider: idx === 0 && maxOrdenes > 0,
   }));
 
-  // 7. Mapear vehículos detallados
-  const ultimosVehiculos: OrdenDetalleReporte[] = ordenes.map((o) => {
+  // 7. Mapear vehículos detallados. "Últimos" es al pie de la letra: los 100
+  // más recientes, no el período entero (que puede ser miles de órdenes) —
+  // `ordenes` ya viene ordenado desc por fecha_ingreso desde la paginación.
+  const ultimosVehiculos: OrdenDetalleReporte[] = ordenes.slice(0, 100).map((o) => {
     const v = o.vehiculo as {
       patente?: string;
       anio?: number;
@@ -274,5 +317,6 @@ export async function obtenerReporteCompleto(
     rankingMecanicos,
     topTrabajos,
     ultimosVehiculos,
+    margenesParciales,
   };
 }

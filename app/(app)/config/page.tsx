@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 
+import { SuscripcionConfig } from "@/components/config/SuscripcionConfig";
 import { AprobarCatalogo } from "@/components/config/AprobarCatalogo";
 import { AjustesIdiomaMoneda } from "@/components/config/AjustesIdiomaMoneda";
 import { CatalogoServicios } from "@/components/config/CatalogoServicios";
@@ -33,7 +34,7 @@ export default async function Config() {
   ] = await Promise.all([
     supabase
       .from("taller")
-      .select("nombre, cuit, direccion, telefono, logo_url")
+      .select("nombre, cuit, direccion, telefono, logo_url, plan, estado_suscripcion, trial_fin, suscripcion_fin, mp_subscription_status, idioma")
       .eq("id", sesion.perfil.taller_id)
       .single(),
     supabase
@@ -65,7 +66,7 @@ export default async function Config() {
     .map((i) => ({ id: i.id, etiqueta: i.etiqueta, categoria: i.categoria }));
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
         <EncabezadoPantalla seccion="Configuración" titulo="Ajustes" />
 
@@ -77,10 +78,14 @@ export default async function Config() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="entrar" style={{ "--i": 1 } as React.CSSProperties}>
-            <AjustesIdiomaMoneda editable={esDueno} />
+            {taller && <SuscripcionConfig taller={taller} esDueno={esDueno} />}
           </div>
 
           <div className="entrar" style={{ "--i": 2 } as React.CSSProperties}>
+            <AjustesIdiomaMoneda editable={esDueno} />
+          </div>
+
+          <div className="entrar" style={{ "--i": 3 } as React.CSSProperties}>
             {taller && <DatosTaller taller={taller} editable={esDueno} />}
           </div>
 

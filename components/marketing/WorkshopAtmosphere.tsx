@@ -46,37 +46,62 @@ export function WorkshopAtmosphere() {
   });
 
   // Opacidades y escalas por etapa del scroll
-  // Escena 1 (Hero e Introducción: 0% a 35%)
-  const scene1Opacity = useTransform(smoothProgress, [0, 0.2, 0.38], [0.85, 0.85, 0]);
-  const scene1Scale = useTransform(smoothProgress, [0, 0.35], [1.02, 1.1]);
-  const scene1Y = useTransform(smoothProgress, [0, 0.35], ["0%", "-5%"]);
+  // Escena 1 (Hero e Introducción: 0% a 45%)
+  const scene1Opacity = useTransform(smoothProgress, [0, 0.32, 0.46], [0.92, 0.92, 0]);
+  const scene1Scale = useTransform(smoothProgress, [0, 0.46], [1.0, 1.08]);
+  const scene1Y = useTransform(smoothProgress, [0, 0.46], ["0%", "-4%"]);
 
-  // Escena 2 (Fosa y Chasis Técnico: 25% a 70%)
-  const scene2Opacity = useTransform(smoothProgress, [0.28, 0.42, 0.58, 0.7], [0, 0.8, 0.8, 0]);
-  const scene2Scale = useTransform(smoothProgress, [0.28, 0.7], [1.04, 1.12]);
-  const scene2Y = useTransform(smoothProgress, [0.28, 0.7], ["4%", "-4%"]);
+  // Escena 2 (Fosa y Chasis Técnico: 35% a 78%)
+  const scene2Opacity = useTransform(smoothProgress, [0.36, 0.48, 0.68, 0.78], [0, 0.9, 0.9, 0]);
+  const scene2Scale = useTransform(smoothProgress, [0.36, 0.78], [1.02, 1.1]);
+  const scene2Y = useTransform(smoothProgress, [0.36, 0.78], ["3%", "-3%"]);
 
-  // Escena 3 (Diagnóstico y Motor: 60% a 95%)
-  const scene3Opacity = useTransform(smoothProgress, [0.62, 0.76, 0.88, 0.98], [0, 0.75, 0.75, 0.2]);
-  const scene3Scale = useTransform(smoothProgress, [0.62, 1], [1.05, 1.12]);
+  // Escena 3 (Diagnóstico y Motor: 68% a 100%)
+  const scene3Opacity = useTransform(smoothProgress, [0.7, 0.8, 1], [0, 0.88, 0.88]);
+  const scene3Scale = useTransform(smoothProgress, [0.7, 1], [1.03, 1.1]);
 
   // Láser de escaneo óptico / barra de luz que barre con el scroll
   const scanLaserY = useTransform(smoothProgress, [0, 1], ["5%", "95%"]);
 
-  // Paralaje de mouse sutil (tilt 3D)
+  // Paralaje de mouse sutil (tilt 3D). Throttleado a un `setState` por frame
+  // con requestAnimationFrame: sin esto, cada pixel de movimiento del mouse
+  // disparaba un re-render, en una página que ya combina scroll-linked motion
+  // values y varias imágenes full-bleed — candidato directo a jank en el
+  // equipo modesto que suele tener un taller.
   useEffect(() => {
     if (reduceMotion) return;
 
+    let frameId: number | null = null;
+
     const handleMouseMove = (e: MouseEvent) => {
-      const { innerWidth, innerHeight } = window;
-      const x = (e.clientX / innerWidth - 0.5) * 16; // ±8px
-      const y = (e.clientY / innerHeight - 0.5) * 16; // ±8px
-      setMousePos({ x, y });
+      if (frameId !== null) return;
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        const { innerWidth, innerHeight } = window;
+        const x = (e.clientX / innerWidth - 0.5) * 16; // ±8px
+        const y = (e.clientY / innerHeight - 0.5) * 16; // ±8px
+        setMousePos({ x, y });
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (frameId !== null) cancelAnimationFrame(frameId);
+    };
   }, [reduceMotion]);
+
+  const scene1Style = reduceMotion || !mounted
+    ? { opacity: 0.92 }
+    : { opacity: scene1Opacity, scale: scene1Scale, y: scene1Y };
+
+  const scene2Style = reduceMotion || !mounted
+    ? { opacity: 0 }
+    : { opacity: scene2Opacity, scale: scene2Scale, y: scene2Y };
+
+  const scene3Style = reduceMotion || !mounted
+    ? { opacity: 0 }
+    : { opacity: scene3Opacity, scale: scene3Scale };
 
   return (
     <div
@@ -89,7 +114,7 @@ export function WorkshopAtmosphere() {
       <div className="absolute inset-0 bg-radial-[circle_at_15%_45%,rgba(14,165,233,0.08)_0%,transparent_60%] pointer-events-none" />
 
       {/* Grilla técnica sutil de ingeniería de taller */}
-      <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
+      <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="fosa-blueprint-grid" width="48" height="48" patternUnits="userSpaceOnUse">
@@ -120,7 +145,7 @@ export function WorkshopAtmosphere() {
       >
         {/* Escena 1: Bahía Principal - Toyota Hilux en Elevador */}
         <motion.div
-          style={reduceMotion || !mounted ? undefined : { opacity: scene1Opacity, scale: scene1Scale, y: scene1Y }}
+          style={scene1Style}
           className="absolute inset-0 w-full h-full will-change-transform"
         >
           <Image
@@ -129,13 +154,13 @@ export function WorkshopAtmosphere() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-[center_32%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-30 mix-blend-multiply"
+            className="object-cover object-[center_30%] sm:object-center filter brightness-[1.0] contrast-[1.04]"
           />
         </motion.div>
 
         {/* Escena 2: Perspectiva de Fosa y Cárter */}
         <motion.div
-          style={reduceMotion || !mounted ? undefined : { opacity: scene2Opacity, scale: scene2Scale, y: scene2Y }}
+          style={scene2Style}
           className="absolute inset-0 w-full h-full will-change-transform"
         >
           <Image
@@ -143,13 +168,13 @@ export function WorkshopAtmosphere() {
             alt={SCENES[1].alt}
             fill
             sizes="100vw"
-            className="object-cover object-[center_38%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-25 mix-blend-multiply"
+            className="object-cover object-[center_38%] sm:object-center filter brightness-[1.0] contrast-[1.04]"
           />
         </motion.div>
 
         {/* Escena 3: Diagnóstico Computarizado & Motor */}
         <motion.div
-          style={reduceMotion || !mounted ? undefined : { opacity: scene3Opacity, scale: scene3Scale }}
+          style={scene3Style}
           className="absolute inset-0 w-full h-full will-change-transform"
         >
           <Image
@@ -157,7 +182,7 @@ export function WorkshopAtmosphere() {
             alt={SCENES[2].alt}
             fill
             sizes="100vw"
-            className="object-cover object-[center_45%] sm:object-center filter brightness-[1.02] contrast-[1.08] opacity-25 mix-blend-multiply"
+            className="object-cover object-[center_45%] sm:object-center filter brightness-[1.0] contrast-[1.04]"
           />
         </motion.div>
       </motion.div>
@@ -181,15 +206,12 @@ export function WorkshopAtmosphere() {
         </div>
       )}
 
-      {/* ── PLANO 3: Scrims & Viñeteado Cinemático para Contraste Impecable de Textos ── */}
-      {/* Gradiente vertical calibrado para mobile y desktop en modo claro */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#f8fafc]/92 via-[#f8fafc]/75 to-[#f8fafc]/98 sm:from-[#f8fafc]/88 sm:via-[#f8fafc]/65 sm:to-[#f8fafc]/98 pointer-events-none" />
+      {/* ── PLANO 3: Scrims Calibrados para Lectura Impecable sin Tapar la Maquinaria ── */}
+      {/* Suavizado suave en columna izquierda para lectura de titulares sin lavar la imagen */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#f8fafc]/85 via-[#f8fafc]/50 to-transparent sm:from-[#f8fafc]/90 sm:via-[#f8fafc]/40 sm:to-transparent pointer-events-none" />
 
-      {/* Gradiente lateral izquierdo para anclar la columna de lectura en desktop */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#f8fafc]/95 via-[#f8fafc]/75 to-[#f8fafc]/40 sm:to-transparent pointer-events-none" />
-
-      {/* Viñeta perimetral de contraste suave */}
-      <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_45%,#f8fafc_95%] pointer-events-none" />
+      {/* Transición suave superior e inferior */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#f8fafc]/40 via-transparent to-[#f8fafc]/60 pointer-events-none" />
     </div>
   );
 }

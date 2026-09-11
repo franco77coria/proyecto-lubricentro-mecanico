@@ -1,4 +1,5 @@
-import { ClipboardCheck, Package, Send, Wrench } from "lucide-react";
+import { ClipboardCheck, Package, Send } from "lucide-react";
+import { LogoIcono } from "@/components/ui/Logo";
 
 import { Tacometro } from "./Tacometro";
 
@@ -38,11 +39,14 @@ export function PanelMarca() {
         style={{ background: "rgb(56 89 168 / 0.35)" }}
       />
 
-      <div className="flex items-center gap-2.5">
-        <span className="grid h-10 w-10 place-items-center rounded-[var(--radius-sm)] bg-accent text-accent-foreground">
-          <Wrench className="h-5 w-5" aria-hidden />
-        </span>
-        <span className="text-display text-2xl tracking-wide text-white">TALLER</span>
+      <div className="flex items-center gap-3">
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-zinc-900 to-black p-1.5 shadow-lg border border-white/10">
+          <LogoIcono size="sm" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-display text-2xl font-black tracking-tight text-white leading-none">FIERROS</span>
+          <span className="text-[10px] font-mono tracking-widest text-orange-400 font-bold uppercase mt-0.5">TALLER & LUBRICENTRO</span>
+        </div>
       </div>
 
       <div className="flex flex-col items-center gap-6 py-6">

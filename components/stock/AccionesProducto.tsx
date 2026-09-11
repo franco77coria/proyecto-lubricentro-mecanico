@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownToLine, ClipboardList, History, Pencil, Trash2, X } from "lucide-react";
+import { ArrowDownToLine, ClipboardList, History, Pencil, Trash2 } from "lucide-react";
+
+import { Sheet } from "@/components/sheet/Sheet";
 
 import { useIsla } from "@/components/isla/IslaContext";
 import {
@@ -147,30 +149,10 @@ export function AccionesProducto({
         </BotonIcono>
       </div>
 
-      {abierto && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={nombre}
-        >
-          <div className="max-h-[85dvh] w-full overflow-y-auto rounded-t-[var(--radius-lg)] bg-card p-5 pb-[calc(var(--safe-bottom)+1.25rem)] shadow-[var(--sombra-alta)] sm:max-w-md sm:rounded-[var(--radius-lg)] sm:pb-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="truncate text-base font-semibold text-foreground">{nombre}</h3>
-                <p className="tabular text-caption text-muted-foreground">
-                  {stock} {unidad} en stock
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={cerrar}
-                aria-label="Cerrar"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4.5 w-4.5" aria-hidden />
-              </button>
-            </div>
+      <Sheet abierto={abierto !== null} onCerrar={cerrar} titulo={nombre}>
+        <p className="tabular text-caption text-muted-foreground -mt-1 mb-3">
+          {stock} {unidad} en stock
+        </p>
 
             {abierto === "ingreso" && (
               <form onSubmit={guardarIngreso} className="space-y-3">
@@ -317,9 +299,7 @@ export function AccionesProducto({
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Sheet>
     </>
   );
 }

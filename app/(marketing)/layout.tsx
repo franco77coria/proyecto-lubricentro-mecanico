@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Navbar } from "@/components/marketing/Navbar";
+import { Footer } from "@/components/marketing/Footer";
 import { BotonWhatsAppFlotante } from "@/components/marketing/BotonWhatsAppFlotante";
+import { BannerCookies } from "@/components/ui/BannerCookies";
 import { obtenerSesion } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -85,29 +87,24 @@ export default async function MarketingLayout({
 
   return (
     <div
-      /* Fondo base claro porcelana #f8fafc con overflow-x contenido en toda la página. */
-      className={`${inter.variable} ${jakarta.variable} tema-marketing min-h-screen w-full max-w-full overflow-x-hidden bg-[#f8fafc] text-zinc-950 flex flex-col font-[family-name:var(--font-inter)] selection:bg-accent/20`}
+      /* Fondo base claro porcelana #f8fafc con overflow-x-clip para no romper el fixed del fondo. */
+      className={`${inter.variable} ${jakarta.variable} tema-marketing min-h-screen w-full max-w-full overflow-x-clip bg-[#f8fafc] text-zinc-950 flex flex-col font-[family-name:var(--font-inter)] selection:bg-accent/20`}
     >
       <Navbar isLoggedIn={isLoggedIn} />
 
       {/* Contenido */}
-      <main className="flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
+      <main className="flex-1 flex flex-col w-full max-w-full overflow-x-clip">
         {children}
       </main>
 
       {/* Botón flotante directo de WhatsApp para clientes / interesados */}
       <BotonWhatsAppFlotante />
 
-      <footer className="relative mt-8 px-3.5 sm:px-6 pb-6 w-full max-w-full overflow-x-hidden">
-        <div className="mx-auto w-full max-w-6xl rounded-[1.5rem] sm:rounded-[2rem] bg-white/90 border border-black/[0.08] shadow-[0_10px_30px_rgba(0,0,0,0.04)] backdrop-blur-xl px-6 sm:px-8 py-8 sm:py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <span className="font-[family-name:var(--font-jakarta)] font-black tracking-[-0.03em] text-lg text-zinc-950">
-            Fierros
-          </span>
-          <p className="text-xs sm:text-sm text-zinc-500">
-            © {new Date().getFullYear()} — Gestión para lubricentros y talleres mecánicos.
-          </p>
-        </div>
-      </footer>
+      {/* Pie de página institucional con blindaje legal y defensa del consumidor */}
+      <Footer />
+
+      {/* Banner de consentimiento de cookies y políticas */}
+      <BannerCookies />
     </div>
   );
 }

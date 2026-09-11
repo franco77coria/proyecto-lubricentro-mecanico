@@ -12,7 +12,13 @@ import {
 import type { Database } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
 
-export async function crearProducto(datos: DatosProducto): Promise<{ productoId?: string; error?: string }> {
+export async function crearProducto(
+  datos: DatosProducto,
+): Promise<{
+  productoId?: string;
+  error?: string;
+  duplicado?: { id: string; nombre: string; stock: number; unidad?: string };
+}> {
   const sesion = await obtenerSesion();
   if (!sesion?.perfil) return { error: "Sesión vencida." };
   if (sesion.perfil.rol === "mecanico") {
@@ -27,6 +33,27 @@ export async function crearProducto(datos: DatosProducto): Promise<{ productoId?
 
   try {
     const supabase = await crearClienteServidor();
+
+    if (!d.forzar) {
+      const { data: existente } = await supabase
+        .from("producto")
+        .select("id, nombre, stock, unidad")
+        .ilike("nombre", d.nombre)
+        .eq("taller_id", tallerId)
+        .eq("activo", true)
+        .maybeSingle();
+
+      if (existente) {
+        return {
+          duplicado: {
+            id: existente.id,
+            nombre: existente.nombre,
+            stock: Number(existente.stock ?? 0),
+            unidad: existente.unidad,
+          },
+        };
+      }
+    }
 
     const { data: prod, error } = await supabase
       .from("producto")

@@ -28,8 +28,8 @@ describe("Mercado Pago - Cliente y Utilidades", () => {
       const hash = crypto.createHmac("sha256", SECRET).update(manifest).digest("hex");
       const xSignature = `ts=${ts},v1=${hash}`;
 
-      const esValido = validarFirmaWebhookMP(xSignature, requestId, dataId);
-      assert.equal(esValido, true);
+      const resultado = validarFirmaWebhookMP(xSignature, requestId, dataId);
+      assert.equal(resultado.ok, true);
 
       process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
     });
@@ -42,8 +42,9 @@ describe("Mercado Pago - Cliente y Utilidades", () => {
       const ts = "1710000000";
       const xSignature = `ts=${ts},v1=hash_falso_invalido_123456789abcdef`;
 
-      const esValido = validarFirmaWebhookMP(xSignature, requestId, dataId);
-      assert.equal(esValido, false);
+      const resultado = validarFirmaWebhookMP(xSignature, requestId, dataId);
+      assert.equal(resultado.ok, false);
+      assert.equal(!resultado.ok && resultado.motivo, "firma_invalida");
 
       process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
     });
@@ -51,8 +52,8 @@ describe("Mercado Pago - Cliente y Utilidades", () => {
     test("rechaza si falta xSignature o dataId", () => {
       process.env.MERCADOPAGO_WEBHOOK_SECRET = SECRET;
 
-      assert.equal(validarFirmaWebhookMP(null, "req_1", "123"), false);
-      assert.equal(validarFirmaWebhookMP("ts=1,v1=abc", "req_1", null), false);
+      assert.equal(validarFirmaWebhookMP(null, "req_1", "123").ok, false);
+      assert.equal(validarFirmaWebhookMP("ts=1,v1=abc", "req_1", null).ok, false);
 
       process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
     });
@@ -66,9 +67,42 @@ describe("Mercado Pago - Cliente y Utilidades", () => {
       const hash = crypto.createHmac("sha256", SECRET).update(manifest).digest("hex");
       const xSignature = `ts=${ts},v1=${hash}`;
 
-      const esValido = validarFirmaWebhookMP(xSignature, "req_adulterado", dataId);
-      assert.equal(esValido, false);
+      const resultado = validarFirmaWebhookMP(xSignature, "req_adulterado", dataId);
+      assert.equal(resultado.ok, false);
 
+      process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
+    });
+
+    // process.env.NODE_ENV es readonly en los tipos de Node: se muta a través
+    // de un Record para poder simular cada ambiente en el test.
+    const env = process.env as Record<string, string | undefined>;
+
+    test("falla CERRADO si falta el secret en producción, no deja pasar todo", () => {
+      const originalEnv = env.NODE_ENV;
+      process.env.MERCADOPAGO_WEBHOOK_SECRET = "";
+      process.env.MERCADO_PAGO_WEBHOOK_SECRET = "";
+      process.env.MP_WEBHOOK_SECRET = "";
+      env.NODE_ENV = "production";
+
+      const resultado = validarFirmaWebhookMP(null, null, "123456789");
+      assert.equal(resultado.ok, false);
+      assert.equal(!resultado.ok && resultado.motivo, "sin_secret_en_produccion");
+
+      env.NODE_ENV = originalEnv;
+      process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
+    });
+
+    test("permite la invocación sin secret fuera de producción (para poder probar el webhook)", () => {
+      const originalEnv = env.NODE_ENV;
+      process.env.MERCADOPAGO_WEBHOOK_SECRET = "";
+      process.env.MERCADO_PAGO_WEBHOOK_SECRET = "";
+      process.env.MP_WEBHOOK_SECRET = "";
+      env.NODE_ENV = "development";
+
+      const resultado = validarFirmaWebhookMP(null, null, "123456789");
+      assert.equal(resultado.ok, true);
+
+      env.NODE_ENV = originalEnv;
       process.env.MERCADOPAGO_WEBHOOK_SECRET = originalSecret;
     });
   });

@@ -1,7 +1,5 @@
 import { EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { exigirVista } from "@/lib/permisos";
-import { obtenerAjustesTaller } from "@/lib/taller";
-import { formatearMoneda } from "@/lib/i18n";
 import { obtenerReporteCompleto } from "@/lib/actions/reportes";
 import { type PeriodoPredefinido } from "@/lib/reportes-fechas";
 import { SelectorPeriodo } from "@/components/reportes/SelectorPeriodo";
@@ -33,9 +31,6 @@ export default async function Reportes(props: PageProps) {
     ? (searchParams.periodo as PeriodoPredefinido)
     : "este_mes";
 
-  const { idioma, moneda } = await obtenerAjustesTaller();
-  const money = (n: number) => formatearMoneda(n, moneda, idioma);
-
   const datos = await obtenerReporteCompleto({
     periodo: periodoValido,
     desde: searchParams.desde,
@@ -43,7 +38,7 @@ export default async function Reportes(props: PageProps) {
   });
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-12 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-12 scroll-inset">
       <div className="contenedor space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -63,7 +58,7 @@ export default async function Reportes(props: PageProps) {
         />
 
         {/* Pestañas con Desglose: Resumen, Semanas, Meses, Mecánicos y Autos */}
-        <PestanasReporte datos={datos} formatearDinero={money} />
+        <PestanasReporte datos={datos} />
       </div>
     </main>
   );

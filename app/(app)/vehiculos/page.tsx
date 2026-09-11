@@ -3,12 +3,14 @@ import Link from "next/link";
 
 import { Buscador, EncabezadoPantalla } from "@/components/ui/EncabezadoPantalla";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
+import { ModalNuevoVehiculo } from "@/components/vehiculos/ModalNuevoVehiculo";
 import { ESTADO_LABEL, ESTADO_TONO } from "@/lib/estados-ot";
 import { crearClienteServidor } from "@/lib/supabase/server";
 import { exigirVista } from "@/lib/permisos";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import { formatearNumero } from "@/lib/i18n";
 import { obtenerResponsablesOT, type DatosOTResponsables } from "@/lib/ot-usuarios";
+import { normalizarPatente } from "@/lib/patente";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,7 @@ export default async function PaginaVehiculos({
 
   if (q?.trim()) {
     const texto = q.trim();
-    const limpio = texto.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const limpio = normalizarPatente(texto);
 
     // Buscar si coincide con marcas o modelos
     const [{ data: marcas }, { data: modelos }] = await Promise.all([
@@ -93,19 +95,22 @@ export default async function PaginaVehiculos({
   }
 
   return (
-    <main className="flex-1 pt-[calc(var(--safe-top)+1.25rem)] pb-4 scroll-inset">
+    <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor space-y-5">
         <EncabezadoPantalla
           seccion="Autos"
           titulo={q ? `Resultados de "${q}"` : "Autos del taller"}
           accion={
-            <Link
-              href="/ot/nueva"
-              className="flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-              Recibir auto
-            </Link>
+            <div className="flex items-center gap-2">
+              <ModalNuevoVehiculo />
+              <Link
+                href="/ot/nueva"
+                className="flex min-h-11 items-center gap-2 rounded-[var(--radius-sm)] bg-accent px-4 text-sm font-semibold text-accent-foreground shadow-[var(--sombra-sutil)] transition-transform hover:brightness-110 active:scale-[0.98]"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                Recibir auto
+              </Link>
+            </div>
           }
         />
 

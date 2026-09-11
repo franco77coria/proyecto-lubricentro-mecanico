@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import {
   AlertOctagon,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { useIsla, type EstadoIsla } from "./IslaContext";
+import { etiquetaEstado } from "@/lib/estados-ot";
 
 /** Reposicionar / morfear: damping 1.0, response 0.4. Sin rebote — nada de
  *  esto viene con impulso, y el overshoot en algo que solo apareció se lee mal. */
@@ -59,7 +61,7 @@ function Resumen({ estado }: { estado: EstadoIsla }) {
             ·
           </span>
           <span className="text-display text-sm tracking-normal">{estado.patente}</span>
-          <span className="truncate text-caption text-muted-foreground">{estado.estado}</span>
+          <span className="truncate text-caption text-muted-foreground">{etiquetaEstado(estado.estado)}</span>
         </>
       );
     case "progreso":
@@ -86,10 +88,16 @@ function Resumen({ estado }: { estado: EstadoIsla }) {
  * destruye la legibilidad. Por eso la isla expandida está topeada en altura.
  */
 export function Isla() {
-  const { estado, descartar } = useIsla();
+  const { estado, descartar, fijarOT } = useIsla();
   const [quiereExpandir, setExpandida] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const reducirMovimiento = useReducedMotion();
+  const pathname = usePathname();
+
+  // Si la isla tiene fijada una OT pero el usuario ya está adentro de esa misma OT,
+  // ocultamos la píldora para no duplicar información ni tapar los botones superiores.
+  const estaEnEstaOT =
+    estado.tipo === "ot" && (pathname === `/ot/${estado.otId}` || pathname?.startsWith(`/ot/${estado.otId}/`));
 
   const puedeExpandir = estado.tipo === "ot";
   // Derivado, no sincronizado con un efecto: si entra un aviso mientras está
@@ -110,13 +118,13 @@ export function Isla() {
     };
   }, [expandida]);
 
-  if (estado.tipo === "oculta") return null;
+  if (estado.tipo === "oculta" || estaEnEstaOT) return null;
 
   const transicion = reducirMovimiento ? { duration: 0 } : SPRING;
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-center px-3 pt-[calc(var(--safe-top)+0.5rem)]"
+      className="pointer-events-none fixed inset-x-0 lg:left-[var(--sidebar-ancho)] lg:right-0 top-0 z-40 flex justify-center px-3 pt-[calc(var(--safe-top)+0.5rem)]"
       aria-live={estado.tipo === "error" ? "assertive" : "polite"}
     >
       <motion.div
@@ -222,13 +230,26 @@ export function Isla() {
                 </div>
               )}
             </div>
-            <Link
-              href={`/ot/${estado.otId}`}
-              onClick={() => setExpandida(false)}
-              className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-accent/10 px-3 text-xs font-bold text-accent hover:bg-accent/20 transition-colors"
-            >
-              Ver la orden completa #{estado.numero}
-            </Link>
+            <div className="mt-2 flex items-center gap-2">
+              <Link
+                href={`/ot/${estado.otId}`}
+                onClick={() => setExpandida(false)}
+                className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-accent/10 px-3 text-xs font-bold text-accent hover:bg-accent/20 transition-colors"
+              >
+                Ver orden completa #{estado.numero}
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setExpandida(false);
+                  fijarOT(null);
+                }}
+                className="flex min-h-11 items-center justify-center rounded-xl bg-muted/60 px-3.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                title="Quitar de la barra"
+              >
+                Descartar
+              </button>
+            </div>
           </motion.div>
         )}
       </motion.div>

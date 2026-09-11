@@ -110,8 +110,18 @@ export default async function PaginaDetallePresupuesto({
 
   const esPresupuesto = presupuesto.estado === "presupuesto";
 
+  // El formulario de alta guarda "Observaciones / Validez de la oferta" como
+  // nota tipo `descargo` (ot_nota), no en `presupuesto.observaciones` — esa
+  // columna la escribe otro flujo. Sin esto, el texto que se tipeó al crear
+  // el presupuesto no se veía acá (solo salía en el PDF/WhatsApp), como si se
+  // hubiera perdido.
+  const descargosTexto = ((presupuesto.notas as Array<{ tipo: string; texto: string }>) || [])
+    .filter((n) => n.tipo === "descargo")
+    .map((n) => n.texto)
+    .join("\n\n");
+
   return (
-    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8">
+    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-24 lg:pb-8">
       <div className="contenedor-ancho space-y-6 max-w-3xl">
         {/* Navegación y Acciones Rápidas */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -268,14 +278,21 @@ export default async function PaginaDetallePresupuesto({
         </div>
 
         {/* Observaciones */}
-        {presupuesto.observaciones && (
+        {(presupuesto.observaciones || descargosTexto) && (
           <section className="rounded-3xl border border-border/80 bg-card p-6 shadow-sm">
             <h2 className="text-xs font-black uppercase tracking-wider text-foreground mb-2">
               Observaciones &amp; Validez
             </h2>
-            <p className="text-sm text-muted-foreground font-medium whitespace-pre-wrap leading-relaxed">
-              {presupuesto.observaciones}
-            </p>
+            {presupuesto.observaciones && (
+              <p className="text-sm text-muted-foreground font-medium whitespace-pre-wrap leading-relaxed">
+                {presupuesto.observaciones}
+              </p>
+            )}
+            {descargosTexto && (
+              <p className="text-sm text-muted-foreground font-medium whitespace-pre-wrap leading-relaxed">
+                {descargosTexto}
+              </p>
+            )}
           </section>
         )}
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Camera, Trash2, TriangleAlert } from "lucide-react";
 
@@ -26,6 +27,7 @@ export function CapturaFotos({
   tallerId: string;
   fotos: FotoConUrl[];
 }) {
+  const router = useRouter();
   const { notificar } = useIsla();
   const [tipo, setTipo] = useState<TipoFoto>("estado_ingreso");
   const [subiendo, setSubiendo] = useState(false);
@@ -77,6 +79,7 @@ export function CapturaFotos({
             ? `Foto subida · ${formatearPeso(ahorrado)} menos`
             : `${subidas} fotos subidas · ${formatearPeso(ahorrado)} menos`,
       });
+      router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "No se pudieron subir las fotos";
       setError(msg);
@@ -88,7 +91,12 @@ export function CapturaFotos({
 
   async function alBorrar(id: string) {
     const res = await borrarFoto(id, otId);
-    if (res.error) notificar({ tipo: "error", mensaje: res.error });
+    if (res.error) {
+      notificar({ tipo: "error", mensaje: res.error });
+    } else {
+      notificar({ tipo: "exito", mensaje: "Foto borrada" });
+      router.refresh();
+    }
   }
 
   return (

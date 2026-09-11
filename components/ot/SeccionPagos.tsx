@@ -1,10 +1,12 @@
 "use client";
 
-import { CreditCard, Plus } from "lucide-react";
+import { Banknote, CreditCard, Landmark, Plus, Smartphone, WalletCards } from "lucide-react";
 import { useState, useTransition } from "react";
 
-import { METODOS_PAGO, MetodoPago, registrarPagoOT } from "@/lib/actions/caja";
+import { METODOS_PAGO, type MetodoPago } from "@/lib/schemas/pago";
+import { registrarPagoOT } from "@/lib/actions/caja";
 import { useFormato } from "@/lib/i18n/I18nContext";
+import { DesplegableModerno, type OpcionDesplegable } from "@/components/ui/DesplegableModerno";
 
 const ETIQUETA_METODO: Record<MetodoPago, string> = {
   efectivo: "Efectivo",
@@ -14,6 +16,21 @@ const ETIQUETA_METODO: Record<MetodoPago, string> = {
   mercado_pago: "Mercado Pago",
   otro: "Otro",
 };
+
+const ICONO_METODO: Record<MetodoPago, typeof Banknote> = {
+  efectivo: Banknote,
+  transferencia: Landmark,
+  tarjeta_credito: CreditCard,
+  tarjeta_debito: CreditCard,
+  mercado_pago: Smartphone,
+  otro: WalletCards,
+};
+
+const OPCIONES_METODO: OpcionDesplegable[] = METODOS_PAGO.map((m) => ({
+  valor: m,
+  etiqueta: ETIQUETA_METODO[m],
+  icono: ICONO_METODO[m],
+}));
 
 interface Pago {
   id: string;
@@ -123,23 +140,18 @@ export function SeccionPagos({
         <form onSubmit={handleCobrar} className="space-y-3 pt-2 border-t border-border">
           {errorMsg && <p className="text-xs font-bold text-red-600">{errorMsg}</p>}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-caption text-muted-foreground">Método</label>
-              <select
-                value={metodo}
-                onChange={(e) => setMetodo(e.target.value as MetodoPago)}
-                className="mt-1 min-h-10 w-full rounded-lg border border-border bg-muted px-2 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
-              >
-                {/* Se derivan de la constante, que es la misma que valida el
-                    Server Action. Escritas a mano, agregar un método implicaba
-                    acordarse de tocar los dos lados. */}
-                {METODOS_PAGO.map((m) => (
-                  <option key={m} value={m}>
-                    {ETIQUETA_METODO[m]}
-                  </option>
-                ))}
-              </select>
+              <label className="text-caption font-semibold text-muted-foreground block mb-1">
+                Método de Cobro
+              </label>
+              <DesplegableModerno
+                valor={metodo}
+                onChange={(v) => setMetodo(v as MetodoPago)}
+                opciones={OPCIONES_METODO}
+                className="w-full"
+                botonClassName="min-h-10 rounded-xl bg-muted/70 border-border/80 text-xs font-bold"
+              />
             </div>
 
             <div>

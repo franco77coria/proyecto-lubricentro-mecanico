@@ -406,7 +406,7 @@ export function Seguimiento() {
               </div>
               <div className="self-start sm:self-center shrink-0">
                 <PlacaPatente patente="AE789CD" size="sm" className="sm:hidden" />
-                <PlacaPatente patente="AE789CD" size="md" className="hidden sm:block" />
+                <PlacaPatente patente="AE789CD" size="md" className="hidden sm:inline-flex" />
               </div>
             </div>
 

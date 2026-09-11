@@ -76,7 +76,7 @@ export default async function PaginaDetalleCliente({
     .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   return (
-    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8">
+    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-24 lg:pb-8">
       <div className="contenedor space-y-6 max-w-4xl">
         {/* Volver */}
         <Link

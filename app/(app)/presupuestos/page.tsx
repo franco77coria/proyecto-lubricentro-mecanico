@@ -12,7 +12,7 @@ export default async function PaginaPresupuestos() {
   const presupuestos = await listarPresupuestos();
 
   return (
-    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+1.25rem)] pb-24 lg:pb-8 relative">
+    <main className="flex-1 overflow-y-auto pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-24 lg:pb-8 relative">
       <div className="contenedor-ancho space-y-6">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
