@@ -468,7 +468,9 @@ export async function buscarVehiculoPorPatente(
       if (res.marcaId) {
         marcaId = res.marcaId;
         modeloId = res.modeloId;
-        motorizacionId = res.motorizacionId || motorizacionId;
+        if (res.motorizacionId) {
+          motorizacionId = res.motorizacionId;
+        }
         if (!marcaNombre && marcaId) {
           const { data: m } = await supabase.from("marca").select("nombre").eq("id", marcaId).maybeSingle();
           marcaNombre = m?.nombre;
@@ -476,6 +478,21 @@ export async function buscarVehiculoPorPatente(
         if (!modeloNombre && modeloId) {
           const { data: mo } = await supabase.from("modelo").select("nombre").eq("id", modeloId).maybeSingle();
           modeloNombre = mo?.nombre;
+        }
+      } else if (limpioNotas.length >= 3) {
+        // Búsqueda directa en el catálogo si la cédula/nota tiene el nombre del modelo
+        const { data: mo } = await supabase
+          .from("modelo")
+          .select("id, nombre, marca_id, marca:marca_id(id, nombre)")
+          .ilike("nombre", `%${limpioNotas}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (mo) {
+          marcaId = mo.marca_id;
+          modeloId = mo.id;
+          modeloNombre = mo.nombre;
+          marcaNombre = (mo.marca as { nombre?: string } | null)?.nombre;
         }
       }
     }

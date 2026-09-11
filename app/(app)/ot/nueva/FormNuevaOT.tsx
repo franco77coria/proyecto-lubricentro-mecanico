@@ -239,16 +239,15 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
         setCedulaPayload(JSON.stringify(d));
         if (d.patente) {
           setPatente(d.patente);
-          const yaEstaba = await buscarEnTaller(d.patente);
-          if (yaEstaba) return;
+          await buscarEnTaller(d.patente);
         }
         if (d.anio) setAnio(String(d.anio));
         if (d.vin) setVin(d.vin);
         if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
         if (d.titularNombre) {
           const desglose = desglosarTitular(d.titularNombre);
-          setClienteApellido(desglose.apellido);
-          setClienteNombre(desglose.nombre);
+          if (desglose.apellido) setClienteApellido(desglose.apellido);
+          if (desglose.nombre) setClienteNombre(desglose.nombre);
         }
         if (d.marca || d.modelo) {
           const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
@@ -256,11 +255,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
           startTransition(async () => {
             const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "", d.motorizacion || "");
             if (resuelto.marcaId) {
-              setVehiculo({
+              setVehiculo((prev) => ({
                 marcaId: resuelto.marcaId,
-                modeloId: resuelto.modeloId,
-                motorizacionId: resuelto.motorizacionId || "",
-              });
+                modeloId: resuelto.modeloId || prev.modeloId,
+                motorizacionId: resuelto.motorizacionId || prev.motorizacionId,
+              }));
             }
           });
         }
@@ -456,10 +455,13 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
             </div>
           )}
 
-          {cedulaResumen && !vehiculoEncontradoBadge && (
-            <p className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-caption font-semibold text-emerald-400">
-              ✓ Leído de la cédula: {cedulaResumen}
-            </p>
+          {cedulaResumen && (
+            <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent/10 p-2.5 text-xs text-accent animate-in fade-in">
+              <span className="flex items-center gap-1.5 font-semibold">
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-accent" />
+                <span>✓ Leído de la cédula: {cedulaResumen}</span>
+              </span>
+            </div>
           )}
 
           {/* Sugerencia inteligente si el QR solo trajo la patente y el auto no estaba registrado */}
@@ -500,8 +502,8 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
               if (d.titularDocumento) setClienteDocumento(d.titularDocumento);
               if (d.titularNombre) {
                 const desglose = desglosarTitular(d.titularNombre);
-                setClienteApellido(desglose.apellido);
-                setClienteNombre(desglose.nombre);
+                if (desglose.apellido) setClienteApellido(desglose.apellido);
+                if (desglose.nombre) setClienteNombre(desglose.nombre);
               }
               if (d.marca || d.modelo) {
                 const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
@@ -509,11 +511,11 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
                 startTransition(async () => {
                   const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "", d.motorizacion || "");
                   if (resuelto.marcaId) {
-                    setVehiculo({
+                    setVehiculo((prev) => ({
                       marcaId: resuelto.marcaId,
-                      modeloId: resuelto.modeloId,
-                      motorizacionId: resuelto.motorizacionId || "",
-                    });
+                      modeloId: resuelto.modeloId || prev.modeloId,
+                      motorizacionId: resuelto.motorizacionId || prev.motorizacionId,
+                    }));
                   }
                 });
               }

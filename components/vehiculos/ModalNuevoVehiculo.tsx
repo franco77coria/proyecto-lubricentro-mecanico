@@ -11,6 +11,7 @@ const LectorCodigo = dynamic(
   { ssr: false },
 );
 import { crearVehiculo } from "@/lib/actions/vehiculos";
+import { resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
 import { useIsla } from "@/components/isla/IslaContext";
 
@@ -24,11 +25,17 @@ export function ModalNuevoVehiculo() {
   const [patenteNueva, setPatenteNueva] = useState("");
   const [vinNuevo, setVinNuevo] = useState("");
   const [anioNuevo, setAnioNuevo] = useState("");
+  const [marcaId, setMarcaId] = useState("");
+  const [modeloId, setModeloId] = useState("");
+  const [resumenIA, setResumenIA] = useState<string | null>(null);
 
   const limpiar = () => {
     setPatenteNueva("");
     setVinNuevo("");
     setAnioNuevo("");
+    setMarcaId("");
+    setModeloId("");
+    setResumenIA(null);
     setAbierto(false);
   };
 
@@ -37,10 +44,20 @@ export function ModalNuevoVehiculo() {
     try {
       const res = await escanearCedulaVerdeAction(dataUri);
       if (res.datos) {
-        if (res.datos.patente) setPatenteNueva(res.datos.patente);
-        if (res.datos.vin) setVinNuevo(res.datos.vin);
-        if (res.datos.anio) setAnioNuevo(String(res.datos.anio));
-        notificar({ tipo: "exito", mensaje: `✨ Cédula leída con IA: ${res.datos.patente || "Leída"}` });
+        const d = res.datos;
+        if (d.patente) setPatenteNueva(d.patente);
+        if (d.vin) setVinNuevo(d.vin);
+        if (d.anio) setAnioNuevo(String(d.anio));
+        if (d.marca || d.modelo) {
+          const desc = [d.marca, d.modelo, d.motorizacion].filter(Boolean).join(" ");
+          setResumenIA(desc);
+          const resuelto = await resolverDesdeCedula(d.marca || "", d.modelo || "", d.motorizacion || "");
+          if (resuelto.marcaId) {
+            setMarcaId(resuelto.marcaId);
+            setModeloId(resuelto.modeloId);
+          }
+        }
+        notificar({ tipo: "exito", mensaje: `✨ Cédula leída con IA: ${d.patente || "Leída"}` });
       } else if (res.error) {
         notificar({ tipo: "alerta", mensaje: res.error });
       }
@@ -58,6 +75,8 @@ export function ModalNuevoVehiculo() {
       formData.append("patente", patenteNueva.trim());
       if (vinNuevo.trim()) formData.append("vin", vinNuevo.trim());
       if (anioNuevo.trim()) formData.append("anio", anioNuevo.trim());
+      if (marcaId) formData.append("marcaId", marcaId);
+      if (modeloId) formData.append("modeloId", modeloId);
 
       const res = await crearVehiculo({}, formData);
 
@@ -116,8 +135,14 @@ export function ModalNuevoVehiculo() {
               className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-accent/40 bg-accent/10 text-xs font-bold text-accent active:scale-98 transition-transform"
             >
               <ScanLine className="h-4 w-4" />
-              <span>Escanear Cédula Verde</span>
+              <span>Escanear Cédula Verde (IA)</span>
             </button>
+
+            {resumenIA && (
+              <div className="rounded-xl border border-accent/30 bg-accent/10 p-2.5 text-xs text-accent">
+                ✓ Leído de cédula con IA: <strong>{resumenIA}</strong>
+              </div>
+            )}
 
             <div>
               <label className="text-caption font-semibold text-muted-foreground block mb-1">
