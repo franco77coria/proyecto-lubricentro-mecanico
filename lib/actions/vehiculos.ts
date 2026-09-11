@@ -9,6 +9,7 @@ import { hoyEnZona } from "@/lib/fechas";
 import { obtenerAjustesTaller } from "@/lib/taller";
 import type { Database } from "@/lib/supabase/database.types";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { resolverDesdeCedula } from "@/lib/actions/catalogo";
 
 /** Solo las columnas que la app puede tocar, con los tipos de la base. */
 type ParcheVehiculo = Database["public"]["Tables"]["vehiculo"]["Update"];
@@ -399,5 +400,133 @@ export async function obtenerVehiculosParaAsignar(): Promise<
     modelo: v.modelo?.nombre || null,
     motorizacion: v.motorizacion?.nombre || null,
   }));
+}
+
+export interface DatosVehiculoEncontrado {
+  id: string;
+  patente: string;
+  marcaId?: string;
+  marcaNombre?: string;
+  modeloId?: string;
+  modeloNombre?: string;
+  motorizacionId?: string;
+  motorizacionNombre?: string;
+  anio?: number;
+  vin?: string;
+  color?: string;
+  combustible?: string;
+  kmActual?: number;
+  cliente?: {
+    id: string;
+    nombre: string;
+    apellido?: string;
+    telefono?: string;
+    documento?: string;
+  };
+  descripcion: string;
+}
+
+export async function buscarVehiculoPorPatente(
+  patente: string,
+): Promise<{ encontrado: boolean; vehiculo?: DatosVehiculoEncontrado; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { encontrado: false, error: "No autorizado" };
+
+  const norm = patente.trim().replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  if (!norm || norm.length < 5) return { encontrado: false };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    const { data: v, error } = await supabase
+      .from("vehiculo")
+      .select(`
+        id, patente, anio, vin, color, combustible, km_actual, notas,
+        marca_id, modelo_id, motorizacion_id,
+        marca:marca_id(id, nombre),
+        modelo:modelo_id(id, nombre),
+        motorizacion:motorizacion_id(id, nombre)
+      `)
+      .eq("taller_id", tallerId)
+      .eq("patente_norm", norm)
+      .maybeSingle();
+
+    if (error || !v) return { encontrado: false };
+
+    let marcaId = v.marca_id || "";
+    let modeloId = v.modelo_id || "";
+    let motorizacionId = v.motorizacion_id || "";
+    let marcaNombre = (v.marca as { nombre?: string } | null)?.nombre;
+    let modeloNombre = (v.modelo as { nombre?: string } | null)?.nombre;
+    const motorizacionNombre = (v.motorizacion as { nombre?: string } | null)?.nombre;
+
+    // Si no tenía marca/modelo enlazado pero tenía notas como "Modelo: fluence"
+    if ((!marcaId || !modeloId) && v.notas) {
+      const limpioNotas = v.notas.replace(/^modelo:\s*/i, "").trim();
+      const res = await resolverDesdeCedula("", limpioNotas);
+      if (res.marcaId) {
+        marcaId = res.marcaId;
+        modeloId = res.modeloId;
+        motorizacionId = res.motorizacionId || motorizacionId;
+        if (!marcaNombre && marcaId) {
+          const { data: m } = await supabase.from("marca").select("nombre").eq("id", marcaId).maybeSingle();
+          marcaNombre = m?.nombre;
+        }
+        if (!modeloNombre && modeloId) {
+          const { data: mo } = await supabase.from("modelo").select("nombre").eq("id", modeloId).maybeSingle();
+          modeloNombre = mo?.nombre;
+        }
+      }
+    }
+
+    // Buscar cliente vinculado activo
+    let clienteData: DatosVehiculoEncontrado["cliente"] = undefined;
+    const { data: vc } = await supabase
+      .from("vehiculo_cliente")
+      .select("cliente:cliente_id(id, nombre, apellido, telefono, documento)")
+      .eq("vehiculo_id", v.id)
+      .eq("taller_id", tallerId)
+      .is("hasta", null)
+      .maybeSingle();
+
+    if (vc?.cliente) {
+      const c = vc.cliente as unknown as { id: string; nombre: string; apellido?: string; telefono?: string; documento?: string };
+      clienteData = {
+        id: c.id,
+        nombre: c.nombre,
+        apellido: c.apellido || "",
+        telefono: c.telefono || "",
+        documento: c.documento || "",
+      };
+    }
+
+    const partes = [marcaNombre, modeloNombre, motorizacionNombre, v.anio ? String(v.anio) : null].filter(Boolean);
+    const descripcion = partes.length ? partes.join(" ") : v.patente;
+
+    return {
+      encontrado: true,
+      vehiculo: {
+        id: v.id,
+        patente: v.patente,
+        marcaId: marcaId || undefined,
+        marcaNombre,
+        modeloId: modeloId || undefined,
+        modeloNombre,
+        motorizacionId: motorizacionId || undefined,
+        motorizacionNombre,
+        anio: v.anio || undefined,
+        vin: v.vin || undefined,
+        color: v.color || undefined,
+        combustible: v.combustible || undefined,
+        kmActual: v.km_actual || undefined,
+        cliente: clienteData,
+        descripcion,
+      },
+    };
+  } catch (err) {
+    console.error("[buscarVehiculoPorPatente]", err);
+    return { encontrado: false };
+  }
 }
 

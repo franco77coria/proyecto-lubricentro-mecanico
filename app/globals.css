@@ -323,6 +323,26 @@ nav {
 }
 
 /* ==========================================================================
+   Comportamiento App Nativa Móvil:
+   1. Prevenir auto-zoom invasivo de iOS Safari forzando 16px mínimo en inputs.
+   2. Ocultar dock/barra inferior flotante cuando el teclado está abierto o hay foco.
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+body:has(input:focus, textarea:focus, select:focus) .barra-inferior-mobile {
+  transform: translateY(150%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+/* ==========================================================================
    Tipografía
    Tracking específico por tamaño: un letter-spacing fijo está mal en algún lado.
    Leading al revés que el tamaño: apretado en títulos, holgado en cuerpo.

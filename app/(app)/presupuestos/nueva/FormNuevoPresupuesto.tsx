@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Car, FileText, Plus, RotateCcw, Trash2, Wrench, Sparkles } from "lucide-react";
+import { ArrowLeft, Car, FileText, Plus, RotateCcw, Trash2, Wrench, Sparkles, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useEffect } from "react";
@@ -11,10 +11,11 @@ import { SelectorCliente } from "@/components/clientes/SelectorCliente";
 import { useIsla } from "@/components/isla/IslaContext";
 import { type OpcionCatalogo, resolverDesdeCedula } from "@/lib/actions/catalogo";
 import { crearPresupuestoCompleto, type DatosPresupuesto } from "@/lib/actions/presupuestos";
-import { crearVehiculo } from "@/lib/actions/vehiculos";
+import { crearVehiculo, buscarVehiculoPorPatente } from "@/lib/actions/vehiculos";
 import { obtenerFichaPorMotorizacion, type FichaTecnica } from "@/lib/actions/tecnica";
 import { useFormato } from "@/lib/i18n/I18nContext";
 import { desglosarTitular } from "@/lib/cedula";
+import { esPatenteValida, normalizarPatente } from "@/lib/patente";
 
 const VEHICULO_VACIO: ValorVehiculo = { marcaId: "", modeloId: "", motorizacionId: "" };
 const DRAFT_KEY = "draft_nuevo_presupuesto";
@@ -54,6 +55,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   
   // Ficha Tecnica
   const [ficha, setFicha] = useState<Partial<FichaTecnica> | null>(null);
+  const [vehiculoEncontradoBadge, setVehiculoEncontradoBadge] = useState<string | null>(null);
 
   // Recuperar el borrador guardado en el navegador.
   //
@@ -127,7 +129,65 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
     setClienteDocumento("");
     setDescargo("");
     setItems([{ id: "init-1", tipo: "mano_obra", descripcion: "", cantidad: 1, precioUnitario: 0 }]);
+    setVehiculoEncontradoBadge(null);
     notificar({ tipo: "alerta", mensaje: "Borrador limpiado." });
+  };
+
+  /**
+   * Busca si el vehículo ya existe en el taller y precarga sus datos.
+   */
+  const buscarEnTaller = async (patenteBuscada: string): Promise<boolean> => {
+    const limpia = normalizarPatente(patenteBuscada);
+    if (!limpia || limpia.length < 5) return false;
+
+    try {
+      const res = await buscarVehiculoPorPatente(limpia);
+      if (res.encontrado && res.vehiculo) {
+        const v = res.vehiculo;
+        if (v.marcaId) {
+          setVehiculo({
+            marcaId: v.marcaId,
+            modeloId: v.modeloId || "",
+            motorizacionId: v.motorizacionId || "",
+          });
+        }
+        if (v.anio) setAnio(String(v.anio));
+        if (v.vin) setVin(v.vin);
+        if (v.combustible) setCombustible(v.combustible);
+        if (v.cliente) {
+          if (v.cliente.nombre) setClienteNombre(v.cliente.nombre);
+          if (v.cliente.apellido) setClienteApellido(v.cliente.apellido);
+          if (v.cliente.telefono) setClienteTelefono(v.cliente.telefono);
+          if (v.cliente.documento) setClienteDocumento(v.cliente.documento);
+        }
+        setVehiculoEncontradoBadge(
+          `✓ Encontrado en taller: ${v.descripcion}${v.cliente?.nombre ? ` · Titular: ${v.cliente.nombre} ${v.cliente.apellido || ""}` : ""}`
+        );
+        notificar({
+          tipo: "exito",
+          mensaje: `Vehículo identificado: ${v.descripcion}`,
+        });
+        return true;
+      }
+    } catch (err) {
+      console.warn("[buscarEnTaller/Presupuesto]", err);
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    const norm = normalizarPatente(patente);
+    if (!esPatenteValida(norm)) return;
+
+    const timer = setTimeout(() => {
+      buscarEnTaller(norm);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [patente]);
+
+  const handleCambioPatente = (val: string) => {
+    setPatente(val);
+    if (vehiculoEncontradoBadge) setVehiculoEncontradoBadge(null);
   };
 
   useEffect(() => {
@@ -248,7 +308,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
   const subtotal = totalManoObra + totalRepuestos;
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 pb-20">
+    <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-6 pb-32">
       {/* Encabezado */}
       <div className="flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
@@ -289,13 +349,26 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
           <h2 className="text-sm font-bold text-foreground">Vehículo y Cliente</h2>
         </div>
 
+        {vehiculoEncontradoBadge && (
+          <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-400 animate-in fade-in">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              <span>{vehiculoEncontradoBadge}</span>
+            </span>
+            <span className="text-[10px] uppercase font-bold text-emerald-500 shrink-0 ml-2">Historial</span>
+          </div>
+        )}
+
         <PatenteInput
           value={patente}
-          onChange={setPatente}
+          onChange={handleCambioPatente}
           formatoEspecial={formatoEspecial}
           onFormatoEspecialChange={setFormatoEspecial}
           onCedulaDetectada={(d) => {
-            if (d.patente) setPatente(d.patente);
+            if (d.patente) {
+              setPatente(d.patente);
+              buscarEnTaller(d.patente);
+            }
             if (d.anio) setAnio(String(d.anio));
             if (d.vin) setVin(d.vin);
             if (d.combustible) setCombustible(d.combustible);
@@ -338,7 +411,7 @@ export function FormNuevoPresupuesto({ marcas }: { marcas: OpcionCatalogo[] }) {
               placeholder="Ej: 2018"
               value={anio}
               onChange={(e) => setAnio(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-xs font-medium text-foreground focus:border-accent focus:outline-none"
+              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-muted px-3 text-base sm:text-xs font-medium text-foreground focus:border-accent focus:outline-none"
             />
           </div>
 

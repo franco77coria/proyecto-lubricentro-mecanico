@@ -24,6 +24,7 @@ export function PatenteInput({
   formatoEspecial: especialProp,
   onFormatoEspecialChange,
   onCedulaDetectada,
+  mostrarBotonEscanear = true,
 }: {
   defaultValue?: string;
   value?: string;
@@ -32,6 +33,7 @@ export function PatenteInput({
   formatoEspecial?: boolean;
   onFormatoEspecialChange?: (especial: boolean) => void;
   onCedulaDetectada?: (datos: CedulaVerdeOCRData) => void;
+  mostrarBotonEscanear?: boolean;
 }) {
   const [internalValor, setInternalValor] = useState(normalizarPatente(defaultValue));
   const [internalEspecial, setInternalEspecial] = useState(false);
@@ -99,24 +101,26 @@ export function PatenteInput({
     <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <span className="text-caption font-medium text-muted-foreground">Patente</span>
-        <button
-          type="button"
-          onClick={() => inputFotoRef.current?.click()}
-          disabled={escaneando}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50 shadow-sm"
-        >
-          {escaneando ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              <span>Leyendo cédula con IA...</span>
-            </>
-          ) : (
-            <>
-              <Camera className="h-3.5 w-3.5" />
-              <span>Escanear Cédula Verde</span>
-            </>
-          )}
-        </button>
+        {mostrarBotonEscanear && (
+          <button
+            type="button"
+            onClick={() => inputFotoRef.current?.click()}
+            disabled={escaneando}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50 shadow-sm"
+          >
+            {escaneando ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Leyendo cédula con IA...</span>
+              </>
+            ) : (
+              <>
+                <Camera className="h-3.5 w-3.5" />
+                <span>Foto Cédula (IA)</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       <input

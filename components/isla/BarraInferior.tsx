@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus, Sparkles, Columns3, CalendarDays } from "lucide-react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 
 import { SidebarDrawer } from "@/components/nav/SidebarDrawer";
 import { esRutaActiva } from "@/lib/navegacion";
@@ -22,6 +21,7 @@ export interface BarraInferiorProps {
  * Al alcance del pulgar, con bordes redondeados prolijos (rounded-3xl),
  * botón de menú lateral (tres rayitas), accesos de carga rápida (+ OT y + Presupuesto)
  * y atajos directos a Kanban y Turnos con áreas táctiles mínimas de 48px.
+ * Se oculta automáticamente cuando se abre el teclado o hay un input activo.
  */
 export function BarraInferior({
   taller = "Mi Taller",
@@ -31,6 +31,34 @@ export function BarraInferior({
 }: BarraInferiorProps) {
   const pathname = usePathname();
   const [drawerAbierto, setDrawerAbierto] = useState(false);
+  const [tecladoVisible, setTecladoVisible] = useState(false);
+
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") {
+        setTecladoVisible(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag !== "input" && activeTag !== "textarea" && activeTag !== "select") {
+          setTecladoVisible(false);
+        }
+      }, 50);
+    };
+
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
 
   return (
     <>
@@ -45,7 +73,9 @@ export function BarraInferior({
 
       <nav
         aria-label="Navegación principal móvil"
-        className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-2 sm:px-3 pb-[calc(var(--safe-bottom)+0.6rem)] lg:hidden pointer-events-none"
+        className={`barra-inferior-mobile fixed inset-x-0 bottom-0 z-40 flex justify-center px-2 sm:px-3 pb-[calc(var(--safe-bottom)+0.6rem)] lg:hidden pointer-events-none transition-all duration-200 ${
+          tecladoVisible ? "translate-y-28 opacity-0" : "translate-y-0 opacity-100"
+        }`}
       >
         <div className="pointer-events-auto flex w-full max-w-[28rem] items-center justify-between gap-1 rounded-3xl border border-border/80 bg-card/90 backdrop-blur-2xl p-1.5 shadow-2xl">
           {/* 1. Menú Hamburguesa → X animado */}
