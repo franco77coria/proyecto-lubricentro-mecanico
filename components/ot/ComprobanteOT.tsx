@@ -295,7 +295,14 @@ export function ComprobanteOT({
                     c.estado ? (ESTADO_CHECK[c.estado]?.clase ?? "") : "estado-pendiente"
                   }`}
                 />
-                <span className="cmp-check-texto">{c.etiqueta_snapshot}</span>
+                <span className="cmp-check-texto">
+                  {c.etiqueta_snapshot}
+                  {c.nota && (
+                    <span style={{ fontWeight: "normal", color: "#444", marginLeft: "5px" }}>
+                      — {c.nota}
+                    </span>
+                  )}
+                </span>
                 <span className={`cmp-check-estado ${c.estado === "critico" ? "cmp-check-critico" : c.estado === "observado" ? "cmp-check-obs" : ""}`}>
                   {c.estado ? ESTADO_CHECK[c.estado]?.texto : "Pend."}
                 </span>

@@ -468,17 +468,19 @@ export async function asegurarChecklistOT(otId: string): Promise<{ ok?: boolean;
     if (!plantilla) {
       // Si no hay plantilla, crear items genéricos directamente
       const ITEMS_DEFECTO = [
-        { etiqueta: "Tren delantero", orden: 1 },
-        { etiqueta: "Tren trasero", orden: 2 },
-        { etiqueta: "Neumáticos", orden: 3 },
-        { etiqueta: "Luces", orden: 4 },
-        { etiqueta: "Aceite", orden: 5 },
-        { etiqueta: "Filtro de aire", orden: 6 },
-        { etiqueta: "Filtro de nafta", orden: 7 },
-        { etiqueta: "Filtro de aceite", orden: 8 },
-        { etiqueta: "Filtro habitáculo", orden: 9 },
-        { etiqueta: "Grasas y aditivos", orden: 10 },
-        { etiqueta: "Otros", orden: 11 },
+        { etiqueta: "Aceite de motor", orden: 1 },
+        { etiqueta: "Filtro de aceite", orden: 2 },
+        { etiqueta: "Filtro de aire", orden: 3 },
+        { etiqueta: "Filtro habitáculo", orden: 4 },
+        { etiqueta: "Filtro de nafta / combustible", orden: 5 },
+        { etiqueta: "Grados de refrigerante / Grados de frío", orden: 6 },
+        { etiqueta: "Líquido de frenos / Freno hidráulico", orden: 7 },
+        { etiqueta: "Dirección hidráulica", orden: 8 },
+        { etiqueta: "Tren delantero y suspensión", orden: 9 },
+        { etiqueta: "Tren trasero", orden: 10 },
+        { etiqueta: "Neumáticos y presión", orden: 11 },
+        { etiqueta: "Luces y batería", orden: 12 },
+        { etiqueta: "Otros", orden: 13 },
       ];
 
       await supabase.from("ot_checklist").insert(
@@ -520,5 +522,90 @@ export async function asegurarChecklistOT(otId: string): Promise<{ ok?: boolean;
   } catch (err) {
     unstable_rethrow(err);
     return { error: "No se pudo inicializar el checklist." };
+  }
+}
+
+export async function agregarItemChecklistOT(
+  otId: string,
+  etiqueta: string,
+): Promise<{ ok?: boolean; error?: string; item?: { id: string; etiqueta_snapshot: string; estado: "ok" | "observado" | "critico" | "no_aplica" | null; nota?: string | null } }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  const texto = etiqueta.trim();
+  if (!texto) return { error: "El nombre del ítem es requerido." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const tallerId = sesion.perfil.taller_id;
+
+    const { data: ultimos } = await supabase
+      .from("ot_checklist")
+      .select("orden")
+      .eq("ot_id", otId)
+      .eq("taller_id", tallerId)
+      .order("orden", { ascending: false })
+      .limit(1);
+
+    const proximoOrden = ((ultimos?.[0]?.orden as number) ?? 0) + 1;
+
+    const { data: nuevo, error } = await supabase
+      .from("ot_checklist")
+      .insert({
+        taller_id: tallerId,
+        ot_id: otId,
+        etiqueta_snapshot: texto,
+        orden: proximoOrden,
+        estado: null,
+      })
+      .select("id, etiqueta_snapshot, estado, nota")
+      .single();
+
+    if (error || !nuevo) {
+      console.error("[agregarItemChecklistOT]", error);
+      return { error: "No se pudo agregar el ítem al checklist." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    return {
+      ok: true,
+      item: {
+        id: nuevo.id,
+        etiqueta_snapshot: nuevo.etiqueta_snapshot,
+        estado: nuevo.estado as "ok" | "observado" | "critico" | "no_aplica" | null,
+        nota: nuevo.nota,
+      },
+    };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "Error de servidor al agregar ítem." };
+  }
+}
+
+export async function eliminarItemChecklistOT(
+  otChecklistId: string,
+  otId: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const sesion = await obtenerSesion();
+  if (!sesion?.perfil) return { error: "Sesión vencida." };
+
+  try {
+    const supabase = await crearClienteServidor();
+    const { error } = await supabase
+      .from("ot_checklist")
+      .delete()
+      .eq("id", otChecklistId)
+      .eq("taller_id", sesion.perfil.taller_id);
+
+    if (error) {
+      console.error("[eliminarItemChecklistOT]", error);
+      return { error: "No se pudo eliminar el ítem del checklist." };
+    }
+
+    revalidatePath(`/ot/${otId}`);
+    return { ok: true };
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: "Error de servidor al eliminar ítem." };
   }
 }
