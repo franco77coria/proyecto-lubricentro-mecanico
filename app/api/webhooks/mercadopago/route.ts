@@ -6,6 +6,9 @@ import {
   cancelarPreapproval,
   validarFirmaWebhookMP,
 } from "@/lib/mercadopago/cliente";
+import { notificarPagoExitoso, notificarPagoFallido } from "@/lib/email/avisos";
+import { obtenerContactoDuenoTaller } from "@/lib/email/taller-contacto";
+import { obtenerConfigPlan } from "@/lib/suscripcion";
 
 /**
  * Webhook receptor de notificaciones de Mercado Pago para Suscripciones SaaS (Preapproval).
@@ -157,6 +160,38 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(`[Webhook MercadoPago] Taller ${tallerId} actualizado a estado: ${nuevoEstadoSuscripcion} (${preapproval.status})`);
+
+      // 2b. Enviar notificación por email al dueño del taller
+      try {
+        const contacto = await obtenerContactoDuenoTaller(admin, tallerId);
+        if (contacto) {
+          const config = obtenerConfigPlan(refPlanId);
+          if (preapproval.status === "authorized") {
+            const monto = preapproval.auto_recurring?.transaction_amount || config.precioARS;
+            notificarPagoExitoso(
+              contacto.email,
+              contacto.nombreUsuario,
+              contacto.nombreTaller,
+              config.nombre,
+              monto,
+              suscripcionFin,
+              preapproval.id
+            ).catch((e) => console.error("[Webhook MercadoPago] Error enviando email de suscripción autorizada:", e));
+          } else if (preapproval.status === "cancelled" || preapproval.status === "paused") {
+            const motivo = preapproval.status === "cancelled"
+              ? "La suscripción mensual fue cancelada en Mercado Pago."
+              : "El débito automático fue pausado por Mercado Pago.";
+            notificarPagoFallido(
+              contacto.email,
+              contacto.nombreUsuario,
+              contacto.nombreTaller,
+              motivo
+            ).catch((e) => console.error("[Webhook MercadoPago] Error enviando email de suscripción pausada/cancelada:", e));
+          }
+        }
+      } catch (errEmail) {
+        console.error("[Webhook MercadoPago] Error resolviendo contacto para email:", errEmail);
+      }
     }
 
     // 3. Procesar eventos de pago puntual (Checkout Pro — como en Cuánto Sale)
@@ -223,6 +258,43 @@ export async function POST(request: NextRequest) {
           .eq("id", tallerId);
 
         console.log(`[Webhook MercadoPago] Pago aprobado registrado para taller ${tallerId}, nueva vigencia: ${nuevaFin}`);
+
+        try {
+          const contacto = await obtenerContactoDuenoTaller(admin, tallerId);
+          if (contacto) {
+            const config = obtenerConfigPlan(refPlanId);
+            const monto = pago.transaction_amount || config.precioARS;
+            notificarPagoExitoso(
+              contacto.email,
+              contacto.nombreUsuario,
+              contacto.nombreTaller,
+              config.nombre,
+              monto,
+              nuevaFin,
+              String(pago.id)
+            ).catch((e) => console.error("[Webhook MercadoPago] Error enviando email de pago puntual:", e));
+          }
+        } catch (errEmail) {
+          console.error("[Webhook MercadoPago] Error enviando email pago puntual:", errEmail);
+        }
+      } else if (pago && (pago.status === "rejected" || pago.status === "cancelled") && pago.external_reference) {
+        const [tallerId] = (pago.external_reference || "").split(":");
+        if (tallerId) {
+          const admin = crearClienteAdmin();
+          try {
+            const contacto = await obtenerContactoDuenoTaller(admin, tallerId);
+            if (contacto) {
+              notificarPagoFallido(
+                contacto.email,
+                contacto.nombreUsuario,
+                contacto.nombreTaller,
+                pago.status_detail || "El pago no pudo ser acreditado por la entidad bancaria."
+              ).catch((e) => console.error("[Webhook MercadoPago] Error enviando email de pago rechazado:", e));
+            }
+          } catch (errEmail) {
+            console.error("[Webhook MercadoPago] Error enviando email pago rechazado:", errEmail);
+          }
+        }
       }
     }
 

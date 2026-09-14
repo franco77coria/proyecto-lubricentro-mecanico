@@ -15,8 +15,12 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Taller",
-  description: "Gestión de órdenes de trabajo, stock y clientes para lubricentros y talleres mecánicos.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://fierros.app"),
+  title: {
+    default: "Fierros — Software para Talleres Mecánicos y Lubricentros",
+    template: "%s | Fierros",
+  },
+  description: "Gestión de órdenes de trabajo, lubricentro por patente, presupuestos y control de stock para talleres mecánicos.",
   // El link al manifest lo agrega Next solo, porque existe app/manifest.ts.
   // Declararlo a mano apuntaba a /manifest.json, que no existe: la ruta
   // generada es /manifest.webmanifest. Ese 404 dejaba la app sin poder
@@ -24,7 +28,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Taller",
+    title: "Fierros",
   },
   icons: {
     icon: [

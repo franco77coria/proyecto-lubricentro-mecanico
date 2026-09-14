@@ -7,6 +7,7 @@ import type { AuthError } from "@supabase/supabase-js";
 import { altaTallerSchema, credencialesSchema } from "@/lib/schemas/auth";
 import { formatearEspera, limitarIntentoAuth, limpiarIntentosAuth } from "@/lib/rate-limit";
 import { crearClienteServidor, obtenerSesion } from "@/lib/supabase/server";
+import { notificarBienvenidaTrial } from "@/lib/email/avisos";
 
 export interface ResultadoAuth {
   error?: string;
@@ -181,6 +182,15 @@ export async function crearTaller(_previo: ResultadoAuth, formData: FormData): P
         redirect("/login");
       }
       return { error: error.message || "No se pudo crear el taller. Probá de nuevo." };
+    }
+    if (user.email) {
+      notificarBienvenidaTrial(
+        user.email,
+        parseado.data.nombreUsuario || "",
+        parseado.data.nombre
+      ).catch((err) => {
+        console.error("[auth] Error enviando email de bienvenida:", err);
+      });
     }
   } catch (error) {
     unstable_rethrow(error);

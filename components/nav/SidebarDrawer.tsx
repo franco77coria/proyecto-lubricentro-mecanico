@@ -97,7 +97,7 @@ export function SidebarDrawer({
               </span>
               <span className="flex items-center gap-0.5 text-[10px] font-semibold text-muted-foreground">
                 <Shield className="h-2.5 w-2.5 text-accent" />
-                Fierros Pro
+                Fierros
               </span>
             </div>
           </div>

@@ -64,7 +64,7 @@ export function Sidebar({ taller, usuario, rol, vistasPermitidas }: SidebarProps
               </span>
               <span className="flex items-center gap-0.5 text-[9px] font-semibold text-muted-foreground">
                 <Shield className="h-2 w-2 text-accent" />
-                Fierros Pro
+                Fierros
               </span>
             </div>
           </div>
