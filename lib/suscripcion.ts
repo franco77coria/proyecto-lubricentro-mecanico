@@ -120,8 +120,8 @@ export function calcularEstadoSuscripcion(taller: InfoSuscripcionTaller | null |
 
   // 1. Si la suscripción fue pagada y está activa vía Mercado Pago
   if (taller.estado_suscripcion === "activa") {
-    // Si tiene fecha de fin explícita, verificar que no haya expirado
-    const fechaFin = taller.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : Infinity;
+    // Si tiene fecha de fin explícita, verificar que no haya expirado. Falla cerrado si es nula o inválida.
+    const fechaFin = taller.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : 0;
     const pagadaVigente = fechaFin > ahora;
 
     if (pagadaVigente) {
@@ -156,6 +156,24 @@ export function calcularEstadoSuscripcion(taller: InfoSuscripcionTaller | null |
 
   // 3. Si el estado explícito es cancelado
   if (taller.estado_suscripcion === "cancelada" || taller.mp_subscription_status === "cancelled") {
+    // Si canceló la renovación pero aún le quedan días ya abonados, mantiene acceso hasta su vencimiento
+    const fechaFin = taller.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : 0;
+    if (fechaFin > ahora) {
+      const msRestantes = fechaFin - ahora;
+      const diasRestantes = Math.ceil(msRestantes / (1000 * 60 * 60 * 24));
+      return {
+        tieneAcceso: true,
+        enTrial: false,
+        trialVencido: false,
+        diasRestantesTrial: 0,
+        horasRestantesTrial: 0,
+        estado: "cancelada",
+        etiquetaEstado: `Cancelada (${diasRestantes}d restantes)`,
+        plan: configPlan.id,
+        nombrePlan: configPlan.nombre,
+      };
+    }
+
     return {
       tieneAcceso: false,
       enTrial: false,

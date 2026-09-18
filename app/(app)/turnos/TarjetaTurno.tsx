@@ -157,7 +157,11 @@ export function TarjetaTurno({ turno }: { turno: Turno }) {
       {estadoOptimista === "ingresado" && (
         <div className="pt-3 mt-1 border-t border-border/60">
           <Link
-            href="/ot/nueva"
+            href={
+              turno.vehiculo?.patente
+                ? `/ot/nueva?patente=${encodeURIComponent(turno.vehiculo.patente)}`
+                : "/ot/nueva"
+            }
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent text-white py-2 text-xs font-black shadow-md shadow-orange-500/20 hover:brightness-110 active:scale-95 transition-all"
           >
             <Plus className="h-4 w-4 stroke-[3]" />

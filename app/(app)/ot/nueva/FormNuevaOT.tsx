@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   Car,
   Plus,
   RotateCcw,
@@ -13,8 +12,7 @@ import {
   CheckCircle2,
   Loader2,
 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { BotonVolverTablero } from "@/components/nav/BotonVolverTablero";
 
@@ -49,12 +47,14 @@ const DRAFT_KEY = "draft_nueva_ot";
 
 export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patenteQuery = searchParams.get("patente");
   const { notificar } = useIsla();
   const [isPending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Form campos
-  const [patente, setPatente] = useState("");
+  const [patente, setPatente] = useState(() => (patenteQuery ? normalizarPatente(patenteQuery) : ""));
   const [formatoEspecial, setFormatoEspecial] = useState(false);
   const [vehiculo, setVehiculo] = useState<ValorVehiculo>(VEHICULO_VACIO);
   const [km, setKm] = useState("");
@@ -208,6 +208,17 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
     return false;
   };
 
+  // Precarga y búsqueda inmediata si viene ?patente=... desde Turnos o desde otra pantalla
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (patenteQuery) {
+      const limpia = normalizarPatente(patenteQuery);
+      buscarEnTaller(limpia);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patenteQuery]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   // Búsqueda reactiva automática cuando se ingresa una patente válida
   useEffect(() => {
     const norm = normalizarPatente(patente);
@@ -217,6 +228,7 @@ export function FormNuevaOT({ marcas }: { marcas: OpcionCatalogo[] }) {
       buscarEnTaller(norm);
     }, 400);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patente]);
 
   const handleCambioPatente = (val: string) => {

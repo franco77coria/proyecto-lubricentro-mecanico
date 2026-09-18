@@ -4,7 +4,6 @@ import { useState, useEffect, useTransition, useRef } from "react";
 import { Search, UserCheck, UserPlus, Phone, Car, X, Loader2, Camera, Image as ImageIcon } from "lucide-react";
 import { buscarClientesOmni, type ClienteOmniResultado } from "@/lib/actions/clientes";
 import { PlacaPatente } from "@/components/ui/PlacaPatente";
-import { FormCliente } from "./FormCliente";
 import { escanearCedulaVerdeAction } from "@/lib/actions/cedula-verde";
 import { comprimirParaOCR } from "@/lib/imagen";
 import { desglosarTitular } from "@/lib/cedula";
@@ -41,7 +40,9 @@ export function SelectorCliente({
   const [resultados, setResultados] = useState<ClienteOmniResultado[]>([]);
   const [cargando, setCargando] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState<ClienteOmniResultado | null>(null);
-  const [mostrarManual, setMostrarManual] = useState(false);
+  const [abrirManualForzado, setAbrirManualForzado] = useState(false);
+  const tieneDatosManuales = Boolean(!clienteSeleccionado && (clienteNombre || clienteApellido || clienteTelefono));
+  const mostrarManual = abrirManualForzado || tieneDatosManuales;
   const [, startTransition] = useTransition();
 
   async function procesarFotoCedula(file: File) {
@@ -105,16 +106,9 @@ export function SelectorCliente({
     return () => clearTimeout(timer);
   }, [termino, clienteSeleccionado]);
 
-  // Abrir formulario manual automáticamente si ya vienen datos cargados externamente (ej. OCR o borrador)
-  useEffect(() => {
-    if ((clienteNombre || clienteApellido || clienteTelefono) && !clienteSeleccionado) {
-      setMostrarManual(true);
-    }
-  }, [clienteNombre, clienteApellido, clienteTelefono, clienteSeleccionado]);
-
   function handleSeleccionar(c: ClienteOmniResultado) {
     setClienteSeleccionado(c);
-    setMostrarManual(false);
+    setAbrirManualForzado(false);
     onCambioNombre(c.nombre);
     onCambioApellido(c.apellido || "");
     onCambioTelefono(c.telefono || "");
@@ -130,7 +124,7 @@ export function SelectorCliente({
 
   function handleLimpiarSeleccion() {
     setClienteSeleccionado(null);
-    setMostrarManual(false);
+    setAbrirManualForzado(false);
     onCambioNombre("");
     onCambioApellido("");
     onCambioTelefono("");
@@ -205,7 +199,7 @@ export function SelectorCliente({
               {!mostrarManual ? (
                 <button
                   type="button"
-                  onClick={() => setMostrarManual(true)}
+                  onClick={() => setAbrirManualForzado(true)}
                   className="inline-flex items-center gap-1 rounded-lg bg-accent/10 px-2 py-1 text-[11px] font-bold text-accent hover:bg-accent/20 active:scale-95 transition-all"
                 >
                   <UserPlus className="h-3 w-3" />
@@ -214,7 +208,13 @@ export function SelectorCliente({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setMostrarManual(false)}
+                  onClick={() => {
+                    setAbrirManualForzado(false);
+                    onCambioNombre("");
+                    onCambioApellido("");
+                    onCambioTelefono("");
+                    onCambioDocumento?.("");
+                  }}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground active:scale-95"
                 >
                   <X className="h-3 w-3" />
@@ -261,7 +261,7 @@ export function SelectorCliente({
               <button
                 type="button"
                 onClick={() => {
-                  setMostrarManual(true);
+                  setAbrirManualForzado(true);
                   if (!clienteNombre) {
                     const partes = termino.trim().split(" ");
                     if (partes.length === 1 && isNaN(Number(partes[0]))) {
@@ -385,7 +385,13 @@ export function SelectorCliente({
             </div>
             <button
               type="button"
-              onClick={() => setMostrarManual(false)}
+              onClick={() => {
+                setAbrirManualForzado(false);
+                onCambioNombre("");
+                onCambioApellido("");
+                onCambioTelefono("");
+                onCambioDocumento?.("");
+              }}
               className="text-[11px] font-semibold text-muted-foreground hover:text-foreground"
             >
               Cancelar

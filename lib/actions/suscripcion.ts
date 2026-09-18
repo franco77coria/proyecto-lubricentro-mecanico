@@ -233,6 +233,23 @@ export async function sincronizarSuscripcionRetornoAction(
     if (params?.paymentId) {
       const pago = await obtenerDetallePago(params.paymentId);
       if (pago && pago.status === "approved") {
+        // Reclamar el evento con 'payment_approved' para idempotencia unificada con el webhook.
+        // Si el webhook ya lo procesó (o el usuario recargó la página), el insert colisiona
+        // con la clave única (mp_id, tipo) de la base de datos y evitamos duplicar la vigencia.
+        const { error: errClaim } = await admin.from("taller_suscripcion_evento").insert({
+          taller_id: tallerId,
+          mp_id: String(pago.id),
+          tipo: "payment_approved",
+          estado: pago.status,
+          monto: pago.transaction_amount || null,
+          payload: JSON.parse(JSON.stringify(pago)),
+        });
+
+        if (errClaim) {
+          // Si ya fue procesado por el webhook o visita previa, no sumar días de nuevo
+          return { ok: true, activada: true };
+        }
+
         const actualFin = taller?.suscripcion_fin ? new Date(taller.suscripcion_fin).getTime() : 0;
         const baseTime = actualFin > Date.now() ? actualFin : Date.now();
         const fechaFin = new Date(baseTime + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -253,15 +270,6 @@ export async function sincronizarSuscripcionRetornoAction(
             ...(planToSet ? { plan: planToSet } : {}),
           })
           .eq("id", tallerId);
-
-        await admin.from("taller_suscripcion_evento").insert({
-          taller_id: tallerId,
-          tipo: "pago_puntual_checkout_pro",
-          mp_id: String(pago.id),
-          estado: pago.status,
-          monto: pago.transaction_amount || null,
-          payload: JSON.parse(JSON.stringify(pago)),
-        });
 
         revalidatePath("/suscripcion");
         revalidatePath("/", "layout");

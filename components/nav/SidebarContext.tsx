@@ -15,6 +15,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [sidebarVisible, setSidebarVisibleState] = useState(true);
   const [montado, setMontado] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setMontado(true);
     try {
@@ -26,6 +27,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
       // Ignorar en caso de restricciones de almacenamiento local
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const setSidebarVisible = (visible: boolean) => {
     setSidebarVisibleState(visible);

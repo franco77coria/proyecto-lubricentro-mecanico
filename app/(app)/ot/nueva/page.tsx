@@ -1,4 +1,5 @@
 
+import { Suspense } from "react";
 import { FormNuevaOT } from "./FormNuevaOT";
 import { listarMarcas } from "@/lib/actions/catalogo";
 import { exigirVista } from "@/lib/permisos";
@@ -15,7 +16,9 @@ export default async function PaginaNuevaOT() {
   return (
     <main className="flex-1 pt-[calc(var(--safe-top)+var(--isla-height)+0.75rem)] pb-4 scroll-inset">
       <div className="contenedor-angosto">
-        <FormNuevaOT marcas={marcas} />
+        <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Cargando formulario...</div>}>
+          <FormNuevaOT marcas={marcas} />
+        </Suspense>
       </div>
     </main>
   );

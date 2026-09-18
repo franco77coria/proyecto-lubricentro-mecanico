@@ -36,6 +36,9 @@ export const dynamic = "force-dynamic";
 export default async function PaginaDetalleOT({ params }: { params: Promise<{ id: string }> }) {
   const sesion = await exigirVista("/kanban");
   const esDueno = sesion.perfil.rol === "dueno";
+  const esMostrador = sesion.perfil.rol === "mostrador";
+  const puedeCobrar = esDueno || esMostrador;
+  const puedeAnular = esDueno || esMostrador;
 
   const { id } = await params;
   const supabase = await crearClienteServidor();
@@ -396,8 +399,8 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
               tallerNombre={taller?.nombre ?? "el taller"}
             />
 
-            {/* Registro de Pagos (Solo dueño) */}
-            {esDueno && (
+            {/* Registro de Pagos (Dueño y Mostrador) */}
+            {puedeCobrar && (
               <SeccionPagos otId={ot.id} totalOT={Number(ot.total || 0)} pagosIniciales={pagosMapeados} />
             )}
 
@@ -409,11 +412,11 @@ export default async function PaginaDetalleOT({ params }: { params: Promise<{ id
                   {ot.motivo_anulacion || "Sin motivo registrado."}
                 </span>
               </p>
-            ) : (
+            ) : puedeAnular ? (
               <div className="flex lg:justify-end">
                 <AnularOrden otId={ot.id} estadoActual={ot.estado} />
               </div>
-            )}
+            ) : null}
 
             <FirmaCliente
               otId={ot.id}

@@ -65,7 +65,7 @@ describe("calcularEstadoSuscripcion", () => {
     assert.equal(res.nombrePlan, "Plan Pro");
   });
 
-  test("taller cancelado no tiene acceso aunque tuviera trial viejo", () => {
+  test("taller cancelado no tiene acceso si no tiene suscripcion_fin vigente", () => {
     const res = calcularEstadoSuscripcion({
       estado_suscripcion: "cancelada",
       trial_fin: new Date(Date.now() - 1000).toISOString(),
@@ -73,6 +73,30 @@ describe("calcularEstadoSuscripcion", () => {
 
     assert.equal(res.tieneAcceso, false);
     assert.equal(res.estado, "cancelada");
+  });
+
+  test("taller cancelado mantiene acceso hasta que expire su fecha suscripcion_fin", () => {
+    const ahora = Date.now();
+    const suscripcionFin = new Date(ahora + 12 * 24 * 60 * 60 * 1000).toISOString();
+    const res = calcularEstadoSuscripcion({
+      estado_suscripcion: "cancelada",
+      suscripcion_fin: suscripcionFin,
+      plan: "pro",
+    });
+
+    assert.equal(res.tieneAcceso, true);
+    assert.equal(res.estado, "cancelada");
+    assert.equal(res.enTrial, false);
+  });
+
+  test("taller con estado activa pero sin suscripcion_fin no otorga acceso infinito (falla cerrado)", () => {
+    const res = calcularEstadoSuscripcion({
+      estado_suscripcion: "activa",
+      suscripcion_fin: null,
+      trial_fin: new Date(Date.now() - 1000).toISOString(),
+    });
+
+    assert.equal(res.tieneAcceso, false);
   });
 
   test("soporta los 2 planes con sus respectivos nombres", () => {

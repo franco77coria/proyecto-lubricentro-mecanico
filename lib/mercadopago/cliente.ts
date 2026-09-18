@@ -109,7 +109,7 @@ export async function crearSuscripcionPreapproval(
     const ruta = backUrl.startsWith("http://")
       ? backUrl.replace(/^http:\/\/[^/]+/, "")
       : "/suscripcion?status=success";
-    backUrl = `https://tallerpro.app${ruta.startsWith("/") ? ruta : `/${ruta}`}`;
+    backUrl = `https://proyecto-lubricentro-mecanico.vercel.app${ruta.startsWith("/") ? ruta : `/${ruta}`}`;
   }
 
   const nombrePlan = params.nombrePlan || "Taller Pro";

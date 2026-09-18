@@ -69,6 +69,7 @@ export function IslaProvider({ children }: { children: React.ReactNode }) {
   const inicializado = useRef(false);
 
   // 1. Recuperar contexto activo guardado en localStorage al iniciar en el navegador
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
       const guardado = localStorage.getItem(STORAGE_KEY);
@@ -84,6 +85,7 @@ export function IslaProvider({ children }: { children: React.ReactNode }) {
       inicializado.current = true;
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 2. Persistir contexto activo en localStorage ante cualquier cambio
   useEffect(() => {
